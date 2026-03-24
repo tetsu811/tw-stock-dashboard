@@ -1,6 +1,6 @@
 {
   "date": "20260324",
-  "generated_at": "2026-03-24 11:37:59",
+  "generated_at": "2026-03-24 11:39:45",
   "taiex": {
     "index": 32612.24,
     "change": -110.26,
@@ -26,74 +26,74 @@
   "foreign_top10": {
     "top_buy": [
       {
-        "stock_id": "",
+        "stock_id": "*",
         "stock_name": "6770",
         "buy": null,
-        "sell": 67582349.0,
-        "net": 134670565.0
-      },
-      {
-        "stock_id": "",
-        "stock_name": "3481",
-        "buy": null,
-        "sell": 105657767.0,
-        "net": 114146879.0
-      },
-      {
-        "stock_id": "",
-        "stock_name": "2344",
-        "buy": null,
-        "sell": 95901411.0,
-        "net": 79157067.0
-      },
-      {
-        "stock_id": "",
-        "stock_name": "1802",
-        "buy": null,
-        "sell": 23390044.0,
-        "net": 61802130.0
-      },
-      {
-        "stock_id": "",
-        "stock_name": "2409",
-        "buy": null,
-        "sell": 29716008.0,
-        "net": 56662500.0
+        "sell": 76913288.0,
+        "net": 157719107.0
       },
       {
         "stock_id": "*",
-        "stock_name": "2317",
+        "stock_name": "3481",
         "buy": null,
-        "sell": 12263428.0,
-        "net": 50435898.0
+        "sell": 97231429.0,
+        "net": 139720063.0
+      },
+      {
+        "stock_id": "*",
+        "stock_name": "2344",
+        "buy": null,
+        "sell": 58968342.0,
+        "net": 73611298.0
+      },
+      {
+        "stock_id": "",
+        "stock_name": "00981A",
+        "buy": null,
+        "sell": 46485382.0,
+        "net": 52096000.0
       },
       {
         "stock_id": "",
         "stock_name": "2887",
         "buy": null,
-        "sell": 11981841.0,
-        "net": 48933902.0
+        "sell": 38427507.0,
+        "net": 43733262.0
+      },
+      {
+        "stock_id": "*",
+        "stock_name": "2408",
+        "buy": null,
+        "sell": 54663662.0,
+        "net": 41597473.0
+      },
+      {
+        "stock_id": "*",
+        "stock_name": "2409",
+        "buy": null,
+        "sell": 10599332.0,
+        "net": 35783288.0
+      },
+      {
+        "stock_id": "*",
+        "stock_name": "2303",
+        "buy": null,
+        "sell": 29290768.0,
+        "net": 33497720.0
       },
       {
         "stock_id": "",
-        "stock_name": "2313",
+        "stock_name": "2367",
         "buy": null,
-        "sell": 27176128.0,
-        "net": 47641192.0
+        "sell": 30514143.0,
+        "net": 32450089.0
       },
       {
         "stock_id": "",
-        "stock_name": "2353",
+        "stock_name": "0050",
         "buy": null,
-        "sell": 50137145.0,
-        "net": 43037605.0
-      },
-      {
-        "stock_id": "",
-        "stock_name": "6282",
-        "buy": null,
-        "sell": 23749302.0,
-        "net": 41658600.0
+        "sell": 4413442.0,
+        "net": 26307592.0
       }
     ],
     "top_sell": []
@@ -253,11 +253,11 @@
     },
     {
       "date": "2026-03-24",
-      "close": 158.7
+      "close": 158.69
     }
   ],
   "vix": {
-    "value": 26.39,
+    "value": 26.37,
     "date": "2026-03-24",
     "prev_value": 26.15,
     "chart": [
@@ -287,7 +287,7 @@
       },
       {
         "date": "2026-03-24",
-        "close": 26.39
+        "close": 26.37
       }
     ]
   },
