@@ -47,7 +47,7 @@ def _finmind_fetch(dataset, data_id, start_date, end_date):
     """
     從 FinMind API 取得資料 (備用資料來源)
     dataset: 資料集名稱
-    data_id: 資料ID (例如 TX, MXF, MTX)
+    data_id: 資料ID (例如 TX, MXF, MTX)，可為空字串
     start_date: YYYYMMDD 格式
     end_date: YYYYMMDD 格式
     """
@@ -64,21 +64,102 @@ def _finmind_fetch(dataset, data_id, start_date, end_date):
 
         params = {
             "dataset": dataset,
-            "data_id": data_id,
             "start_date": start_formatted,
             "end_date": end_formatted,
             "token": finmind_token,
         }
+        if data_id:
+            params["data_id"] = data_id
+
         resp = _safe_get(url, params)
         if resp:
             data = resp.json()
             if data.get("status") == 200 and data.get("data"):
-                print(f"    [FinMind] 成功取得 {dataset} (data_id={data_id})")
+                print(f"    [FinMind] 成功取得 {dataset} (data_id={data_id or 'N/A'}) 共{len(data['data'])}筆")
                 return data["data"]
+            else:
+                msg = data.get("msg", "unknown")
+                print(f"    [FinMind] {dataset} 回應: status={data.get('status')}, msg={msg}")
     except Exception as e:
         print(f"    [FinMind] 錯誤: {e}")
 
     return None
+
+
+# ============================================================
+# 股票名稱查詢 (確保代號後面一定有公司名)
+# ============================================================
+_STOCK_NAME_CACHE = {}
+
+def _ensure_stock_names(stocks_list):
+    """
+    確保股票列表中每個項目都有公司名稱
+    如果 stock_name 為空或等於 stock_id，嘗試從 TWSE 查詢
+    """
+    global _STOCK_NAME_CACHE
+
+    # 先檢查哪些需要查詢
+    missing = [s for s in stocks_list if not s.get("stock_name") or s["stock_name"] == s["stock_id"]]
+    if not missing:
+        return stocks_list
+
+    # 如果快取是空的，載入完整股票名稱表
+    if not _STOCK_NAME_CACHE:
+        _load_stock_names()
+
+    # 填入名稱
+    for stock in stocks_list:
+        if not stock.get("stock_name") or stock["stock_name"] == stock["stock_id"]:
+            name = _STOCK_NAME_CACHE.get(stock["stock_id"])
+            if name:
+                stock["stock_name"] = name
+            else:
+                # 仍然沒有名稱，至少顯示代號
+                stock["stock_name"] = stock["stock_id"]
+
+    return stocks_list
+
+
+def _load_stock_names():
+    """從 TWSE 載入所有上市股票代號與名稱"""
+    global _STOCK_NAME_CACHE
+    print("  [股名] 載入股票名稱對照表...")
+
+    # TWSE 上市公司列表
+    url = "https://www.twse.com.tw/exchangeReport/STOCK_DAY_ALL"
+    params = {"response": "json"}
+    resp = _safe_get(url, params, timeout=10)
+    if resp:
+        try:
+            data = resp.json()
+            if "data" in data:
+                for row in data["data"]:
+                    if len(row) >= 2:
+                        sid = str(row[0]).strip()
+                        sname = str(row[1]).strip()
+                        if sid and sname:
+                            _STOCK_NAME_CACHE[sid] = sname
+                print(f"  [股名] 已載入 {len(_STOCK_NAME_CACHE)} 檔上市股票名稱")
+        except:
+            pass
+
+    # TPEx 上櫃公司列表
+    url2 = "https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php"
+    params2 = {"l": "zh-tw", "o": "json"}
+    resp2 = _safe_get(url2, params2, timeout=10)
+    if resp2:
+        try:
+            data2 = resp2.json()
+            if "aaData" in data2:
+                for row in data2["aaData"]:
+                    if len(row) >= 2:
+                        sid = str(row[0]).strip()
+                        sname = str(row[1]).strip()
+                        if sid and sname:
+                            _STOCK_NAME_CACHE[sid] = sname
+                print(f"  [股名] 加入上櫃後共 {len(_STOCK_NAME_CACHE)} 檔")
+        except:
+            pass
 
 
 # ============================================================
@@ -288,6 +369,9 @@ def fetch_foreign_top10(date_str=None):
         print(f"  [錯誤] 解析外資排行失敗: {e}")
         return _fetch_foreign_top10_from_t86(date_str)
 
+    # 確保所有股票都有公司名稱
+    _ensure_stock_names(result["top_buy"])
+    _ensure_stock_names(result["top_sell"])
     return result
 
 
@@ -333,6 +417,9 @@ def _fetch_foreign_top10_from_t86(date_str):
     except Exception as e:
         print(f"  [錯誤] 備用方案解析失敗: {e}")
 
+    # 確保所有股票都有公司名稱
+    _ensure_stock_names(result["top_buy"])
+    _ensure_stock_names(result["top_sell"])
     return result
 
 
@@ -342,15 +429,11 @@ def _fetch_foreign_top10_from_t86(date_str):
 def fetch_margin_trading(date_str=None):
     """
     抓取融資融券餘額
-    回傳: {margin_balance, margin_change, short_balance, short_change}
+    回傳: {margin_balance, margin_change, margin_balance_amount, short_balance, short_change}
     """
     print("💰 抓取融資融券...")
     if date_str is None:
         date_str = datetime.now().strftime("%Y%m%d")
-
-    url = "https://www.twse.com.tw/exchangeReport/MI_MARGN"
-    params = {"response": "json", "date": date_str, "selectType": "MS"}
-    resp = _safe_get(url, params)
 
     result = {
         "margin_balance": None, "margin_change": None,
@@ -358,54 +441,127 @@ def fetch_margin_trading(date_str=None):
         "short_balance": None, "short_change": None,
     }
 
-    if resp is None:
-        return result
+    # ===== 方法1: TWSE MI_MARGN (用 creditFields 動態對應欄位) =====
+    # 嘗試今天和前幾個交易日 (資料可能延遲)
+    url = "https://www.twse.com.tw/exchangeReport/MI_MARGN"
+    resp = None
+    tried_dates = [date_str]
+    prev = _get_prev_trading_date(date_str)
+    if prev:
+        tried_dates.append(prev)
 
-    try:
-        data = resp.json()
-        # creditList 包含融資融券彙總
-        if "creditList" in data and len(data["creditList"]) > 0:
-            summary = data["creditList"][-1]  # 最後一列是合計
-            print(f"    [TWSE] creditList 欄位數: {len(summary)}")
-            print(f"    [TWSE] 行資料: {summary}")
+    for try_date in tried_dates:
+        params = {"response": "json", "date": try_date, "selectType": "MS"}
+        resp = _safe_get(url, params)
+        if resp:
+            try:
+                test_data = resp.json()
+                if test_data.get("stat") == "OK" and test_data.get("creditList"):
+                    print(f"    [TWSE] MI_MARGN 使用日期: {try_date}")
+                    break
+            except:
+                pass
+        resp = None  # 重置，繼續嘗試下一個日期
+        print(f"    [TWSE] MI_MARGN 日期 {try_date} 無資料，嘗試前一天...")
 
-            # 嘗試多種欄位位置，TWSE API 可能有不同版本
-            # 通常格式: [日期, 融資買進, 融資賣出, 融資餘額(張), 融資餘額(金額), 融資餘額變化, 融券買進, 融券賣出, 融券餘額(張), 融券餘額(金額), ...]
+    if resp:
+        try:
+            data = resp.json()
+            print(f"    [TWSE] MI_MARGN stat={data.get('stat')}")
 
-            # 優先嘗試常見欄位位置
-            if len(summary) > 3:
-                result["margin_balance"] = _parse_number(summary[3])  # 融資餘額張數
-            if len(summary) > 4:
-                result["margin_balance_amount"] = _parse_number(summary[4])  # 融資餘額金額
-            if len(summary) > 5:
-                result["margin_change"] = _parse_number(summary[5])  # 融資餘額變化
+            # 使用 creditFields 取得欄位名稱，creditList 取得資料
+            credit_fields = data.get("creditFields", [])
+            credit_list = data.get("creditList", [])
+            print(f"    [TWSE] creditFields: {credit_fields}")
+            print(f"    [TWSE] creditList 共 {len(credit_list)} 行")
 
-            # 嘗試取得融券，可能在 field[8] 或 field[9]
-            if len(summary) > 8:
-                result["short_balance"] = _parse_number(summary[8])
-            elif len(summary) > 9:
-                result["short_balance"] = _parse_number(summary[9])
+            # 找「今日餘額」欄位的位置
+            balance_idx = None
+            prev_balance_idx = None
+            for i, field_name in enumerate(credit_fields):
+                if "今日" in str(field_name) and "餘額" in str(field_name):
+                    balance_idx = i
+                elif "前日" in str(field_name) and "餘額" in str(field_name):
+                    prev_balance_idx = i
 
-            print(f"    [TWSE] 融資餘額: {result['margin_balance']}, 融券餘額: {result['short_balance']}")
-    except Exception as e:
-        print(f"  [錯誤] 解析融資融券失敗: {e}")
+            # 如果找不到精確匹配，嘗試最後一個欄位 (通常是今日餘額)
+            if balance_idx is None and len(credit_fields) >= 2:
+                balance_idx = len(credit_fields) - 1
+                prev_balance_idx = len(credit_fields) - 2
+                print(f"    [TWSE] 使用推測: balance_idx={balance_idx}, prev_idx={prev_balance_idx}")
+            else:
+                print(f"    [TWSE] 欄位定位: balance_idx={balance_idx}, prev_idx={prev_balance_idx}")
 
-    # 如果仍無資料，嘗試 FinMind 備用資料源
+            # 遍歷每一行，根據「項目」名稱匹配
+            for row in credit_list:
+                if not row or len(row) <= (balance_idx or 0):
+                    continue
+                item_name = str(row[0]).strip()
+                print(f"    [TWSE] 行: '{item_name}' => {row}")
+
+                if "融資" in item_name and "金額" not in item_name and "張" not in item_name:
+                    # 融資(交易單位) - 張數
+                    if balance_idx is not None:
+                        result["margin_balance"] = _parse_number(row[balance_idx])
+                    if prev_balance_idx is not None:
+                        prev_val = _parse_number(row[prev_balance_idx])
+                        if prev_val is not None and result["margin_balance"] is not None:
+                            result["margin_change"] = result["margin_balance"] - prev_val
+                elif "融資金額" in item_name or ("融資" in item_name and "金額" in item_name):
+                    # 融資金額(仟元)
+                    if balance_idx is not None:
+                        amt = _parse_number(row[balance_idx])
+                        if amt is not None:
+                            # 融資金額單位是仟元，轉為元
+                            if "仟" in item_name or amt < 1e9:
+                                result["margin_balance_amount"] = amt * 1000
+                            else:
+                                result["margin_balance_amount"] = amt
+                elif "融券" in item_name and "金額" not in item_name:
+                    # 融券(交易單位) - 張數
+                    if balance_idx is not None:
+                        result["short_balance"] = _parse_number(row[balance_idx])
+                    if prev_balance_idx is not None:
+                        prev_val = _parse_number(row[prev_balance_idx])
+                        if prev_val is not None and result["short_balance"] is not None:
+                            result["short_change"] = result["short_balance"] - prev_val
+
+            print(f"    [TWSE] 結果: 融資餘額={result['margin_balance']}, 金額={result['margin_balance_amount']}, 融券={result['short_balance']}")
+        except Exception as e:
+            print(f"  [錯誤] 解析融資融券失敗: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # ===== 方法2: FinMind 備用 =====
     if result["margin_balance"] is None:
-        print("  [備用] 嘗試 FinMind API 取得融資融券...")
+        print("  [備用] 嘗試 FinMind TaiwanStockTotalMarginPurchaseShortSale...")
         fm_data = _finmind_fetch("TaiwanStockTotalMarginPurchaseShortSale", "", date_str, date_str)
         if fm_data:
             try:
                 for row in fm_data:
-                    margin_today = _parse_number(row.get("MarginPurchaseTodayBalance", ""))
-                    short_today = _parse_number(row.get("ShortSaleTodayBalance", ""))
-                    if margin_today is not None:
-                        result["margin_balance"] = margin_today
-                    if short_today is not None:
-                        result["short_balance"] = short_today
-                    print(f"    [FinMind] 融資餘額: {result['margin_balance']}, 融券餘額: {result['short_balance']}")
+                    name = row.get("name", "")
+                    today_bal = row.get("TodayBalance")
+                    yes_bal = row.get("YesBalance")
+                    print(f"    [FinMind] name={name}, TodayBalance={today_bal}, YesBalance={yes_bal}")
+
+                    if "融資" in name and "金額" not in name:
+                        result["margin_balance"] = _parse_number(str(today_bal)) if today_bal is not None else None
+                        if today_bal is not None and yes_bal is not None:
+                            result["margin_change"] = int(today_bal) - int(yes_bal)
+                    elif "融資金額" in name or ("融資" in name and "金額" in name):
+                        amt = _parse_number(str(today_bal)) if today_bal is not None else None
+                        if amt is not None:
+                            result["margin_balance_amount"] = amt * 1000  # 仟元轉元
+                    elif "融券" in name and "金額" not in name:
+                        result["short_balance"] = _parse_number(str(today_bal)) if today_bal is not None else None
+                        if today_bal is not None and yes_bal is not None:
+                            result["short_change"] = int(today_bal) - int(yes_bal)
+
+                print(f"    [FinMind] 結果: 融資={result['margin_balance']}, 金額={result['margin_balance_amount']}, 融券={result['short_balance']}")
             except Exception as e:
                 print(f"  [錯誤] FinMind 解析失敗: {e}")
+                import traceback
+                traceback.print_exc()
 
     return result
 
@@ -541,15 +697,57 @@ def fetch_yahoo_chart(symbol, period="30d", interval="1d"):
     symbol: "DX=F" (美元指數), "JPY=X" (USD/JPY), "^VIX"
     回傳: [{"date": "2024-01-01", "close": 104.5}, ...]
     """
-    url = "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol
+    # 嘗試多個 API 端點 (v8 已停用，v11 有 crumb 限制)
+    urls = [
+        f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}",
+        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
+    ]
+
     params = {
         "range": period,
         "interval": interval,
         "includePrePost": "false",
     }
-    resp = _safe_get(url, params)
+
+    resp = None
+    for url in urls:
+        resp = _safe_get(url, params)
+        if resp and resp.status_code == 200:
+            break
+        resp = None
 
     if resp is None:
+        # 備用: 嘗試 yfinance 風格的下載端點
+        print(f"  [Yahoo] chart API 失敗，嘗試 download 端點...")
+        from datetime import timedelta
+        end_dt = datetime.now()
+        days = int(period.replace("d", "")) if "d" in period else 30
+        start_dt = end_dt - timedelta(days=days)
+        dl_url = f"https://query1.finance.yahoo.com/v7/finance/download/{symbol}"
+        dl_params = {
+            "period1": str(int(start_dt.timestamp())),
+            "period2": str(int(end_dt.timestamp())),
+            "interval": interval,
+            "events": "history",
+        }
+        resp_dl = _safe_get(dl_url, dl_params)
+        if resp_dl and resp_dl.status_code == 200:
+            try:
+                lines = resp_dl.text.strip().split("\n")
+                points = []
+                for line in lines[1:]:
+                    parts = line.split(",")
+                    if len(parts) >= 5 and parts[4] != "null":
+                        close_val = float(parts[4])
+                        points.append({
+                            "date": parts[0],
+                            "close": round(close_val, 2)
+                        })
+                if points:
+                    print(f"  [Yahoo] download 成功: {symbol} 共 {len(points)} 筆")
+                    return points
+            except Exception as e:
+                print(f"  [Yahoo] download 解析失敗: {e}")
         return []
 
     try:
@@ -798,17 +996,41 @@ def fetch_futures_oi(date_str=None):
         try:
             lines = resp.text.strip().split("\n")
             print(f"    [期交所] 解析 {len(lines)} 行資料")
+            if len(lines) > 0:
+                print(f"    [期交所] 標頭: {lines[0][:200]}")
+
+            # 動態偵測欄位位置：找身份別、多空交易口數淨額、多空未平倉口數淨額
+            header = lines[0] if lines else ""
+            header_fields = [f.strip().strip('"') for f in header.split(",")]
+
+            # 預設欄位位置 (期交所 CSV 格式: 日期,商品名稱,身份別,...)
+            # 0:日期 1:商品名稱 2:身份別 3:多方交易口數 4:多方交易金額
+            # 5:空方交易口數 6:空方交易金額 7:多空交易口數淨額 8:多空交易金額淨額
+            # 9:多方未平倉口數 10:多方未平倉金額 11:空方未平倉口數 12:空方未平倉金額
+            # 13:多空未平倉口數淨額 14:多空未平倉金額淨額
+            id_idx = 2
+            change_idx = 7   # 多空交易口數淨額
+            oi_idx = 13      # 多空未平倉口數淨額
+
+            # 嘗試從標頭動態找欄位
+            for i, h in enumerate(header_fields):
+                if "身份" in h or "身分" in h:
+                    id_idx = i
+                elif "多空" in h and "交易" in h and "口數" in h and "淨" in h:
+                    change_idx = i
+                elif "多空" in h and "未平倉" in h and "口數" in h and "淨" in h:
+                    oi_idx = i
+
+            print(f"    [期交所] 欄位定位: id={id_idx}, change={change_idx}, oi={oi_idx}")
+
             for line in lines[1:]:
                 fields = [f.strip().strip('"') for f in line.split(",")]
-                if len(fields) < 13:
+                if len(fields) <= max(id_idx, change_idx, oi_idx):
                     continue
-                identity = fields[1].strip() if len(fields) > 1 else ""
+                identity = fields[id_idx].strip()
 
-                # 正確的欄位位置 (0-indexed):
-                # 6: 多空交易口數淨額 (增減口數) ← NET TRADE CHANGE
-                # 12: 多空未平倉口數淨額 ← NET OI
-                net_change = _parse_number(fields[6]) if len(fields) > 6 else None
-                net_oi = _parse_number(fields[12]) if len(fields) > 12 else None
+                net_change = _parse_number(fields[change_idx])
+                net_oi = _parse_number(fields[oi_idx])
 
                 # 轉為整數
                 if net_oi is not None:
@@ -829,6 +1051,8 @@ def fetch_futures_oi(date_str=None):
                     result["dealer"]["change"] = net_change
         except Exception as e:
             print(f"  [錯誤] 解析期交所 CSV 失敗: {e}")
+            import traceback
+            traceback.print_exc()
 
     # 嘗試用 HTML 表格備用
     if result["foreign"]["oi"] is None:
@@ -907,10 +1131,91 @@ def fetch_futures_oi(date_str=None):
     return result
 
 
+def _calc_sentiment_from_finmind(fm_data):
+    """從 FinMind 期貨法人資料計算多空指標"""
+    if not fm_data:
+        return None
+    total_long = 0
+    total_short = 0
+    for row in fm_data:
+        long_vol = row.get("long_open_interest_balance_volume")
+        short_vol = row.get("short_open_interest_balance_volume")
+        investor = row.get("institutional_investors", "")
+        if long_vol is not None and short_vol is not None:
+            total_long += int(long_vol)
+            total_short += int(short_vol)
+            print(f"      {investor}: long={long_vol}, short={short_vol}")
+    total = total_long + total_short
+    if total > 0:
+        return round((total_long - total_short) / total * 100, 2)
+    return None
+
+
+def _calc_sentiment_from_taifex(resp_text, contract_id):
+    """從期交所 CSV 資料計算多空指標"""
+    if not resp_text:
+        return None
+    try:
+        lines = resp_text.strip().split("\n")
+        print(f"    [TAIFEX] {contract_id}: 共 {len(lines)} 行")
+        if len(lines) > 0:
+            print(f"    [TAIFEX] 標頭: {lines[0][:300]}")
+
+        # 檢查是否是 HTML 而非 CSV
+        if "<html" in lines[0].lower() or "<table" in lines[0].lower():
+            print(f"    [TAIFEX] {contract_id}: 回傳 HTML 而非 CSV，跳過")
+            return None
+
+        # 動態偵測欄位位置
+        header_fields = [f.strip().strip('"') for f in lines[0].split(",")]
+        long_oi_idx = 9   # 多方未平倉口數 (預設)
+        short_oi_idx = 11  # 空方未平倉口數 (預設)
+        id_idx = 2         # 身份別 (預設)
+
+        for i, h in enumerate(header_fields):
+            if "身份" in h or "身分" in h:
+                id_idx = i
+            elif "多方" in h and "未平倉" in h and "口數" in h:
+                long_oi_idx = i
+            elif "空方" in h and "未平倉" in h and "口數" in h:
+                short_oi_idx = i
+
+        print(f"    [TAIFEX] 欄位定位: id={id_idx}, long_oi={long_oi_idx}, short_oi={short_oi_idx}")
+
+        total_long_oi = 0
+        total_short_oi = 0
+        found_data = False
+        for line in lines[1:]:
+            fields = [f.strip().strip('"') for f in line.split(",")]
+            if len(fields) > max(long_oi_idx, short_oi_idx):
+                long_oi = _parse_number(fields[long_oi_idx])
+                short_oi = _parse_number(fields[short_oi_idx])
+                identity = fields[id_idx].strip() if len(fields) > id_idx else ""
+                if long_oi is not None and long_oi > 0:
+                    total_long_oi += long_oi
+                    found_data = True
+                if short_oi is not None and short_oi > 0:
+                    total_short_oi += short_oi
+                    found_data = True
+                if identity:
+                    print(f"      {identity}: long_oi={long_oi}, short_oi={short_oi}")
+
+        total = total_long_oi + total_short_oi
+        if total > 0:
+            sentiment = round((total_long_oi - total_short_oi) / total * 100, 2)
+            print(f"    [TAIFEX] {contract_id}: {sentiment}% (long={total_long_oi}, short={total_short_oi})")
+            return sentiment
+        elif not found_data:
+            print(f"    [TAIFEX] {contract_id}: 無有效資料")
+    except Exception as e:
+        print(f"  [錯誤] 解析{contract_id}多空指標失敗: {e}")
+    return None
+
+
 def fetch_sentiment_indicators(date_str=None):
     """
     抓取期權觀測指標：微台多空指標、小台多空指標、PCR（含前日對比）
-    來源: 期交所
+    策略：FinMind 為主要資料源，TAIFEX CSV 為備用
     """
     print("🔮 抓取期權觀測指標...")
     if date_str is None:
@@ -927,38 +1232,33 @@ def fetch_sentiment_indicators(date_str=None):
         "pcr_prev": None,               # PCR 前一交易日
     }
 
-    # 嘗試從期交所 PCR 頁面取得
-    url = "https://www.taifex.com.tw/cht/3/pcRatio"
-    params = {
-        "queryStartDate": formatted_date,
-        "queryEndDate": formatted_date,
-    }
-    resp = _safe_get(url, params)
+    prev_date = _get_prev_trading_date(date_str)
 
-    if resp:
-        try:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(resp.text, "html.parser")
-            tables = soup.find_all("table")
-            for table in tables:
-                rows = table.find_all("tr")
-                for row in rows:
-                    cells = row.find_all("td")
-                    if len(cells) >= 3:
-                        cell_text = [c.get_text(strip=True) for c in cells]
-                        # PCR 數據
-                        for i, t in enumerate(cell_text):
-                            val = _parse_number(t.replace("%", ""))
-                            if val and 30 < val < 300:
-                                if result["pcr_today"] is None:
-                                    result["pcr_today"] = val
-        except:
-            pass
+    # ===== 方法1 (主要): FinMind TaiwanFuturesInstitutionalInvestors =====
+    for data_id, key_prefix, label in [("MXF", "micro", "微台"), ("MTX", "mini", "小台")]:
+        print(f"  [FinMind] 取得{label}多空指標 (data_id={data_id})...")
+        # 今日
+        fm_data = _finmind_fetch("TaiwanFuturesInstitutionalInvestors", data_id, date_str, date_str)
+        if fm_data:
+            sentiment = _calc_sentiment_from_finmind(fm_data)
+            if sentiment is not None:
+                result[f"{key_prefix}_sentiment"] = sentiment
+                print(f"    [FinMind] {label}多空: {sentiment}%")
 
-    # 微台 & 小台多空指標
-    # 計算方式：(多方未平倉 - 空方未平倉) / 總未平倉 * 100%
-    for contract_id, key_prefix in [("MXF", "micro"), ("MTX", "mini")]:
-        print(f"    [情緒指標] 計算{contract_id}多空指標...")
+        # 前日
+        if prev_date:
+            fm_prev = _finmind_fetch("TaiwanFuturesInstitutionalInvestors", data_id, prev_date, prev_date)
+            if fm_prev:
+                prev_sentiment = _calc_sentiment_from_finmind(fm_prev)
+                if prev_sentiment is not None:
+                    result[f"{key_prefix}_sentiment_prev"] = prev_sentiment
+                    print(f"    [FinMind] {label}前日多空: {prev_sentiment}%")
+
+    # ===== 方法2 (備用): TAIFEX 期交所 CSV =====
+    for contract_id, key_prefix, label in [("MXF", "micro", "微台"), ("MTX", "mini", "小台")]:
+        if result[f"{key_prefix}_sentiment"] is not None:
+            continue  # FinMind 已成功取得，跳過
+        print(f"  [TAIFEX備用] 取得{label}多空指標 (commodityId={contract_id})...")
         url3 = "https://www.taifex.com.tw/cht/3/futContractsDateDown"
         params3 = {
             "queryStartDate": formatted_date,
@@ -967,81 +1267,73 @@ def fetch_sentiment_indicators(date_str=None):
         }
         resp3 = _safe_get(url3, params3)
         if resp3:
-            try:
-                lines = resp3.text.strip().split("\n")
-                total_long_oi = 0
-                total_short_oi = 0
-                for line in lines[1:]:
-                    fields = [f.strip().strip('"') for f in line.split(",")]
-                    if len(fields) > 10:
-                        # 正確的欄位位置: 8=多方未平倉口數, 10=空方未平倉口數
-                        long_oi = _parse_number(fields[8])
-                        short_oi = _parse_number(fields[10])
-                        if long_oi:
-                            total_long_oi += long_oi
-                        if short_oi:
-                            total_short_oi += short_oi
-                total = total_long_oi + total_short_oi
-                if total > 0:
-                    sentiment = round((total_long_oi - total_short_oi) / total * 100, 2)
-                    result[f"{key_prefix}_sentiment"] = sentiment
-                    print(f"      {key_prefix}: {sentiment}% (long={total_long_oi}, short={total_short_oi})")
-            except Exception as e:
-                print(f"  [錯誤] 解析{contract_id}多空指標失敗: {e}")
+            sentiment = _calc_sentiment_from_taifex(resp3.text, contract_id)
+            if sentiment is not None:
+                result[f"{key_prefix}_sentiment"] = sentiment
 
-    # 抓取前一交易日的數據做比較
-    prev_date = _get_prev_trading_date(date_str)
-    if prev_date:
-        prev_formatted = f"{prev_date[:4]}/{prev_date[4:6]}/{prev_date[6:8]}"
-
-        # 前日 PCR
-        url_prev = "https://www.taifex.com.tw/cht/3/pcRatio"
-        params_prev = {"queryStartDate": prev_formatted, "queryEndDate": prev_formatted}
-        resp_prev = _safe_get(url_prev, params_prev)
-        if resp_prev:
-            try:
-                from bs4 import BeautifulSoup
-                soup_prev = BeautifulSoup(resp_prev.text, "html.parser")
-                for table in soup_prev.find_all("table"):
-                    for row in table.find_all("tr"):
-                        cells = row.find_all("td")
-                        if len(cells) >= 3:
-                            for c in cells:
-                                val = _parse_number(c.get_text(strip=True).replace("%", ""))
-                                if val and 30 < val < 300:
-                                    if result["pcr_prev"] is None:
-                                        result["pcr_prev"] = val
-            except:
-                pass
-
-        # 前日微台、小台
-        for contract_id, key_prefix in [("MXF", "micro"), ("MTX", "mini")]:
-            url4 = "https://www.taifex.com.tw/cht/3/futContractsDateDown"
+        # 前日
+        if prev_date and result[f"{key_prefix}_sentiment_prev"] is None:
+            prev_formatted = f"{prev_date[:4]}/{prev_date[4:6]}/{prev_date[6:8]}"
             params4 = {
                 "queryStartDate": prev_formatted,
                 "queryEndDate": prev_formatted,
                 "commodityId": contract_id,
             }
-            resp4 = _safe_get(url4, params4)
+            resp4 = _safe_get(url3, params4)
             if resp4:
-                try:
-                    lines = resp4.text.strip().split("\n")
-                    total_long = 0
-                    total_short = 0
-                    for line in lines[1:]:
-                        fields = [f.strip().strip('"') for f in line.split(",")]
-                        if len(fields) > 10:
-                            # 正確的欄位位置: 8=多方未平倉口數, 10=空方未平倉口數
-                            lo = _parse_number(fields[8])
-                            so = _parse_number(fields[10])
-                            if lo: total_long += lo
-                            if so: total_short += so
-                    total = total_long + total_short
-                    if total > 0:
-                        result[f"{key_prefix}_sentiment_prev"] = round((total_long - total_short) / total * 100, 2)
-                except Exception as e:
-                    print(f"  [錯誤] 解析前日{contract_id}多空指標失敗: {e}")
+                prev_sentiment = _calc_sentiment_from_taifex(resp4.text, contract_id)
+                if prev_sentiment is not None:
+                    result[f"{key_prefix}_sentiment_prev"] = prev_sentiment
 
+    # ===== PCR (Put/Call Ratio) =====
+    # 嘗試從期交所 PCR 頁面取得
+    url_pcr = "https://www.taifex.com.tw/cht/3/pcRatio"
+    for target_date, key in [(formatted_date, "pcr_today"), (None, "pcr_prev")]:
+        if target_date is None:
+            if prev_date:
+                target_date = f"{prev_date[:4]}/{prev_date[4:6]}/{prev_date[6:8]}"
+            else:
+                continue
+        params_pcr = {"queryStartDate": target_date, "queryEndDate": target_date}
+        resp_pcr = _safe_get(url_pcr, params_pcr)
+        if resp_pcr:
+            try:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(resp_pcr.text, "html.parser")
+                for table in soup.find_all("table"):
+                    for row in table.find_all("tr"):
+                        cells = row.find_all("td")
+                        if len(cells) >= 3:
+                            cell_text = [c.get_text(strip=True) for c in cells]
+                            for t in cell_text:
+                                val = _parse_number(t.replace("%", ""))
+                                if val and 30 < val < 300 and result[key] is None:
+                                    result[key] = val
+            except:
+                pass
+
+    # ===== PCR 備用: FinMind =====
+    if result["pcr_today"] is None:
+        print("  [FinMind] 嘗試取得 PCR...")
+        fm_pcr = _finmind_fetch("TaiwanOptionPutCallRatio", "", date_str, date_str)
+        if fm_pcr:
+            for row in fm_pcr:
+                pcr_val = row.get("PutCallRatio")
+                if pcr_val is not None:
+                    result["pcr_today"] = round(float(pcr_val), 2)
+                    print(f"    [FinMind] PCR: {result['pcr_today']}%")
+                    break
+
+    if result["pcr_prev"] is None and prev_date:
+        fm_pcr_prev = _finmind_fetch("TaiwanOptionPutCallRatio", "", prev_date, prev_date)
+        if fm_pcr_prev:
+            for row in fm_pcr_prev:
+                pcr_val = row.get("PutCallRatio")
+                if pcr_val is not None:
+                    result["pcr_prev"] = round(float(pcr_val), 2)
+                    break
+
+    print(f"  [結果] 微台={result['micro_sentiment']}, 小台={result['mini_sentiment']}, PCR={result['pcr_today']}")
     return result
 
 
@@ -1053,6 +1345,11 @@ def fetch_margin_maintenance_ratio(date_str=None):
     抓取整體融資維持率
     融資維持率 = 擔保品市值 / 融資金額 × 100%
     低於 130% 會被追繳，低於 120% 強制斷頭
+
+    策略：
+    1. 從 TWSE MI_MARGN 用 creditFields 動態解析
+    2. 從 TWSE 融資融券統計頁面爬取
+    3. 從 FinMind 計算 (個股加總)
     """
     print("📉 抓取融資維持率...")
     if date_str is None:
@@ -1060,48 +1357,114 @@ def fetch_margin_maintenance_ratio(date_str=None):
 
     result = {"ratio": None, "date": date_str}
 
-    # 從 TWSE 融資融券彙總表計算
+    # ===== 方法1: TWSE MI_MARGN 用 creditFields 動態解析 =====
     url = "https://www.twse.com.tw/exchangeReport/MI_MARGN"
     params = {"response": "json", "date": date_str, "selectType": "MS"}
     resp = _safe_get(url, params)
 
+    margin_amount = None  # 融資金額
+    collateral_value = None  # 擔保品市值
+
     if resp:
         try:
             data = resp.json()
-            if "creditList" in data and len(data["creditList"]) > 0:
-                summary = data["creditList"][-1]
-                print(f"    [TWSE] creditList 欄位數: {len(summary)}")
-                print(f"    [TWSE] 完整行資料: {summary}")
+            credit_fields = data.get("creditFields", [])
+            credit_list = data.get("creditList", [])
+            print(f"    [TWSE] 融資維持率: creditFields={credit_fields}")
 
-                # 嘗試各種欄位位置組合
-                # creditList 格式可能是: [日期, 融資買進, 融資賣出, 融資餘額(張), 融資餘額(金額), ...]
-                # 或更多欄位包含擔保品市值
-                margin_amt = None
-                collateral = None
-                # 遍歷所有數值欄位，找融資金額和擔保品
-                values = []
-                for i, cell in enumerate(summary):
-                    val = _parse_number(cell)
-                    if val and val > 1e9:  # 大於10億的值
-                        values.append((i, val))
-                        print(f"    [TWSE] field[{i}] (超過10億): {val}")
+            # 找「今日餘額」欄位位置
+            balance_idx = None
+            for i, field_name in enumerate(credit_fields):
+                if "今日" in str(field_name) and "餘額" in str(field_name):
+                    balance_idx = i
+            if balance_idx is None and len(credit_fields) >= 2:
+                balance_idx = len(credit_fields) - 1
 
-                # 嘗試直接計算: 如果有多個大數值，擔保品通常 > 融資金額
-                if len(values) >= 2:
-                    # 按數值排序，最大的可能是擔保品市值，次大的是融資金額
-                    values_sorted = sorted(values, key=lambda x: x[1], reverse=True)
-                    # 融資維持率 = 擔保品 / 融資 * 100，通常在 130-200 之間
-                    for i in range(len(values_sorted)):
-                        for j in range(i+1, len(values_sorted)):
-                            ratio_test = values_sorted[i][1] / values_sorted[j][1] * 100
-                            if 100 < ratio_test < 300:
-                                result["ratio"] = round(ratio_test, 1)
-                                print(f"    [TWSE] 融資維持率: {result['ratio']}% (擔保品={values_sorted[i][1]}, 融資={values_sorted[j][1]})")
-                                break
-                        if result["ratio"]:
-                            break
+            # 遍歷所有行，找融資金額和擔保品
+            for row in credit_list:
+                if not row or len(row) <= (balance_idx or 0):
+                    continue
+                item_name = str(row[0]).strip()
+
+                if "融資金額" in item_name or ("融資" in item_name and "金額" in item_name):
+                    if balance_idx is not None:
+                        amt = _parse_number(row[balance_idx])
+                        if amt is not None:
+                            # 仟元轉元
+                            margin_amount = amt * 1000 if "仟" in item_name or amt < 1e9 else amt
+                            print(f"    [TWSE] 融資金額: {margin_amount}")
+                elif "擔保" in item_name or "市值" in item_name:
+                    if balance_idx is not None:
+                        val = _parse_number(row[balance_idx])
+                        if val is not None:
+                            collateral_value = val * 1000 if "仟" in item_name or val < 1e9 else val
+                            print(f"    [TWSE] 擔保品市值: {collateral_value}")
+
+            if margin_amount and collateral_value and margin_amount > 0:
+                result["ratio"] = round(collateral_value / margin_amount * 100, 1)
+                print(f"    [TWSE] 融資維持率: {result['ratio']}%")
         except Exception as e:
             print(f"  [錯誤] 解析融資維持率失敗: {e}")
+
+    # ===== 方法2: 如果 MI_MARGN 沒有擔保品數據，嘗試爬取 TWSE 統計頁面 =====
+    if result["ratio"] is None:
+        print("  [備用] 嘗試 TWSE 融資融券統計頁面...")
+        url2 = "https://www.twse.com.tw/exchangeReport/MI_MARGN"
+        params2 = {"response": "json", "date": date_str, "selectType": "ALL"}
+        resp2 = _safe_get(url2, params2)
+
+        if resp2:
+            try:
+                data2 = resp2.json()
+                # selectType=ALL 回傳個股融資融券明細
+                # 可能包含 maintainRatio 或在 data 中有維持率欄位
+                # 嘗試從整體統計取得
+                if "creditList" in data2:
+                    all_margin_amt = 0
+                    all_collateral = 0
+                    for row in data2["creditList"]:
+                        if len(row) >= 6:
+                            # 嘗試找個股的融資金額和擔保品
+                            pass  # 個股資料太多，跳過
+
+                # 嘗試其他可用欄位
+                if "marginNote" in data2:
+                    note = str(data2["marginNote"])
+                    print(f"    [TWSE] marginNote: {note[:200]}")
+            except Exception as e:
+                print(f"  [錯誤] 備用融資維持率解析: {e}")
+
+    # ===== 方法3: 嘗試從新聞/金融網站取得 =====
+    if result["ratio"] is None:
+        print("  [備用] 嘗試從 Goodinfo 取得融資維持率...")
+        url3 = "https://goodinfo.tw/tw/StockMarginList.asp"
+        resp3 = _safe_get(url3, timeout=10)
+        if resp3:
+            try:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(resp3.text, "html.parser")
+                # 找整體維持率
+                text = soup.get_text()
+                import re
+                # 搜尋「整體融資維持率」或類似文字後面跟著百分比
+                patterns = [
+                    r'整體.*?維持率.*?(\d{2,3}\.?\d*)\s*%',
+                    r'維持率.*?(\d{2,3}\.?\d*)\s*%',
+                    r'融資維持率.*?(\d{2,3}\.?\d*)',
+                ]
+                for pattern in patterns:
+                    match = re.search(pattern, text)
+                    if match:
+                        val = float(match.group(1))
+                        if 100 < val < 300:
+                            result["ratio"] = round(val, 1)
+                            print(f"    [Goodinfo] 融資維持率: {result['ratio']}%")
+                            break
+            except Exception as e:
+                print(f"  [錯誤] Goodinfo 解析: {e}")
+
+    if result["ratio"] is None:
+        print("  ⚠️ 無法取得融資維持率")
 
     return result
 

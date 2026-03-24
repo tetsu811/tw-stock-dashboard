@@ -144,8 +144,16 @@ d = results.get("外資買賣超排行", {})
 top_buy = d.get("top_buy", [])
 top_sell = d.get("top_sell", [])
 print("【外資排行】")
-print(f"  買超前3: {', '.join(f'{s.get(\"stock_name\",\"\")}({s.get(\"stock_id\",\"\")})' for s in top_buy[:3]) if top_buy else '❌ 無資料'}")
-print(f"  賣超前3: {', '.join(f'{s.get(\"stock_name\",\"\")}({s.get(\"stock_id\",\"\")})' for s in top_sell[:3]) if top_sell else '❌ 無資料'}")
+if top_buy:
+    buy_strs = [f"{s.get('stock_name','')}{s.get('stock_id','')}" for s in top_buy[:3]]
+    print(f"  買超前3: {', '.join(buy_strs)}")
+else:
+    print("  買超前3: ❌ 無資料")
+if top_sell:
+    sell_strs = [f"{s.get('stock_name','')}{s.get('stock_id','')}" for s in top_sell[:3]]
+    print(f"  賣超前3: {', '.join(sell_strs)}")
+else:
+    print("  賣超前3: ❌ 無資料")
 print()
 
 # 國際指標
