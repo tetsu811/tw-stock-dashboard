@@ -6,21 +6,56 @@
     <title>台灣股市每日戰略儀表板 | 2026/03/24 (星期二)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        :root {
+        /* ===== Dark Mode (default) ===== */
+        :root, [data-theme="dark"] {
             --bg-primary: #0a0e17;
             --bg-card: #111827;
             --bg-card-hover: #1a2332;
+            --bg-subtle: rgba(255,255,255,0.04);
             --border: #1e2d3d;
             --text-primary: #e2e8f0;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
-            --accent-green: #22c55e;
-            --accent-red: #ef4444;
+            --accent-green: #ef4444;  /* 台灣慣例：漲=紅 */
+            --accent-red: #22c55e;   /* 台灣慣例：跌=綠 */
             --accent-blue: #3b82f6;
             --accent-yellow: #eab308;
             --accent-purple: #a855f7;
             --accent-cyan: #06b6d4;
             --accent-orange: #f97316;
+            --hero-gradient-1: linear-gradient(135deg, #111827 0%, #1a2744 100%);
+            --hero-gradient-2: linear-gradient(135deg, #111827 0%, #2a1a44 100%);
+            --chart-grid: rgba(30, 45, 61, 0.5);
+            --chart-tick: #64748b;
+            --tooltip-bg: #1e293b;
+            --tooltip-border: #334155;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* ===== Light Mode ===== */
+        [data-theme="light"] {
+            --bg-primary: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f8fafc;
+            --bg-subtle: rgba(0,0,0,0.04);
+            --border: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-green: #dc2626;  /* 台灣慣例：漲=紅 */
+            --accent-red: #16a34a;   /* 台灣慣例：跌=綠 */
+            --accent-blue: #2563eb;
+            --accent-yellow: #ca8a04;
+            --accent-purple: #9333ea;
+            --accent-cyan: #0891b2;
+            --accent-orange: #ea580c;
+            --hero-gradient-1: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            --hero-gradient-2: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+            --chart-grid: rgba(0, 0, 0, 0.06);
+            --chart-tick: #94a3b8;
+            --tooltip-bg: #ffffff;
+            --tooltip-border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -31,12 +66,37 @@
             color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.6;
+            transition: background 0.3s, color 0.3s;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 100;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
         }
 
         /* Header */
@@ -52,6 +112,7 @@
             background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 8px;
         }
         .header .date {
@@ -91,9 +152,10 @@
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px;
-            transition: background 0.2s;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
         }
-        .card:hover { background: var(--bg-card-hover); }
+        .card:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
         .card-title {
             font-size: 13px;
             font-weight: 600;
@@ -119,11 +181,13 @@
         }
 
         .hero-card {
-            background: linear-gradient(135deg, #111827 0%, #1a2744 100%);
+            background: var(--hero-gradient-1);
             border: 1px solid var(--accent-blue);
             border-radius: 16px;
             padding: 28px;
             text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
         }
         .hero-card .index-value {
             font-size: 48px;
@@ -143,11 +207,13 @@
 
         /* 期貨卡片 */
         .futures-card {
-            background: linear-gradient(135deg, #111827 0%, #2a1a44 100%);
+            background: var(--hero-gradient-2);
             border: 1px solid var(--accent-purple);
             border-radius: 16px;
             padding: 28px;
             text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
         }
         .futures-card .index-value {
             font-size: 42px;
@@ -170,7 +236,7 @@
             display: flex;
             justify-content: space-between;
             padding: 4px 8px;
-            background: rgba(255,255,255,0.05);
+            background: var(--bg-subtle);
             border-radius: 6px;
         }
         .futures-detail .detail-label { color: var(--text-muted); }
@@ -213,7 +279,7 @@
             flex: 1;
             padding: 6px 8px;
             border-radius: 6px;
-            background: rgba(255,255,255,0.04);
+            background: var(--bg-subtle);
         }
         .inst-detail .detail-box .label {
             color: var(--text-muted);
@@ -234,8 +300,8 @@
         .text-cyan { color: var(--accent-cyan); }
         .text-orange { color: var(--accent-orange); }
 
-        .bg-green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-        .bg-red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+        .bg-green { background: rgba(239, 68, 68, 0.15); color: var(--accent-green); }  /* 漲=紅底 */
+        .bg-red { background: rgba(34, 197, 94, 0.15); color: var(--accent-red); }    /* 跌=綠底 */
 
         /* Table */
         .stock-table {
@@ -354,12 +420,15 @@
     </style>
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="切換淺色/深色模式" id="themeBtn">🌙</button>
+
     <div class="container">
         <!-- Header -->
         <div class="header">
             <h1>台灣股市每日戰略儀表板</h1>
             <div class="date">2026/03/24 (星期二)</div>
-            <div class="update-time">資料更新時間: 2026-03-24 10:37:49</div>
+            <div class="update-time">資料更新時間: 2026-03-24 10:58:55</div>
         </div>
 
         <!-- ====== 加權指數 + 台指期 Hero ====== -->
@@ -563,10 +632,10 @@
                     <tbody>
                         <tr>
                             <td style="font-weight:600;">微台多空指標</td>
-                            <td style="text-align:right" class="text-green">
-                                13.70%
+                            <td style="text-align:right" class="text-red">
+                                -21.12%
                             </td>
-                            <td style="text-align:right; color: var(--text-muted);">-24.34%</td>
+                            <td style="text-align:right; color: var(--text-muted);">-428.52%</td>
                         </tr>
                         <tr>
                             <td style="font-weight:600;">小台多空指標</td>
@@ -604,10 +673,10 @@
                 <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近7天)</div>
                 <div class="vix-header">
                     <div>
-                        <span class="vix-current text-red">26.27</span>
+                        <span class="vix-current text-red">26.34</span>
                         
                         <span style="font-size:16px; margin-left:8px;" class="text-red">
-                            ▲ 0.12
+                            ▲ 0.19
                         </span>
                         
                     </div>
@@ -829,36 +898,73 @@
     </div>
 
     <script>
-        const chartDefaults = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#1e293b',
-                    titleColor: '#e2e8f0',
-                    bodyColor: '#e2e8f0',
-                    borderColor: '#334155',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false,
-                }
-            },
-            scales: {
-                x: {
-                    grid: { color: 'rgba(30, 45, 61, 0.5)' },
-                    ticks: { color: '#64748b', maxTicksLimit: 6, font: { size: 11 } }
+        // ===== Theme Toggle =====
+        function getTheme() {
+            return localStorage.getItem('dashboard-theme') || 'dark';
+        }
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const btn = document.getElementById('themeBtn');
+            if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+        function toggleTheme() {
+            const current = getTheme();
+            const next = current === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('dashboard-theme', next);
+            applyTheme(next);
+            // Rebuild charts with new colors
+            rebuildCharts();
+        }
+        // Apply saved theme on load
+        applyTheme(getTheme());
+
+        function getChartColors() {
+            const style = getComputedStyle(document.documentElement);
+            return {
+                grid: style.getPropertyValue('--chart-grid').trim() || 'rgba(30,45,61,0.5)',
+                tick: style.getPropertyValue('--chart-tick').trim() || '#64748b',
+                tooltipBg: style.getPropertyValue('--tooltip-bg').trim() || '#1e293b',
+                tooltipBorder: style.getPropertyValue('--tooltip-border').trim() || '#334155',
+                textPrimary: style.getPropertyValue('--text-primary').trim() || '#e2e8f0',
+            };
+        }
+
+        function getChartDefaults() {
+            const c = getChartColors();
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: c.tooltipBg,
+                        titleColor: c.textPrimary,
+                        bodyColor: c.textPrimary,
+                        borderColor: c.tooltipBorder,
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                    }
                 },
-                y: {
-                    grid: { color: 'rgba(30, 45, 61, 0.5)' },
-                    ticks: { color: '#64748b', font: { size: 11 } }
+                scales: {
+                    x: {
+                        grid: { color: c.grid },
+                        ticks: { color: c.tick, maxTicksLimit: 6, font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { color: c.grid },
+                        ticks: { color: c.tick, font: { size: 11 } }
+                    }
+                },
+                elements: {
+                    point: { radius: 2, hoverRadius: 5 },
+                    line: { tension: 0.3, borderWidth: 2 }
                 }
-            },
-            elements: {
-                point: { radius: 2, hoverRadius: 5 },
-                line: { tension: 0.3, borderWidth: 2 }
-            }
-        };
+            };
+        }
+
+        let chartDefaults = getChartDefaults();
+        let chartInstances = [];
 
         function makeGradient(ctx, color) {
             const g = ctx.createLinearGradient(0, 0, 0, 200);
@@ -867,132 +973,89 @@
             return g;
         }
 
-        // VIX 近7天折線圖
-        const vixData = {"labels": ["03-16", "03-17", "03-18", "03-19", "03-20", "03-23", "03-24"], "values": [23.51, 22.37, 25.09, 24.06, 26.78, 26.15, 26.27]};
-        if (vixData.labels.length > 0) {
-            const vixCtx = document.getElementById('vixChart').getContext('2d');
-
-            // VIX 顏色依數值變化
-            const vixColors = vixData.values.map(v => {
-                if (v < 15) return 'rgba(34, 197, 94, 1)';
-                if (v < 20) return 'rgba(59, 130, 246, 1)';
-                if (v < 25) return 'rgba(234, 179, 8, 1)';
-                return 'rgba(239, 68, 68, 1)';
-            });
-
-            new Chart(vixCtx, {
-                type: 'line',
-                data: {
-                    labels: vixData.labels,
-                    datasets: [{
-                        data: vixData.values,
-                        borderColor: 'rgb(249, 115, 22)',
-                        backgroundColor: makeGradient(vixCtx, 'rgb(249, 115, 22)'),
-                        fill: true,
-                        pointBackgroundColor: vixColors,
-                        pointBorderColor: vixColors,
-                        pointRadius: 5,
-                        pointHoverRadius: 8,
-                    }]
-                },
-                options: {
-                    ...chartDefaults,
-                    plugins: {
-                        ...chartDefaults.plugins,
-                        tooltip: {
-                            ...chartDefaults.plugins.tooltip,
-                            callbacks: {
-                                label: function(context) {
-                                    const v = context.parsed.y;
-                                    let level = '';
-                                    if (v < 15) level = '極度樂觀';
-                                    else if (v < 20) level = '正常';
-                                    else if (v < 25) level = '偏高警戒';
-                                    else if (v < 30) level = '恐慌';
-                                    else level = '極度恐慌';
-                                    return `VIX: ${v} (${level})`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        ...chartDefaults.scales,
-                        x: {
-                            ...chartDefaults.scales.x,
-                            ticks: { color: '#64748b', font: { size: 11 } }
-                        },
-                    }
-                }
-            });
-        }
-
-        // 美元指數圖
+        // Chart data
+        const vixData = {"labels": ["03-16", "03-17", "03-18", "03-19", "03-20", "03-23", "03-24"], "values": [23.51, 22.37, 25.09, 24.06, 26.78, 26.15, 26.34]};
         const usdData = {"labels": [], "values": []};
-        if (usdData.labels.length > 0) {
-            const usdCtx = document.getElementById('usdChart').getContext('2d');
-            new Chart(usdCtx, {
-                type: 'line',
-                data: {
-                    labels: usdData.labels,
-                    datasets: [{
-                        data: usdData.values,
-                        borderColor: 'rgb(59, 130, 246)',
-                        backgroundColor: makeGradient(usdCtx, 'rgb(59, 130, 246)'),
-                        fill: true,
-                    }]
-                },
-                options: chartDefaults
-            });
-        }
-
-        // 日圓圖
         const jpyData = {"labels": ["02-04", "02-05", "02-06", "02-09", "02-10", "02-11", "02-12", "02-13", "02-16", "02-17", "02-18", "02-19", "02-20", "02-23", "02-24", "02-25", "02-26", "02-27", "03-02", "03-03", "03-04", "03-05", "03-06", "03-09", "03-10", "03-11", "03-12", "03-13", "03-16", "03-17", "03-18", "03-19", "03-20", "03-23", "03-24"], "values": [155.8, 156.92, 156.78, 157.24, 156.13, 154.48, 153.27, 152.82, 152.78, 153.61, 153.15, 154.69, 155.16, 154.34, 154.63, 155.88, 156.2, 155.86, 156.63, 157.26, 157.77, 156.98, 157.53, 158.43, 157.85, 158.11, 159.07, 159.21, 159.57, 159.1, 158.89, 159.79, 157.92, 159.23, 158.69]};
-        if (jpyData.labels.length > 0) {
-            const jpyCtx = document.getElementById('jpyChart').getContext('2d');
-            new Chart(jpyCtx, {
-                type: 'line',
-                data: {
-                    labels: jpyData.labels,
-                    datasets: [{
-                        data: jpyData.values,
-                        borderColor: 'rgb(168, 85, 247)',
-                        backgroundColor: makeGradient(jpyCtx, 'rgb(168, 85, 247)'),
-                        fill: true,
-                    }]
-                },
-                options: chartDefaults
-            });
+        const us10yData = {"labels": ["03-16", "03-17", "03-18", "03-19", "03-20", "03-23", "03-23"], "values": [4.22, 4.2, 4.26, 4.28, 4.39, 4.33, 4.33]};
+
+        function buildAllCharts() {
+            chartDefaults = getChartDefaults();
+            const c = getChartColors();
+
+            // VIX
+            if (vixData.labels.length > 0) {
+                const vixCtx = document.getElementById('vixChart').getContext('2d');
+                const vixColors = vixData.values.map(v => {
+                    if (v < 15) return 'rgba(34,197,94,1)';
+                    if (v < 20) return 'rgba(59,130,246,1)';
+                    if (v < 25) return 'rgba(234,179,8,1)';
+                    return 'rgba(239,68,68,1)';
+                });
+                chartInstances.push(new Chart(vixCtx, {
+                    type: 'line',
+                    data: {
+                        labels: vixData.labels,
+                        datasets: [{
+                            data: vixData.values,
+                            borderColor: 'rgb(249,115,22)',
+                            backgroundColor: makeGradient(vixCtx, 'rgb(249,115,22)'),
+                            fill: true,
+                            pointBackgroundColor: vixColors,
+                            pointBorderColor: vixColors,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                        }]
+                    },
+                    options: {
+                        ...chartDefaults,
+                        plugins: { ...chartDefaults.plugins, tooltip: { ...chartDefaults.plugins.tooltip,
+                            callbacks: { label: ctx => { const v=ctx.parsed.y; let l=''; if(v<15)l='極度樂觀'; else if(v<20)l='正常'; else if(v<25)l='偏高警戒'; else if(v<30)l='恐慌'; else l='極度恐慌'; return `VIX: ${v} (${l})`; } }
+                        }},
+                        scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { color: c.tick, font:{size:11}} } }
+                    }
+                }));
+            }
+
+            // USD
+            if (usdData.labels.length > 0) {
+                const ctx = document.getElementById('usdChart').getContext('2d');
+                chartInstances.push(new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: usdData.labels, datasets: [{ data: usdData.values, borderColor: 'rgb(59,130,246)', backgroundColor: makeGradient(ctx, 'rgb(59,130,246)'), fill: true }] },
+                    options: chartDefaults
+                }));
+            }
+
+            // JPY
+            if (jpyData.labels.length > 0) {
+                const ctx = document.getElementById('jpyChart').getContext('2d');
+                chartInstances.push(new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: jpyData.labels, datasets: [{ data: jpyData.values, borderColor: 'rgb(168,85,247)', backgroundColor: makeGradient(ctx, 'rgb(168,85,247)'), fill: true }] },
+                    options: chartDefaults
+                }));
+            }
+
+            // US10Y
+            if (us10yData.labels.length > 0) {
+                const ctx = document.getElementById('us10yChart').getContext('2d');
+                chartInstances.push(new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: us10yData.labels, datasets: [{ data: us10yData.values, borderColor: 'rgb(6,182,212)', backgroundColor: makeGradient(ctx, 'rgb(6,182,212)'), fill: true, pointRadius: 4, pointHoverRadius: 7 }] },
+                    options: { ...chartDefaults, scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { color: c.tick, font:{size:11}} } } }
+                }));
+            }
         }
 
-        // 美國10年期公債殖利率
-        const us10yData = {"labels": ["03-16", "03-17", "03-18", "03-19", "03-20", "03-23", "03-23"], "values": [4.22, 4.2, 4.26, 4.28, 4.39, 4.33, 4.33]};
-        if (us10yData.labels.length > 0) {
-            const us10yCtx = document.getElementById('us10yChart').getContext('2d');
-            new Chart(us10yCtx, {
-                type: 'line',
-                data: {
-                    labels: us10yData.labels,
-                    datasets: [{
-                        data: us10yData.values,
-                        borderColor: 'rgb(6, 182, 212)',
-                        backgroundColor: makeGradient(us10yCtx, 'rgb(6, 182, 212)'),
-                        fill: true,
-                        pointRadius: 4,
-                        pointHoverRadius: 7,
-                    }]
-                },
-                options: {
-                    ...chartDefaults,
-                    scales: {
-                        ...chartDefaults.scales,
-                        x: {
-                            ...chartDefaults.scales.x,
-                            ticks: { color: '#64748b', font: { size: 11 } }
-                        },
-                    }
-                }
-            });
+        function rebuildCharts() {
+            chartInstances.forEach(c => c.destroy());
+            chartInstances = [];
+            buildAllCharts();
         }
+
+        // Initial build
+        buildAllCharts();
     </script>
 </body>
 </html>
