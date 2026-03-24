@@ -9,6 +9,7 @@
 import requests
 import json
 import time
+import os
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
@@ -40,6 +41,44 @@ def _parse_number(s):
         return float(str(s).replace(",", "").replace(" ", ""))
     except (ValueError, TypeError):
         return None
+
+
+def _finmind_fetch(dataset, data_id, start_date, end_date):
+    """
+    從 FinMind API 取得資料 (備用資料來源)
+    dataset: 資料集名稱
+    data_id: 資料ID (例如 TX, MXF, MTX)
+    start_date: YYYYMMDD 格式
+    end_date: YYYYMMDD 格式
+    """
+    finmind_token = os.environ.get("FINMIND_TOKEN", "")
+    if not finmind_token:
+        print(f"    [跳過] FinMind token 未設置，無法使用備用資料源")
+        return None
+
+    try:
+        url = "https://api.finmindtrade.com/api/v4/data"
+        # 將 YYYYMMDD 轉換為 YYYY-MM-DD
+        start_formatted = f"{start_date[:4]}-{start_date[4:6]}-{start_date[6:8]}"
+        end_formatted = f"{end_date[:4]}-{end_date[4:6]}-{end_date[6:8]}"
+
+        params = {
+            "dataset": dataset,
+            "data_id": data_id,
+            "start_date": start_formatted,
+            "end_date": end_formatted,
+            "token": finmind_token,
+        }
+        resp = _safe_get(url, params)
+        if resp:
+            data = resp.json()
+            if data.get("status") == 200 and data.get("data"):
+                print(f"    [FinMind] 成功取得 {dataset} (data_id={data_id})")
+                return data["data"]
+    except Exception as e:
+        print(f"    [FinMind] 錯誤: {e}")
+
+    return None
 
 
 # ============================================================
@@ -327,16 +366,46 @@ def fetch_margin_trading(date_str=None):
         # creditList 包含融資融券彙總
         if "creditList" in data and len(data["creditList"]) > 0:
             summary = data["creditList"][-1]  # 最後一列是合計
-            # 融資金額 (元)
-            result["margin_balance_amount"] = _parse_number(summary[4])  # 融資餘額金額
-            result["margin_balance"] = _parse_number(summary[3])  # 融資餘額張數
-            result["margin_change"] = _parse_number(summary[5]) if len(summary) > 5 else None
+            print(f"    [TWSE] creditList 欄位數: {len(summary)}")
+            print(f"    [TWSE] 行資料: {summary}")
 
-            # 嘗試取得融券
-            if len(summary) > 9:
+            # 嘗試多種欄位位置，TWSE API 可能有不同版本
+            # 通常格式: [日期, 融資買進, 融資賣出, 融資餘額(張), 融資餘額(金額), 融資餘額變化, 融券買進, 融券賣出, 融券餘額(張), 融券餘額(金額), ...]
+
+            # 優先嘗試常見欄位位置
+            if len(summary) > 3:
+                result["margin_balance"] = _parse_number(summary[3])  # 融資餘額張數
+            if len(summary) > 4:
+                result["margin_balance_amount"] = _parse_number(summary[4])  # 融資餘額金額
+            if len(summary) > 5:
+                result["margin_change"] = _parse_number(summary[5])  # 融資餘額變化
+
+            # 嘗試取得融券，可能在 field[8] 或 field[9]
+            if len(summary) > 8:
+                result["short_balance"] = _parse_number(summary[8])
+            elif len(summary) > 9:
                 result["short_balance"] = _parse_number(summary[9])
+
+            print(f"    [TWSE] 融資餘額: {result['margin_balance']}, 融券餘額: {result['short_balance']}")
     except Exception as e:
         print(f"  [錯誤] 解析融資融券失敗: {e}")
+
+    # 如果仍無資料，嘗試 FinMind 備用資料源
+    if result["margin_balance"] is None:
+        print("  [備用] 嘗試 FinMind API 取得融資融券...")
+        fm_data = _finmind_fetch("TaiwanStockTotalMarginPurchaseShortSale", "", date_str, date_str)
+        if fm_data:
+            try:
+                for row in fm_data:
+                    margin_today = _parse_number(row.get("MarginPurchaseTodayBalance", ""))
+                    short_today = _parse_number(row.get("ShortSaleTodayBalance", ""))
+                    if margin_today is not None:
+                        result["margin_balance"] = margin_today
+                    if short_today is not None:
+                        result["short_balance"] = short_today
+                    print(f"    [FinMind] 融資餘額: {result['margin_balance']}, 融券餘額: {result['short_balance']}")
+            except Exception as e:
+                print(f"  [錯誤] FinMind 解析失敗: {e}")
 
     return result
 
@@ -728,23 +797,26 @@ def fetch_futures_oi(date_str=None):
     if resp:
         try:
             lines = resp.text.strip().split("\n")
+            print(f"    [期交所] 解析 {len(lines)} 行資料")
             for line in lines[1:]:
                 fields = [f.strip().strip('"') for f in line.split(",")]
-                if len(fields) < 10:
+                if len(fields) < 13:
                     continue
                 identity = fields[1].strip() if len(fields) > 1 else ""
-                # 多方未平倉 - 空方未平倉 = 淨未平倉
-                long_oi = _parse_number(fields[9]) if len(fields) > 9 else None
-                short_oi = _parse_number(fields[11]) if len(fields) > 11 else None
-                long_trade = _parse_number(fields[3]) if len(fields) > 3 else None
-                short_trade = _parse_number(fields[5]) if len(fields) > 5 else None
 
-                net_oi = None
-                net_change = None
-                if long_oi is not None and short_oi is not None:
-                    net_oi = int(long_oi - short_oi)
-                if long_trade is not None and short_trade is not None:
-                    net_change = int(long_trade - short_trade)
+                # 正確的欄位位置 (0-indexed):
+                # 6: 多空交易口數淨額 (增減口數) ← NET TRADE CHANGE
+                # 12: 多空未平倉口數淨額 ← NET OI
+                net_change = _parse_number(fields[6]) if len(fields) > 6 else None
+                net_oi = _parse_number(fields[12]) if len(fields) > 12 else None
+
+                # 轉為整數
+                if net_oi is not None:
+                    net_oi = int(net_oi)
+                if net_change is not None:
+                    net_change = int(net_change)
+
+                print(f"    [期交所] {identity}: change={net_change}, oi={net_oi}")
 
                 if "外資" in identity:
                     result["foreign"]["oi"] = net_oi
@@ -755,8 +827,8 @@ def fetch_futures_oi(date_str=None):
                 elif "自營" in identity:
                     result["dealer"]["oi"] = net_oi
                     result["dealer"]["change"] = net_change
-        except:
-            pass
+        except Exception as e:
+            print(f"  [錯誤] 解析期交所 CSV 失敗: {e}")
 
     # 嘗試用 HTML 表格備用
     if result["foreign"]["oi"] is None:
@@ -802,6 +874,35 @@ def fetch_futures_oi(date_str=None):
         result["total"]["change"] = sum(changes)
     if ois:
         result["total"]["oi"] = sum(ois)
+
+    # 如果仍無資料，嘗試 FinMind 備用資料源
+    if result["foreign"]["oi"] is None:
+        print("  [備用] 嘗試 FinMind API...")
+        fm_data = _finmind_fetch("TaiwanFuturesInstitutionalInvestors", "TX", date_str, date_str)
+        if fm_data:
+            try:
+                for row in fm_data:
+                    name = row.get("name", "")
+                    short_oi_vol = _parse_number(row.get("short_open_interest_balance_volume", ""))
+                    long_oi_vol = _parse_number(row.get("long_open_interest_balance_volume", ""))
+
+                    if name and short_oi_vol is not None and long_oi_vol is not None:
+                        net_oi = int(long_oi_vol - short_oi_vol)
+                        print(f"    [FinMind] {name}: oi={net_oi}")
+
+                        if "外資" in name:
+                            result["foreign"]["oi"] = net_oi
+                        elif "投信" in name:
+                            result["trust"]["oi"] = net_oi
+                        elif "自營" in name:
+                            result["dealer"]["oi"] = net_oi
+
+                # 重新計算合計
+                ois = [result[k]["oi"] for k in ["foreign", "trust", "dealer"] if result[k]["oi"] is not None]
+                if ois:
+                    result["total"]["oi"] = sum(ois)
+            except Exception as e:
+                print(f"  [錯誤] FinMind 解析失敗: {e}")
 
     return result
 
@@ -857,6 +958,7 @@ def fetch_sentiment_indicators(date_str=None):
     # 微台 & 小台多空指標
     # 計算方式：(多方未平倉 - 空方未平倉) / 總未平倉 * 100%
     for contract_id, key_prefix in [("MXF", "micro"), ("MTX", "mini")]:
+        print(f"    [情緒指標] 計算{contract_id}多空指標...")
         url3 = "https://www.taifex.com.tw/cht/3/futContractsDateDown"
         params3 = {
             "queryStartDate": formatted_date,
@@ -871,9 +973,10 @@ def fetch_sentiment_indicators(date_str=None):
                 total_short_oi = 0
                 for line in lines[1:]:
                     fields = [f.strip().strip('"') for f in line.split(",")]
-                    if len(fields) > 11:
-                        long_oi = _parse_number(fields[9])
-                        short_oi = _parse_number(fields[11])
+                    if len(fields) > 10:
+                        # 正確的欄位位置: 8=多方未平倉口數, 10=空方未平倉口數
+                        long_oi = _parse_number(fields[8])
+                        short_oi = _parse_number(fields[10])
                         if long_oi:
                             total_long_oi += long_oi
                         if short_oi:
@@ -882,8 +985,9 @@ def fetch_sentiment_indicators(date_str=None):
                 if total > 0:
                     sentiment = round((total_long_oi - total_short_oi) / total * 100, 2)
                     result[f"{key_prefix}_sentiment"] = sentiment
-            except:
-                pass
+                    print(f"      {key_prefix}: {sentiment}% (long={total_long_oi}, short={total_short_oi})")
+            except Exception as e:
+                print(f"  [錯誤] 解析{contract_id}多空指標失敗: {e}")
 
     # 抓取前一交易日的數據做比較
     prev_date = _get_prev_trading_date(date_str)
@@ -926,16 +1030,17 @@ def fetch_sentiment_indicators(date_str=None):
                     total_short = 0
                     for line in lines[1:]:
                         fields = [f.strip().strip('"') for f in line.split(",")]
-                        if len(fields) > 11:
-                            lo = _parse_number(fields[9])
-                            so = _parse_number(fields[11])
+                        if len(fields) > 10:
+                            # 正確的欄位位置: 8=多方未平倉口數, 10=空方未平倉口數
+                            lo = _parse_number(fields[8])
+                            so = _parse_number(fields[10])
                             if lo: total_long += lo
                             if so: total_short += so
                     total = total_long + total_short
                     if total > 0:
                         result[f"{key_prefix}_sentiment_prev"] = round((total_long - total_short) / total * 100, 2)
-                except:
-                    pass
+                except Exception as e:
+                    print(f"  [錯誤] 解析前日{contract_id}多空指標失敗: {e}")
 
     return result
 
@@ -965,6 +1070,9 @@ def fetch_margin_maintenance_ratio(date_str=None):
             data = resp.json()
             if "creditList" in data and len(data["creditList"]) > 0:
                 summary = data["creditList"][-1]
+                print(f"    [TWSE] creditList 欄位數: {len(summary)}")
+                print(f"    [TWSE] 完整行資料: {summary}")
+
                 # 嘗試各種欄位位置組合
                 # creditList 格式可能是: [日期, 融資買進, 融資賣出, 融資餘額(張), 融資餘額(金額), ...]
                 # 或更多欄位包含擔保品市值
@@ -976,6 +1084,7 @@ def fetch_margin_maintenance_ratio(date_str=None):
                     val = _parse_number(cell)
                     if val and val > 1e9:  # 大於10億的值
                         values.append((i, val))
+                        print(f"    [TWSE] field[{i}] (超過10億): {val}")
 
                 # 嘗試直接計算: 如果有多個大數值，擔保品通常 > 融資金額
                 if len(values) >= 2:
@@ -987,11 +1096,12 @@ def fetch_margin_maintenance_ratio(date_str=None):
                             ratio_test = values_sorted[i][1] / values_sorted[j][1] * 100
                             if 100 < ratio_test < 300:
                                 result["ratio"] = round(ratio_test, 1)
+                                print(f"    [TWSE] 融資維持率: {result['ratio']}% (擔保品={values_sorted[i][1]}, 融資={values_sorted[j][1]})")
                                 break
                         if result["ratio"]:
                             break
-        except:
-            pass
+        except Exception as e:
+            print(f"  [錯誤] 解析融資維持率失敗: {e}")
 
     return result
 

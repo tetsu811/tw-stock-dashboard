@@ -22,3 +22,9 @@ FIXED_PAGE_ID = None           # 固定頁面的 ID (到 WordPress 後台查看)
 # ============================================================
 CRON_HOUR = 17                 # 每天幾點執行 (24小時制，台灣時間下午5點)
 CRON_MINUTE = 0                # 幾分
+
+# ============================================================
+# FinMind API 設定 (補充資料來源)
+# ============================================================
+import os
+FINMIND_TOKEN = os.environ.get("FINMIND_TOKEN", "")  # FinMind API token (from env var)
