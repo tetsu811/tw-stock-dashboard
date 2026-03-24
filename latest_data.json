@@ -1,6 +1,6 @@
 {
   "date": "20260324",
-  "generated_at": "2026-03-24 10:23:04",
+  "generated_at": "2026-03-24 10:37:49",
   "taiex": {
     "index": 32612.24,
     "change": -110.26,
@@ -11,15 +11,17 @@
     "date": "20260324"
   },
   "institutional": {
-    "foreign_buy": null,
-    "foreign_sell": null,
-    "foreign_net": null,
+    "foreign_buy": 240072437809.0,
+    "foreign_sell": 252259227222.0,
+    "foreign_net": -12186789413.0,
     "foreign_prev_net": -83922601792.0,
     "trust_buy": 11860336778.0,
     "trust_sell": 9265831492.0,
     "trust_net": 2594505286.0,
     "trust_prev_net": 10534823636.0,
-    "dealer_net": null
+    "dealer_net": -1698808314.0,
+    "dealer_buy": 8188487740.0,
+    "dealer_sell": 9887296054.0
   },
   "foreign_top10": {
     "top_buy": [
@@ -251,11 +253,11 @@
     },
     {
       "date": "2026-03-24",
-      "close": 158.62
+      "close": 158.69
     }
   ],
   "vix": {
-    "value": 26.24,
+    "value": 26.27,
     "date": "2026-03-24",
     "prev_value": 26.15,
     "chart": [
@@ -285,20 +287,20 @@
       },
       {
         "date": "2026-03-24",
-        "close": 26.24
+        "close": 26.27
       }
     ]
   },
   "futures": {
-    "close": null,
-    "change": null,
-    "change_pct": null,
+    "close": 32771.0,
+    "change": 212.0,
+    "change_pct": 0.65,
     "volume": null,
-    "settlement": null,
-    "open": null,
-    "high": null,
-    "low": null,
-    "contract_month": null
+    "settlement": 92474.0,
+    "open": 33280.0,
+    "high": 33393.0,
+    "low": 32342.0,
+    "contract_month": "202604"
   },
   "margin_ratio": {
     "ratio": null,
