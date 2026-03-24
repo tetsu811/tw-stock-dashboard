@@ -1,5 +1,5 @@
 """
-台灣股市戰略儀表板 - 資料抓取模組 v9
+台灣股市戰略儀表板 - 資料抓取模組 v10
 資料來源：
   - FinMind API (免費無需 token, 每小時 300 次)
   - 台灣證券交易所 (TWSE) 開放資料 API + OpenAPI v1
@@ -638,9 +638,54 @@ def fetch_margin_trading(date_str=None):
             except Exception as e:
                 print(f"  [錯誤] TWSE ALL 解析: {e}")
 
-    # ===== 方法4 (備用): 鉅亨網 API =====
+    # ===== 方法4 (備用): TWSE OpenAPI v1 TWT93U (融資融券彙總) =====
     if result["margin_balance"] is None:
-        print("  [備用4] 嘗試鉅亨網...")
+        print("  [備用4] 嘗試 TWSE OpenAPI TWT93U...")
+        try:
+            oa_url = "https://openapi.twse.com.tw/v1/exchangeReport/TWT93U"
+            resp_oa = _safe_get(oa_url, timeout=12)
+            if resp_oa:
+                oa_data = resp_oa.json()
+                if isinstance(oa_data, list) and len(oa_data) > 0:
+                    print(f"    [TWT93U] 共 {len(oa_data)} 筆, keys={list(oa_data[0].keys())}")
+                    for item in oa_data:
+                        name = item.get("Name", "") or item.get("Title", "") or item.get("ItemName", "")
+                        # 嘗試找各種可能的值欄位
+                        val_str = (item.get("TodayBalance", "") or item.get("Balance", "") or
+                                   item.get("Unit", "") or item.get("Value", ""))
+                        if not name:
+                            # 如果沒有 Name 欄位，嘗試用第一個字串欄位
+                            for k, v in item.items():
+                                if isinstance(v, str) and ("融資" in v or "融券" in v):
+                                    name = v
+                                    break
+                        val = _parse_number(str(val_str)) if val_str else None
+                        if not val:
+                            # 嘗試其他數值欄位
+                            for k, v in item.items():
+                                if k not in ["Name", "Title", "ItemName", "Date", "date"]:
+                                    parsed = _parse_number(str(v))
+                                    if parsed and parsed > 10000:
+                                        val = parsed
+                                        break
+
+                        print(f"    [TWT93U] name={name}, val={val}")
+                        if "融資" in str(name) and "金額" not in str(name) and val:
+                            result["margin_balance"] = val
+                        elif "融券" in str(name) and "金額" not in str(name) and val:
+                            result["short_balance"] = val
+                        elif ("融資金額" in str(name) or ("融資" in str(name) and "金額" in str(name))) and val:
+                            result["margin_balance_amount"] = val * 1000 if val < 1e9 else val
+                    if result["margin_balance"]:
+                        print(f"    [TWT93U] ✅ 融資={result['margin_balance']}, 融券={result['short_balance']}")
+        except Exception as e:
+            print(f"    [TWT93U] ❌ {e}")
+            import traceback
+            traceback.print_exc()
+
+    # ===== 方法5 (備用): 鉅亨網 API =====
+    if result["margin_balance"] is None:
+        print("  [備用5] 嘗試鉅亨網...")
         try:
             url4 = "https://ws.api.cnyes.com/ws/api/v1/charting/history"
             for symbol, key in [
@@ -682,12 +727,8 @@ def fetch_market_breadth(date_str=None):
         "otc_up": None, "otc_down": None, "otc_flat": None,
     }
 
-    # 上市 - 從 TWSE 每日收盤行情取得漲跌家數
-    # 方法1: 從 TAIEX 指數頁面直接取得統計
-    url_stat = "https://www.twse.com.tw/exchangeReport/BWIBBU_d"
-    params_stat = {"response": "json", "date": date_str, "selectType": "ALL"}
-
-    # 方法2: 從個股行情計算漲跌家數
+    # ==== 方法1 (主要): TWSE MI_INDEX 每日收盤行情 ====
+    print("  [方法1] TWSE MI_INDEX...")
     url2 = "https://www.twse.com.tw/exchangeReport/MI_INDEX"
     params2 = {"response": "json", "date": date_str, "type": "ALLBUT0999"}
     resp2 = _safe_get(url2, params2)
@@ -695,51 +736,84 @@ def fetch_market_breadth(date_str=None):
     if resp2:
         try:
             data2 = resp2.json()
-            up_count = 0
-            down_count = 0
-            flat_count = 0
+            if data2.get("stat") == "OK":
+                up_count = 0
+                down_count = 0
+                flat_count = 0
 
-            # 遍歷所有 data 欄位找個股資料
-            for key in sorted(data2.keys()):
-                if not key.startswith("data") or not isinstance(data2[key], list):
-                    continue
-                rows = data2[key]
-                if len(rows) < 10:
-                    continue
-
-                for row in rows:
-                    if not isinstance(row, list) or len(row) < 10:
+                # 遍歷所有 data 欄位找個股資料
+                for key in sorted(data2.keys()):
+                    if not key.startswith("data") or not isinstance(data2[key], list):
                         continue
-                    try:
-                        # 漲跌方向通常在第9或第10欄
-                        for ci in [9, 8, 10]:
-                            if ci < len(row):
-                                val_str = str(row[ci]).strip()
-                                if val_str in ["+", "-", "X", " "]:
-                                    if val_str == "+":
-                                        up_count += 1
-                                    elif val_str == "-":
-                                        down_count += 1
-                                    elif val_str == "X" or val_str == " ":
-                                        flat_count += 1
-                                    break
-                                # 也可能是帶符號的數字
-                                elif val_str.startswith("+") or "▲" in val_str:
-                                    up_count += 1
-                                    break
-                                elif val_str.startswith("-") or "▼" in val_str:
-                                    down_count += 1
-                                    break
-                    except:
-                        pass
+                    rows = data2[key]
+                    if len(rows) < 10:
+                        continue
 
-                if up_count > 0:
-                    result["tse_up"] = up_count
-                    result["tse_down"] = down_count
-                    result["tse_flat"] = flat_count
-                    break
-        except:
-            pass
+                    # 先找出哪個欄位是漲跌方向 (+ / - / X)
+                    sign_col = None
+                    if rows:
+                        sample = rows[0]
+                        if isinstance(sample, list):
+                            for ci in range(len(sample)):
+                                if str(sample[ci]).strip() in ["+", "-", "X", " "]:
+                                    sign_col = ci
+                                    break
+
+                    for row in rows:
+                        if not isinstance(row, list) or len(row) < 5:
+                            continue
+                        try:
+                            if sign_col is not None and sign_col < len(row):
+                                val_str = str(row[sign_col]).strip()
+                                if val_str == "+":
+                                    up_count += 1
+                                elif val_str == "-":
+                                    down_count += 1
+                                else:
+                                    flat_count += 1
+                            else:
+                                # 嘗試多個可能的欄位位置
+                                found = False
+                                for ci in [9, 8, 10, 7]:
+                                    if ci < len(row):
+                                        val_str = str(row[ci]).strip()
+                                        if val_str in ["+", "-", "X", " "]:
+                                            if val_str == "+":
+                                                up_count += 1
+                                            elif val_str == "-":
+                                                down_count += 1
+                                            else:
+                                                flat_count += 1
+                                            found = True
+                                            break
+                                if not found:
+                                    # 嘗試從漲跌價差欄位判斷
+                                    for ci in [10, 9, 8]:
+                                        if ci < len(row):
+                                            try:
+                                                val = float(str(row[ci]).replace(",", ""))
+                                                if val > 0:
+                                                    up_count += 1
+                                                elif val < 0:
+                                                    down_count += 1
+                                                else:
+                                                    flat_count += 1
+                                                break
+                                            except:
+                                                continue
+                        except:
+                            pass
+
+                    if up_count > 0:
+                        result["tse_up"] = up_count
+                        result["tse_down"] = down_count
+                        result["tse_flat"] = flat_count
+                        print(f"    [MI_INDEX] ✅ 漲{up_count} 跌{down_count} 平{flat_count}")
+                        break
+            else:
+                print(f"    [MI_INDEX] stat={data2.get('stat')}")
+        except Exception as e:
+            print(f"    [MI_INDEX] ❌ {e}")
 
     # 上櫃 - 從 TPEx 取得
     tpex_date = f"{int(date_str[:4]) - 1911}/{date_str[4:6]}/{date_str[6:8]}"
@@ -784,33 +858,80 @@ def fetch_market_breadth(date_str=None):
             except:
                 pass
 
-    # 備用: TWSE OpenAPI v1 取最新行情，自己統計漲跌
+    # ==== 方法3 (備用): TWSE OpenAPI v1 STOCK_DAY_ALL 自己統計漲跌 ====
     if result["tse_up"] is None:
-        print("  [備用] 嘗試 TWSE OpenAPI v1 統計漲跌...")
+        print("  [方法3] 嘗試 TWSE OpenAPI v1 STOCK_DAY_ALL 統計漲跌...")
         try:
             oa_url = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"
-            resp_oa = _safe_get(oa_url, timeout=12)
+            resp_oa = _safe_get(oa_url, timeout=15)
             if resp_oa:
                 oa_data = resp_oa.json()
                 if isinstance(oa_data, list) and len(oa_data) > 50:
-                    up = down = flat = 0
-                    for item in oa_data:
-                        change = item.get("Change") or item.get("change") or ""
-                        val = _parse_number(str(change))
-                        if val is not None:
-                            if val > 0:
-                                up += 1
-                            elif val < 0:
-                                down += 1
-                            else:
-                                flat += 1
-                    if up > 0 or down > 0:
-                        result["tse_up"] = up
-                        result["tse_down"] = down
-                        result["tse_flat"] = flat
-                        print(f"  [TWSE OpenAPI] ✅ 漲{up} 跌{down} 平{flat}")
+                    # 動態找到「漲跌」欄位 - 嘗試多種可能的 key
+                    change_key = None
+                    first = oa_data[0]
+                    for candidate in ["Change", "change", "UpDown", "漲跌價差", "漲跌"]:
+                        if candidate in first:
+                            change_key = candidate
+                            break
+                    # 如果沒找到，搜尋所有 key
+                    if not change_key:
+                        for k in first.keys():
+                            if "change" in k.lower() or "漲跌" in k or "updown" in k.lower():
+                                change_key = k
+                                break
+                    print(f"    [STOCK_DAY_ALL] keys={list(first.keys())[:8]}, change_key={change_key}")
+
+                    if change_key:
+                        up = down = flat = 0
+                        for item in oa_data:
+                            val = _parse_number(str(item.get(change_key, "")))
+                            if val is not None:
+                                if val > 0:
+                                    up += 1
+                                elif val < 0:
+                                    down += 1
+                                else:
+                                    flat += 1
+                        if up > 0 or down > 0:
+                            result["tse_up"] = up
+                            result["tse_down"] = down
+                            result["tse_flat"] = flat
+                            print(f"    [STOCK_DAY_ALL] ✅ 漲{up} 跌{down} 平{flat}")
+                    else:
+                        # 最後手段: 用收盤價和昨日收盤價比較
+                        close_key = None
+                        prev_key = None
+                        for k in first.keys():
+                            kl = k.lower()
+                            if "close" in kl or "收盤" in k:
+                                if not close_key:
+                                    close_key = k
+                            if "yesterday" in kl or "昨日" in k or "prev" in kl:
+                                prev_key = k
+                        print(f"    [STOCK_DAY_ALL] close_key={close_key}, prev_key={prev_key}")
+                        if close_key:
+                            up = down = flat = 0
+                            for item in oa_data:
+                                c = _parse_number(str(item.get(close_key, "")))
+                                p = _parse_number(str(item.get(prev_key or "", "")))
+                                if c is not None and p is not None and p > 0:
+                                    diff = c - p
+                                    if diff > 0:
+                                        up += 1
+                                    elif diff < 0:
+                                        down += 1
+                                    else:
+                                        flat += 1
+                            if up > 0 or down > 0:
+                                result["tse_up"] = up
+                                result["tse_down"] = down
+                                result["tse_flat"] = flat
+                                print(f"    [STOCK_DAY_ALL close] ✅ 漲{up} 跌{down} 平{flat}")
         except Exception as e:
-            print(f"  [TWSE OpenAPI] ❌ 漲跌家數: {e}")
+            print(f"    [STOCK_DAY_ALL] ❌ {e}")
+            import traceback
+            traceback.print_exc()
 
     return result
 
@@ -889,8 +1010,9 @@ def _fetch_investing_data(pair_id, days=30):
         "pointscount": days,
     }
     headers = {
-        "User-Agent": "Mozilla/5.0",
-        "domain-id": "www",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "domain-id": "www.investing.com",
+        "Referer": "https://www.investing.com/",
     }
     try:
         resp = requests.get(url, params=params, headers=headers, timeout=10)
@@ -915,17 +1037,35 @@ def _fetch_investing_data(pair_id, days=30):
 def fetch_usd_index():
     """
     抓取美元指數近30天
-    鉅亨網代號: GI:DXY
+    嘗試多個鉅亨網代號 + investing.com
     """
     print("💵 抓取美元指數...")
-    # 方法1: 鉅亨網
-    data = _fetch_cnyes_chart("GI:DXY", 35)
-    if data:
-        return data
+    # 方法1: 鉅亨網 - 嘗試多個可能的 symbol
+    for sym in ["GI:DXY", "GI:DXY00", "TWG:DXY00", "FX:DXY", "FX:USDX"]:
+        data = _fetch_cnyes_chart(sym, 35)
+        if data:
+            return data
     # 方法2: investing.com (DXY pair_id=8827)
     data = _fetch_investing_data(8827, 35)
     if data:
         return data
+    # 方法3: 從 cnyes 搜尋正確的 DXY symbol
+    print("  [備用] 嘗試 cnyes search API 找 DXY symbol...")
+    try:
+        search_url = "https://ws.api.cnyes.com/ws/api/v1/universal/search"
+        resp = _safe_get(search_url, {"q": "DXY"}, timeout=8)
+        if resp:
+            sdata = resp.json()
+            items = sdata.get("data", {}).get("items", [])
+            for item in items:
+                sym = item.get("symbol", "")
+                if sym and ("DXY" in sym.upper() or "美元" in item.get("name", "")):
+                    print(f"  [cnyes search] 找到 symbol: {sym} ({item.get('name','')})")
+                    data = _fetch_cnyes_chart(sym, 35)
+                    if data:
+                        return data
+    except Exception as e:
+        print(f"  [cnyes search] ❌ {e}")
     print("  ⚠️ 美元指數: 所有來源失敗")
     return []
 
@@ -1649,40 +1789,69 @@ def fetch_margin_maintenance_ratio(date_str=None):
     if resp:
         try:
             data = resp.json()
-            credit_fields = data.get("creditFields", [])
-            credit_list = data.get("creditList", [])
-            print(f"    [TWSE] creditFields={credit_fields}, creditList={len(credit_list)}行")
+            if data.get("stat") != "OK":
+                print(f"    [TWSE MI_MARGN] stat={data.get('stat')}")
+            else:
+                credit_fields = data.get("creditFields", [])
+                credit_list = data.get("creditList", [])
+                print(f"    [TWSE] creditFields={credit_fields}")
+                print(f"    [TWSE] creditList ({len(credit_list)} 行):")
+                for i, row in enumerate(credit_list):
+                    print(f"      [{i}] {row}")
 
-            if credit_fields and credit_list:
-                balance_idx = None
-                for i, fn in enumerate(credit_fields):
-                    if "今日" in str(fn) and "餘額" in str(fn):
-                        balance_idx = i
-                if balance_idx is None and len(credit_fields) >= 2:
-                    balance_idx = len(credit_fields) - 1
+                if credit_fields and credit_list:
+                    # 動態找到各欄位索引
+                    balance_idx = None
+                    for i, fn in enumerate(credit_fields):
+                        fn_str = str(fn)
+                        if "今日" in fn_str and "餘額" in fn_str:
+                            balance_idx = i
+                            break
+                    # 如果沒找到「今日餘額」，找最後一個數值欄位
+                    if balance_idx is None:
+                        for i in range(len(credit_fields) - 1, 0, -1):
+                            fn_str = str(credit_fields[i])
+                            if "餘額" in fn_str or "合計" in fn_str:
+                                balance_idx = i
+                                break
+                    if balance_idx is None and len(credit_fields) >= 2:
+                        balance_idx = len(credit_fields) - 1
+                    print(f"    [TWSE] 使用 balance_idx={balance_idx} ({credit_fields[balance_idx] if balance_idx and balance_idx < len(credit_fields) else 'N/A'})")
 
-                for row in credit_list:
-                    if not row or len(row) <= (balance_idx or 0):
-                        continue
-                    item_name = str(row[0]).strip()
-                    if "融資金額" in item_name or ("融資" in item_name and "金額" in item_name):
+                    for row in credit_list:
+                        if not row or len(row) <= (balance_idx or 0):
+                            continue
+                        item_name = str(row[0]).strip()
+
+                        # 嘗試所有可能的值欄位
                         if balance_idx is not None:
-                            amt = _parse_number(row[balance_idx])
-                            if amt is not None:
-                                margin_amount = amt * 1000 if amt < 1e9 else amt
+                            raw_val = _parse_number(row[balance_idx])
+                        else:
+                            # 從後面找第一個數值
+                            raw_val = None
+                            for ci in range(len(row) - 1, 0, -1):
+                                raw_val = _parse_number(row[ci])
+                                if raw_val is not None:
+                                    break
+
+                        if "融資金額" in item_name or ("融資" in item_name and "金額" in item_name):
+                            if raw_val is not None:
+                                margin_amount = raw_val * 1000 if raw_val < 1e9 else raw_val
                                 print(f"    [TWSE] 融資金額: {margin_amount}")
-                    elif "擔保" in item_name or "市值" in item_name:
-                        if balance_idx is not None:
-                            val = _parse_number(row[balance_idx])
-                            if val is not None:
-                                collateral_value = val * 1000 if val < 1e9 else val
+                        elif "擔保" in item_name or "市值" in item_name:
+                            if raw_val is not None:
+                                collateral_value = raw_val * 1000 if raw_val < 1e9 else raw_val
                                 print(f"    [TWSE] 擔保品市值: {collateral_value}")
 
-                if margin_amount and collateral_value and margin_amount > 0:
-                    result["ratio"] = round(collateral_value / margin_amount * 100, 1)
-                    print(f"    [TWSE] 融資維持率: {result['ratio']}%")
+                    if margin_amount and collateral_value and margin_amount > 0:
+                        result["ratio"] = round(collateral_value / margin_amount * 100, 1)
+                        print(f"    [TWSE] ✅ 融資維持率: {result['ratio']}%")
+                    else:
+                        print(f"    [TWSE] 無法計算: margin_amount={margin_amount}, collateral={collateral_value}")
         except Exception as e:
             print(f"  [錯誤] TWSE MI_MARGN: {e}")
+            import traceback
+            traceback.print_exc()
 
     # ===== 方法2: FinMind 取得融資金額 + 擔保品估算 =====
     if result["ratio"] is None:
