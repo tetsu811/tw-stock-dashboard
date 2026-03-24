@@ -1,0 +1,27 @@
+name: Daily Dashboard Update
+
+on:
+  schedule:
+    - cron: '0 9 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python generate.py
+      - name: Commit and push
+        run: |
+          git config user.name "Dashboard Bot"
+          git config user.email "bot@example.com"
+          git add index.html archive/ latest_data.json
+          git diff --cached --quiet || git commit -m "Update dashboard $(date '+%Y-%m-%d')"
+          git push
