@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣股市每日戰略儀表板 | 2026/03/24 (星期二)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2332;
+            --border: #1e2d3d;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #eab308;
+            --accent-purple: #a855f7;
+            --accent-cyan: #06b6d4;
+            --accent-orange: #f97316;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .header .date {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        .header .update-time {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .grid-5 { grid-template-columns: repeat(5, 1fr); }
+
+        @media (max-width: 900px) {
+            .grid-2, .grid-3, .grid-4, .grid-5 {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (min-width: 901px) and (max-width: 1200px) {
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-5 { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: background 0.2s;
+        }
+        .card:hover { background: var(--bg-card-hover); }
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-title .icon { font-size: 16px; }
+
+        /* Hero area - 加權指數 + 期貨 並排 */
+        .hero-area {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 900px) {
+            .hero-area { grid-template-columns: 1fr; }
+        }
+
+        .hero-card {
+            background: linear-gradient(135deg, #111827 0%, #1a2744 100%);
+            border: 1px solid var(--accent-blue);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+        }
+        .hero-card .index-value {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .hero-card .index-change {
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .hero-card .volume-info {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+
+        /* 期貨卡片 */
+        .futures-card {
+            background: linear-gradient(135deg, #111827 0%, #2a1a44 100%);
+            border: 1px solid var(--accent-purple);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+        }
+        .futures-card .index-value {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .futures-card .index-change {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .futures-detail {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+        .futures-detail .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+        .futures-detail .detail-label { color: var(--text-muted); }
+        .futures-detail .detail-value { font-weight: 600; }
+        .spread-tag {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Metric Value */
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .metric-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .metric-compare {
+            font-size: 12px;
+            margin-top: 6px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* 外資買賣明細 */
+        .inst-detail {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .inst-detail .detail-box {
+            flex: 1;
+            padding: 6px 8px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.04);
+        }
+        .inst-detail .detail-box .label {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+        .inst-detail .detail-box .value {
+            font-weight: 600;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+
+        /* Colors */
+        .text-green { color: var(--accent-green); }
+        .text-red { color: var(--accent-red); }
+        .text-blue { color: var(--accent-blue); }
+        .text-yellow { color: var(--accent-yellow); }
+        .text-purple { color: var(--accent-purple); }
+        .text-cyan { color: var(--accent-cyan); }
+        .text-orange { color: var(--accent-orange); }
+
+        .bg-green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+        .bg-red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+        /* Table */
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .stock-table th {
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .stock-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(30, 45, 61, 0.5);
+        }
+        .stock-table tr:last-child td { border-bottom: none; }
+        .stock-table .rank {
+            width: 30px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .stock-table .stock-id {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Breadth bar */
+        .breadth-bar {
+            display: flex;
+            height: 28px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .breadth-bar .up {
+            background: var(--accent-green);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+        .breadth-bar .down {
+            background: var(--accent-red);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+        .breadth-bar .flat {
+            background: var(--text-muted);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+
+        .breadth-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        .breadth-legend span { display: flex; align-items: center; gap: 4px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-green { background: var(--accent-green); }
+        .dot-red { background: var(--accent-red); }
+        .dot-gray { background: var(--text-muted); }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 10px;
+        }
+        .chart-container-sm {
+            position: relative;
+            height: 160px;
+            margin-top: 10px;
+        }
+
+        /* VIX value inline */
+        .vix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .vix-current {
+            font-size: 32px;
+            font-weight: 800;
+        }
+        .vix-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Section title */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 28px 0 14px;
+            padding-left: 12px;
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 0 20px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .nowrap { white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>台灣股市每日戰略儀表板</h1>
+            <div class="date">2026/03/24 (星期二)</div>
+            <div class="update-time">資料更新時間: 2026-03-24 10:10:40</div>
+        </div>
+
+        <!-- ====== 加權指數 + 台指期 Hero ====== -->
+        <div class="hero-area">
+            <!-- 加權指數 -->
+            <div class="hero-card">
+                <div class="card-title" style="justify-content: center;">
+                    <span class="icon">📊</span> 加權股價指數 TAIEX
+                </div>
+                <div class="index-value text-red">
+                    22,856.73
+                </div>
+                <div class="index-change text-red">
+                    ▼
+                    128.45 點
+                    (-0.56%)
+                </div>
+                <div class="volume-info">
+                    成交金額: +3,287.00 億元
+                    
+                        <span class="metric-compare bg-green">
+                            較前日 11.2%
+                        </span>
+                    
+                </div>
+            </div>
+
+            <!-- 台指期貨 -->
+            <div class="futures-card">
+                <div class="card-title" style="justify-content: center;">
+                    <span class="icon">📈</span> 台指期貨 (TX)
+                </div>
+                <div class="index-value text-red">
+                    22,830
+                </div>
+                <div class="index-change text-red">
+                    ▼
+                    135 點
+                    (-0.59%)
+                </div>
+                
+                <div class="spread-tag bg-red">
+                    期現貨價差: 27 點
+                </div>
+                
+                <div class="futures-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">開盤</span>
+                        <span class="detail-value">22,960</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">最高</span>
+                        <span class="detail-value text-green">22,985</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">最低</span>
+                        <span class="detail-value text-red">22,810</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">成交量</span>
+                        <span class="detail-value">128,456</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 三大法人現貨買賣超 ====== -->
+        <div class="grid grid-4" style="margin-bottom: 16px;">
+            <!-- 外資 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🌍</span> 外資買賣超</div>
+                <div class="metric-value text-red">
+                    -158.23
+                </div>
+                <div class="metric-sub">億元</div>
+                <div class="inst-detail">
+                    <div class="detail-box">
+                        <div class="label">買進</div>
+                        <div class="value text-green">+825.60 億元</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">賣出</div>
+                        <div class="value text-red">+983.83 億元</div>
+                    </div>
+                </div>
+                
+                <div class="metric-compare bg-red" style="margin-top:10px;">
+                    前日: -89.20 億元
+                </div>
+                
+            </div>
+
+            <!-- 投信 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🏛️</span> 投信買賣超</div>
+                <div class="metric-value text-green">
+                    +32.56
+                </div>
+                <div class="metric-sub">億元</div>
+                <div class="inst-detail">
+                    <div class="detail-box">
+                        <div class="label">買進</div>
+                        <div class="value text-green">+128.90 億元</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">賣出</div>
+                        <div class="value text-red">+96.34 億元</div>
+                    </div>
+                </div>
+                
+                <div class="metric-compare bg-green" style="margin-top:10px;">
+                    前日: +18.70 億元
+                </div>
+                
+            </div>
+
+            <!-- 自營商 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🏢</span> 自營商買賣超</div>
+                <div class="metric-value text-red">
+                    -12.45
+                </div>
+                <div class="metric-sub">億元</div>
+            </div>
+
+            <!-- 融資 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">💰</span> 融資餘額</div>
+                <div class="metric-value text-yellow">+1,892.00</div>
+                <div class="metric-sub">億元</div>
+            </div>
+        </div>
+
+        <!-- ====== 三大法人台指期未平倉 ====== -->
+        <div class="section-title">三大法人台指期未平倉 (口)</div>
+        <div class="card" style="margin-bottom: 16px;">
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th style="text-align:right">台指期增減口數</th>
+                        <th style="text-align:right">台指期未平倉口數</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight:600;">外資</td>
+                        <td style="text-align:right" class="text-red">
+                            ▼ -3,250
+                        </td>
+                        <td style="text-align:right" class="text-red">
+                            -45,680
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600;">投信</td>
+                        <td style="text-align:right" class="text-green">
+                            ▲ 820
+                        </td>
+                        <td style="text-align:right" class="text-green">
+                            3,450
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600;">自營</td>
+                        <td style="text-align:right" class="text-green">
+                            ▲ 1,580
+                        </td>
+                        <td style="text-align:right" class="text-green">
+                            28,760
+                        </td>
+                    </tr>
+                    <tr style="border-top: 2px solid var(--border);">
+                        <td style="font-weight:700;">合計</td>
+                        <td style="text-align:right; font-weight:700;" class="text-red">
+                            ▼ -850
+                        </td>
+                        <td style="text-align:right; font-weight:700;" class="text-red">
+                            -13,470
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ====== 期權觀測指標 + VIX ====== -->
+        <div class="section-title">期權觀測 & 恐慌指標</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+
+            <!-- 左: 期權觀測指標表格 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🔮</span> 期權觀測指標</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>指標</th>
+                            <th style="text-align:right">今日</th>
+                            <th style="text-align:right">前一交易日</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight:600;">微台多空指標</td>
+                            <td style="text-align:right" class="text-green">
+                                42.35%
+                            </td>
+                            <td style="text-align:right; color: var(--text-muted);">44.12%</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:600;">小台多空指標</td>
+                            <td style="text-align:right" class="text-green">
+                                38.78%
+                            </td>
+                            <td style="text-align:right; color: var(--text-muted);">40.56%</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:600;">PUT/CALL Ratio</td>
+                            <td style="text-align:right" class="text-red">87.3%</td>
+                            <td style="text-align:right; color: var(--text-muted);">91.2%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="inst-detail" style="margin-top:12px;">
+                    <div class="detail-box">
+                        <div class="label">Put OI</div>
+                        <div class="value">234,567</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">Call OI</div>
+                        <div class="value">268,750</div>
+                    </div>
+                </div>
+                <div class="metric-sub" style="margin-top:8px; font-size:11px; line-height:1.5;">
+                    PCR &gt;100%：Put 未平倉多於 Call，莊家偏多佈局<br>
+                    PCR &lt;100%：Call 未平倉多於 Put，莊家偏空佈局<br>
+                    微台/小台：正值偏多、負值偏空，反映散戶方向
+                </div>
+            </div>
+
+            <!-- 右: VIX 近7天折線圖 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近7天)</div>
+                <div class="vix-header">
+                    <div>
+                        <span class="vix-current text-yellow">22.45</span>
+                        
+                        <span style="font-size:16px; margin-left:8px;" class="text-red">
+                            ▲ 1.27
+                        </span>
+                        
+                    </div>
+                    <span class="vix-badge" style="background: rgba(234,179,8,0.15); color: var(--accent-yellow);">偏高警戒</span>
+                </div>
+                <div class="chart-container-sm">
+                    <canvas id="vixChart"></canvas>
+                </div>
+                <div class="metric-sub" style="margin-top:10px; font-size:11px; line-height:1.5;">
+                    &lt;15 極度樂觀（市場過度自滿）<br>
+                    15~20 正常區間<br>
+                    20~25 偏高警戒（波動加大）<br>
+                    25~30 恐慌（市場大幅震盪）<br>
+                    &gt;30 極度恐慌（恐慌性拋售）
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 市場情緒指標 ====== -->
+        <div class="section-title">市場情緒指標</div>
+        <div class="grid grid-3" style="margin-bottom: 16px;">
+
+            <!-- CNN Fear & Greed -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🎭</span> CNN 恐慌貪婪</div>
+                <div style="text-align:center; padding: 6px 0;">
+                    <div class="metric-value text-orange" style="font-size:36px;">38</div>
+                    <span class="vix-badge" style="background: rgba(249,115,22,0.15); color: #f97316;; margin-top:6px; display:inline-block;">Fear</span>
+                    
+                    <div style="font-size:13px; margin-top:8px;" class="text-red">
+                        ▼ -4
+                    </div>
+                    
+                </div>
+                <div class="metric-sub" style="text-align:center; margin-top:6px; font-size:11px; line-height:1.4;">0=極度恐慌 → 100=極度貪婪</div>
+            </div>
+
+            <!-- 比特幣恐慌貪婪 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">₿</span> 加密貨幣恐慌貪婪</div>
+                <div style="text-align:center; padding: 6px 0;">
+                    <div class="metric-value text-blue" style="font-size:36px;">45</div>
+                    <span class="vix-badge" style="background: rgba(59,130,246,0.15); color: #3b82f6;; margin-top:6px; display:inline-block;">Neutral</span>
+                    
+                    <div style="font-size:13px; margin-top:8px;" class="text-red">
+                        ▼ -6
+                    </div>
+                    
+                </div>
+                <div class="metric-sub" style="text-align:center; margin-top:6px; font-size:11px; line-height:1.4;">0=極度恐慌 → 100=極度貪婪</div>
+            </div>
+
+            <!-- 融資維持率 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🏦</span> 融資維持率</div>
+                <div style="text-align:center; padding: 6px 0;">
+                    <div class="metric-value text-blue" style="font-size:36px;">162.5%</div>
+                    
+                    <span class="vix-badge" style="background: rgba(59,130,246,0.15); color: #3b82f6;; margin-top:6px; display:inline-block;">正常</span>
+                    
+                </div>
+                <div class="metric-sub" style="text-align:center; margin-top:8px; font-size:11px; line-height:1.4;">
+                    &lt;130% 追繳 · &lt;120% 斷頭
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ====== 漲跌家數 ====== -->
+        <div class="section-title">漲跌家數</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+            <div class="card">
+                <div class="card-title"><span class="icon">🏢</span> 上市 (TWSE)</div>
+                
+                
+                <div class="breadth-bar">
+                    <div class="up" style="width: 32.06577595066803%">312</div>
+                    <div class="flat" style="width: 7.399794450154163%">72</div>
+                    <div class="down" style="width: 60.5344295991778%">589</div>
+                </div>
+                <div class="breadth-legend">
+                    <span><span class="dot dot-green"></span> 上漲 312</span>
+                    <span><span class="dot dot-gray"></span> 持平 72</span>
+                    <span><span class="dot dot-red"></span> 下跌 589</span>
+                </div>
+                
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">🏬</span> 上櫃 (TPEx)</div>
+                
+                
+                <div class="breadth-bar">
+                    <div class="up" style="width: 35.51980198019802%">287</div>
+                    <div class="flat" style="width: 6.9306930693069315%">56</div>
+                    <div class="down" style="width: 57.54950495049505%">465</div>
+                </div>
+                <div class="breadth-legend">
+                    <span><span class="dot dot-green"></span> 上漲 287</span>
+                    <span><span class="dot dot-gray"></span> 持平 56</span>
+                    <span><span class="dot dot-red"></span> 下跌 465</span>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- ====== 外資排行 ====== -->
+        <div class="section-title">外資買賣超排行</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+            <div class="card">
+                <div class="card-title"><span class="icon">🟢</span> 外資買超前十名</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr><th>#</th><th>股票</th><th style="text-align:right">買超(張)</th></tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td class="rank">1</td>
+                            <td>台積電 <span class="stock-id">2330</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+12,580</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">2</td>
+                            <td>聯發科 <span class="stock-id">2454</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+4,230</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">3</td>
+                            <td>富邦金 <span class="stock-id">2881</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+3,870</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">4</td>
+                            <td>國泰金 <span class="stock-id">2882</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+3,120</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">5</td>
+                            <td>聯電 <span class="stock-id">2303</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+2,890</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">6</td>
+                            <td>日月光投控 <span class="stock-id">3711</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+2,450</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">7</td>
+                            <td>中信金 <span class="stock-id">2891</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+2,180</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">8</td>
+                            <td>台達電 <span class="stock-id">2308</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+1,950</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">9</td>
+                            <td>中華電 <span class="stock-id">2412</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+1,680</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">10</td>
+                            <td>兆豐金 <span class="stock-id">2886</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+1,520</td>
+                        </tr>
+                        
+                        
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">🔴</span> 外資賣超前十名</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr><th>#</th><th>股票</th><th style="text-align:right">賣超(張)</th></tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td class="rank">1</td>
+                            <td>鴻海 <span class="stock-id">2317</span></td>
+                            <td style="text-align:right" class="text-red nowrap">8,920</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">2</td>
+                            <td>廣達 <span class="stock-id">2382</span></td>
+                            <td style="text-align:right" class="text-red nowrap">5,430</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">3</td>
+                            <td>欣興 <span class="stock-id">3037</span></td>
+                            <td style="text-align:right" class="text-red nowrap">4,120</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">4</td>
+                            <td>長榮 <span class="stock-id">2603</span></td>
+                            <td style="text-align:right" class="text-red nowrap">3,780</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">5</td>
+                            <td>陽明 <span class="stock-id">2609</span></td>
+                            <td style="text-align:right" class="text-red nowrap">3,250</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">6</td>
+                            <td>聯詠 <span class="stock-id">3034</span></td>
+                            <td style="text-align:right" class="text-red nowrap">2,890</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">7</td>
+                            <td>華碩 <span class="stock-id">2357</span></td>
+                            <td style="text-align:right" class="text-red nowrap">2,460</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">8</td>
+                            <td>智邦 <span class="stock-id">2345</span></td>
+                            <td style="text-align:right" class="text-red nowrap">2,180</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">9</td>
+                            <td>世芯-KY <span class="stock-id">3661</span></td>
+                            <td style="text-align:right" class="text-red nowrap">1,920</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">10</td>
+                            <td>緯穎 <span class="stock-id">6669</span></td>
+                            <td style="text-align:right" class="text-red nowrap">1,750</td>
+                        </tr>
+                        
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ====== 國際指標趨勢 ====== -->
+        <div class="section-title">國際指標趨勢</div>
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-title"><span class="icon">💵</span> 美元指數 (DXY) · 近30天</div>
+                
+                <div class="metric-value text-blue">104.42</div>
+                
+                <div class="chart-container">
+                    <canvas id="usdChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">💴</span> 美元兌日圓 (USD/JPY) · 近30天</div>
+                
+                <div class="metric-value text-purple">148.15</div>
+                
+                <div class="chart-container">
+                    <canvas id="jpyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近7天</div>
+                <div style="display:flex; align-items:baseline; gap:8px;">
+                    <div class="metric-value text-cyan">4.285%</div>
+                    
+                    <span style="font-size:14px;" class="text-green">
+                        ▼ 0.027%
+                    </span>
+                    
+                </div>
+                <div class="chart-container">
+                    <canvas id="us10yChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>台灣股市每日戰略儀表板 | 資料來源: 台灣證券交易所、證券櫃檯買賣中心、台灣期貨交易所、Yahoo Finance</p>
+            <p>本頁面僅供參考，不構成任何投資建議</p>
+        </div>
+    </div>
+
+    <script>
+        const chartDefaults = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#e2e8f0',
+                    bodyColor: '#e2e8f0',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: false,
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(30, 45, 61, 0.5)' },
+                    ticks: { color: '#64748b', maxTicksLimit: 6, font: { size: 11 } }
+                },
+                y: {
+                    grid: { color: 'rgba(30, 45, 61, 0.5)' },
+                    ticks: { color: '#64748b', font: { size: 11 } }
+                }
+            },
+            elements: {
+                point: { radius: 2, hoverRadius: 5 },
+                line: { tension: 0.3, borderWidth: 2 }
+            }
+        };
+
+        function makeGradient(ctx, color) {
+            const g = ctx.createLinearGradient(0, 0, 0, 200);
+            g.addColorStop(0, color.replace(')', ', 0.3)').replace('rgb', 'rgba'));
+            g.addColorStop(1, color.replace(')', ', 0.02)').replace('rgb', 'rgba'));
+            return g;
+        }
+
+        // VIX 近7天折線圖
+        const vixData = {"labels": ["03-18", "03-19", "03-20", "03-21", "03-22", "03-23", "03-24"], "values": [19.32, 20.15, 21.78, 21.18, 20.85, 21.52, 22.45]};
+        if (vixData.labels.length > 0) {
+            const vixCtx = document.getElementById('vixChart').getContext('2d');
+
+            // VIX 顏色依數值變化
+            const vixColors = vixData.values.map(v => {
+                if (v < 15) return 'rgba(34, 197, 94, 1)';
+                if (v < 20) return 'rgba(59, 130, 246, 1)';
+                if (v < 25) return 'rgba(234, 179, 8, 1)';
+                return 'rgba(239, 68, 68, 1)';
+            });
+
+            new Chart(vixCtx, {
+                type: 'line',
+                data: {
+                    labels: vixData.labels,
+                    datasets: [{
+                        data: vixData.values,
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: makeGradient(vixCtx, 'rgb(249, 115, 22)'),
+                        fill: true,
+                        pointBackgroundColor: vixColors,
+                        pointBorderColor: vixColors,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                    }]
+                },
+                options: {
+                    ...chartDefaults,
+                    plugins: {
+                        ...chartDefaults.plugins,
+                        tooltip: {
+                            ...chartDefaults.plugins.tooltip,
+                            callbacks: {
+                                label: function(context) {
+                                    const v = context.parsed.y;
+                                    let level = '';
+                                    if (v < 15) level = '極度樂觀';
+                                    else if (v < 20) level = '正常';
+                                    else if (v < 25) level = '偏高警戒';
+                                    else if (v < 30) level = '恐慌';
+                                    else level = '極度恐慌';
+                                    return `VIX: ${v} (${level})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        ...chartDefaults.scales,
+                        x: {
+                            ...chartDefaults.scales.x,
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                    }
+                }
+            });
+        }
+
+        // 美元指數圖
+        const usdData = {"labels": ["02-22", "02-23", "02-24", "02-25", "02-26", "02-27", "02-28", "03-01", "03-02", "03-03", "03-04", "03-05", "03-06", "03-07", "03-08", "03-09", "03-10", "03-11", "03-12", "03-13", "03-14", "03-15", "03-16", "03-17", "03-18", "03-19", "03-20", "03-21", "03-22", "03-23", "03-24"], "values": [106.32, 106.18, 105.95, 106.45, 106.72, 106.58, 106.89, 107.12, 106.98, 106.75, 106.42, 106.28, 105.95, 105.78, 105.62, 105.89, 106.15, 106.32, 106.08, 105.85, 105.62, 105.48, 105.32, 105.18, 104.95, 104.78, 104.62, 104.85, 104.72, 104.58, 104.42]};
+        if (usdData.labels.length > 0) {
+            const usdCtx = document.getElementById('usdChart').getContext('2d');
+            new Chart(usdCtx, {
+                type: 'line',
+                data: {
+                    labels: usdData.labels,
+                    datasets: [{
+                        data: usdData.values,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: makeGradient(usdCtx, 'rgb(59, 130, 246)'),
+                        fill: true,
+                    }]
+                },
+                options: chartDefaults
+            });
+        }
+
+        // 日圓圖
+        const jpyData = {"labels": ["02-22", "02-23", "02-24", "02-25", "02-26", "02-27", "02-28", "03-01", "03-02", "03-03", "03-04", "03-05", "03-06", "03-07", "03-08", "03-09", "03-10", "03-11", "03-12", "03-13", "03-14", "03-15", "03-16", "03-17", "03-18", "03-19", "03-20", "03-21", "03-22", "03-23", "03-24"], "values": [149.82, 149.65, 149.48, 149.92, 150.15, 150.38, 150.62, 150.45, 150.28, 150.12, 149.95, 149.78, 149.52, 149.35, 149.18, 149.42, 149.65, 149.88, 149.72, 149.55, 149.38, 149.22, 149.05, 148.88, 148.72, 148.55, 148.38, 148.62, 148.48, 148.32, 148.15]};
+        if (jpyData.labels.length > 0) {
+            const jpyCtx = document.getElementById('jpyChart').getContext('2d');
+            new Chart(jpyCtx, {
+                type: 'line',
+                data: {
+                    labels: jpyData.labels,
+                    datasets: [{
+                        data: jpyData.values,
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: makeGradient(jpyCtx, 'rgb(168, 85, 247)'),
+                        fill: true,
+                    }]
+                },
+                options: chartDefaults
+            });
+        }
+
+        // 美國10年期公債殖利率
+        const us10yData = {"labels": ["03-18", "03-19", "03-20", "03-21", "03-22", "03-23", "03-24"], "values": [4.352, 4.338, 4.315, 4.312, 4.298, 4.292, 4.285]};
+        if (us10yData.labels.length > 0) {
+            const us10yCtx = document.getElementById('us10yChart').getContext('2d');
+            new Chart(us10yCtx, {
+                type: 'line',
+                data: {
+                    labels: us10yData.labels,
+                    datasets: [{
+                        data: us10yData.values,
+                        borderColor: 'rgb(6, 182, 212)',
+                        backgroundColor: makeGradient(us10yCtx, 'rgb(6, 182, 212)'),
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 7,
+                    }]
+                },
+                options: {
+                    ...chartDefaults,
+                    scales: {
+                        ...chartDefaults.scales,
+                        x: {
+                            ...chartDefaults.scales.x,
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

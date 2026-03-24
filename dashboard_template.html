@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣股市每日戰略儀表板 | {{ date_display }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2332;
+            --border: #1e2d3d;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #eab308;
+            --accent-purple: #a855f7;
+            --accent-cyan: #06b6d4;
+            --accent-orange: #f97316;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .header .date {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        .header .update-time {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .grid-5 { grid-template-columns: repeat(5, 1fr); }
+
+        @media (max-width: 900px) {
+            .grid-2, .grid-3, .grid-4, .grid-5 {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (min-width: 901px) and (max-width: 1200px) {
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-5 { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: background 0.2s;
+        }
+        .card:hover { background: var(--bg-card-hover); }
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-title .icon { font-size: 16px; }
+
+        /* Hero area - 加權指數 + 期貨 並排 */
+        .hero-area {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 900px) {
+            .hero-area { grid-template-columns: 1fr; }
+        }
+
+        .hero-card {
+            background: linear-gradient(135deg, #111827 0%, #1a2744 100%);
+            border: 1px solid var(--accent-blue);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+        }
+        .hero-card .index-value {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .hero-card .index-change {
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .hero-card .volume-info {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+
+        /* 期貨卡片 */
+        .futures-card {
+            background: linear-gradient(135deg, #111827 0%, #2a1a44 100%);
+            border: 1px solid var(--accent-purple);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+        }
+        .futures-card .index-value {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .futures-card .index-change {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .futures-detail {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+        .futures-detail .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+        .futures-detail .detail-label { color: var(--text-muted); }
+        .futures-detail .detail-value { font-weight: 600; }
+        .spread-tag {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Metric Value */
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .metric-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .metric-compare {
+            font-size: 12px;
+            margin-top: 6px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* 外資買賣明細 */
+        .inst-detail {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .inst-detail .detail-box {
+            flex: 1;
+            padding: 6px 8px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.04);
+        }
+        .inst-detail .detail-box .label {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+        .inst-detail .detail-box .value {
+            font-weight: 600;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+
+        /* Colors */
+        .text-green { color: var(--accent-green); }
+        .text-red { color: var(--accent-red); }
+        .text-blue { color: var(--accent-blue); }
+        .text-yellow { color: var(--accent-yellow); }
+        .text-purple { color: var(--accent-purple); }
+        .text-cyan { color: var(--accent-cyan); }
+        .text-orange { color: var(--accent-orange); }
+
+        .bg-green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+        .bg-red { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+        /* Table */
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .stock-table th {
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .stock-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(30, 45, 61, 0.5);
+        }
+        .stock-table tr:last-child td { border-bottom: none; }
+        .stock-table .rank {
+            width: 30px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .stock-table .stock-id {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Breadth bar */
+        .breadth-bar {
+            display: flex;
+            height: 28px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .breadth-bar .up {
+            background: var(--accent-green);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+        .breadth-bar .down {
+            background: var(--accent-red);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+        .breadth-bar .flat {
+            background: var(--text-muted);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+
+        .breadth-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        .breadth-legend span { display: flex; align-items: center; gap: 4px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-green { background: var(--accent-green); }
+        .dot-red { background: var(--accent-red); }
+        .dot-gray { background: var(--text-muted); }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 10px;
+        }
+        .chart-container-sm {
+            position: relative;
+            height: 160px;
+            margin-top: 10px;
+        }
+
+        /* VIX value inline */
+        .vix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .vix-current {
+            font-size: 32px;
+            font-weight: 800;
+        }
+        .vix-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Section title */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 28px 0 14px;
+            padding-left: 12px;
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 0 20px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .nowrap { white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>台灣股市每日戰略儀表板</h1>
+            <div class="date">{{ date_display }}</div>
+            <div class="update-time">資料更新時間: {{ generated_at }}</div>
+        </div>
+
+        <!-- ====== 加權指數 + 台指期 Hero ====== -->
+        <div class="hero-area">
+            <!-- 加權指數 -->
+            <div class="hero-card">
+                <div class="card-title" style="justify-content: center;">
+                    <span class="icon">📊</span> 加權股價指數 TAIEX
+                </div>
+                <div class="index-value {% if taiex_change and taiex_change > 0 %}text-green{% elif taiex_change and taiex_change < 0 %}text-red{% endif %}">
+                    {{ taiex_index }}
+                </div>
+                <div class="index-change {% if taiex_change and taiex_change > 0 %}text-green{% elif taiex_change and taiex_change < 0 %}text-red{% endif %}">
+                    {% if taiex_change and taiex_change > 0 %}▲{% elif taiex_change and taiex_change < 0 %}▼{% endif %}
+                    {{ taiex_change_display }} 點
+                    {% if taiex_change_pct %}({{ taiex_change_pct }}%){% endif %}
+                </div>
+                <div class="volume-info">
+                    成交金額: {{ volume_display }}
+                    {% if volume_change_pct %}
+                        <span class="metric-compare {% if volume_change_pct > 0 %}bg-green{% else %}bg-red{% endif %}">
+                            較前日 {{ volume_change_pct }}%
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 台指期貨 -->
+            <div class="futures-card">
+                <div class="card-title" style="justify-content: center;">
+                    <span class="icon">📈</span> 台指期貨 (TX)
+                </div>
+                <div class="index-value {% if futures_change and futures_change > 0 %}text-green{% elif futures_change and futures_change < 0 %}text-red{% endif %}">
+                    {{ futures_close }}
+                </div>
+                <div class="index-change {% if futures_change and futures_change > 0 %}text-green{% elif futures_change and futures_change < 0 %}text-red{% endif %}">
+                    {% if futures_change and futures_change > 0 %}▲{% elif futures_change and futures_change < 0 %}▼{% endif %}
+                    {{ futures_change_display }} 點
+                    {% if futures_change_pct %}({{ futures_change_pct }}%){% endif %}
+                </div>
+                {% if futures_spread is not none %}
+                <div class="spread-tag {% if futures_spread > 0 %}bg-green{% elif futures_spread < 0 %}bg-red{% else %}{% endif %}">
+                    期現貨價差: {% if futures_spread > 0 %}+{% endif %}{{ futures_spread_display }} 點
+                </div>
+                {% endif %}
+                <div class="futures-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">開盤</span>
+                        <span class="detail-value">{{ futures_open }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">最高</span>
+                        <span class="detail-value text-green">{{ futures_high }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">最低</span>
+                        <span class="detail-value text-red">{{ futures_low }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">成交量</span>
+                        <span class="detail-value">{{ futures_volume }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 三大法人現貨買賣超 ====== -->
+        <div class="grid grid-4" style="margin-bottom: 16px;">
+            <!-- 外資 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🌍</span> 外資買賣超</div>
+                <div class="metric-value {% if foreign_net and foreign_net > 0 %}text-green{% elif foreign_net and foreign_net < 0 %}text-red{% endif %}">
+                    {{ foreign_net_display }}
+                </div>
+                <div class="metric-sub">{{ foreign_net_yi }}</div>
+                <div class="inst-detail">
+                    <div class="detail-box">
+                        <div class="label">買進</div>
+                        <div class="value text-green">{{ foreign_buy_display }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">賣出</div>
+                        <div class="value text-red">{{ foreign_sell_display }}</div>
+                    </div>
+                </div>
+                {% if foreign_prev_net_display %}
+                <div class="metric-compare {% if foreign_net_diff > 0 %}bg-green{% else %}bg-red{% endif %}" style="margin-top:10px;">
+                    前日: {{ foreign_prev_net_display }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 投信 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🏛️</span> 投信買賣超</div>
+                <div class="metric-value {% if trust_net and trust_net > 0 %}text-green{% elif trust_net and trust_net < 0 %}text-red{% endif %}">
+                    {{ trust_net_display }}
+                </div>
+                <div class="metric-sub">{{ trust_net_yi }}</div>
+                <div class="inst-detail">
+                    <div class="detail-box">
+                        <div class="label">買進</div>
+                        <div class="value text-green">{{ trust_buy_display }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">賣出</div>
+                        <div class="value text-red">{{ trust_sell_display }}</div>
+                    </div>
+                </div>
+                {% if trust_prev_net_display %}
+                <div class="metric-compare {% if trust_net_diff > 0 %}bg-green{% else %}bg-red{% endif %}" style="margin-top:10px;">
+                    前日: {{ trust_prev_net_display }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 自營商 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🏢</span> 自營商買賣超</div>
+                <div class="metric-value {% if dealer_net and dealer_net > 0 %}text-green{% elif dealer_net and dealer_net < 0 %}text-red{% endif %}">
+                    {{ dealer_net_display }}
+                </div>
+                <div class="metric-sub">{{ dealer_net_yi }}</div>
+            </div>
+
+            <!-- 融資 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">💰</span> 融資餘額</div>
+                <div class="metric-value text-yellow">{{ margin_display }}</div>
+                <div class="metric-sub">{{ margin_sub }}</div>
+            </div>
+        </div>
+
+        <!-- ====== 三大法人台指期未平倉 ====== -->
+        <div class="section-title">三大法人台指期未平倉 (口)</div>
+        <div class="card" style="margin-bottom: 16px;">
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th style="text-align:right">台指期增減口數</th>
+                        <th style="text-align:right">台指期未平倉口數</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight:600;">外資</td>
+                        <td style="text-align:right" class="{% if foi_foreign_change_raw and foi_foreign_change_raw > 0 %}text-green{% elif foi_foreign_change_raw and foi_foreign_change_raw < 0 %}text-red{% endif %}">
+                            {% if foi_foreign_change_raw and foi_foreign_change_raw > 0 %}▲{% elif foi_foreign_change_raw and foi_foreign_change_raw < 0 %}▼{% endif %} {{ foi_foreign_change }}
+                        </td>
+                        <td style="text-align:right" class="{% if foi_foreign_oi_raw and foi_foreign_oi_raw > 0 %}text-green{% elif foi_foreign_oi_raw and foi_foreign_oi_raw < 0 %}text-red{% endif %}">
+                            {{ foi_foreign_oi }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600;">投信</td>
+                        <td style="text-align:right" class="{% if foi_trust_change_raw and foi_trust_change_raw > 0 %}text-green{% elif foi_trust_change_raw and foi_trust_change_raw < 0 %}text-red{% endif %}">
+                            {% if foi_trust_change_raw and foi_trust_change_raw > 0 %}▲{% elif foi_trust_change_raw and foi_trust_change_raw < 0 %}▼{% endif %} {{ foi_trust_change }}
+                        </td>
+                        <td style="text-align:right" class="{% if foi_trust_oi_raw and foi_trust_oi_raw > 0 %}text-green{% elif foi_trust_oi_raw and foi_trust_oi_raw < 0 %}text-red{% endif %}">
+                            {{ foi_trust_oi }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600;">自營</td>
+                        <td style="text-align:right" class="{% if foi_dealer_change_raw and foi_dealer_change_raw > 0 %}text-green{% elif foi_dealer_change_raw and foi_dealer_change_raw < 0 %}text-red{% endif %}">
+                            {% if foi_dealer_change_raw and foi_dealer_change_raw > 0 %}▲{% elif foi_dealer_change_raw and foi_dealer_change_raw < 0 %}▼{% endif %} {{ foi_dealer_change }}
+                        </td>
+                        <td style="text-align:right" class="{% if foi_dealer_oi_raw and foi_dealer_oi_raw > 0 %}text-green{% elif foi_dealer_oi_raw and foi_dealer_oi_raw < 0 %}text-red{% endif %}">
+                            {{ foi_dealer_oi }}
+                        </td>
+                    </tr>
+                    <tr style="border-top: 2px solid var(--border);">
+                        <td style="font-weight:700;">合計</td>
+                        <td style="text-align:right; font-weight:700;" class="{% if foi_total_change_raw and foi_total_change_raw > 0 %}text-green{% elif foi_total_change_raw and foi_total_change_raw < 0 %}text-red{% endif %}">
+                            {% if foi_total_change_raw and foi_total_change_raw > 0 %}▲{% elif foi_total_change_raw and foi_total_change_raw < 0 %}▼{% endif %} {{ foi_total_change }}
+                        </td>
+                        <td style="text-align:right; font-weight:700;" class="{% if foi_total_oi_raw and foi_total_oi_raw > 0 %}text-green{% elif foi_total_oi_raw and foi_total_oi_raw < 0 %}text-red{% endif %}">
+                            {{ foi_total_oi }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ====== 期權觀測指標 + VIX ====== -->
+        <div class="section-title">期權觀測 & 恐慌指標</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+
+            <!-- 左: 期權觀測指標表格 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🔮</span> 期權觀測指標</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>指標</th>
+                            <th style="text-align:right">今日</th>
+                            <th style="text-align:right">前一交易日</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight:600;">微台多空指標</td>
+                            <td style="text-align:right" class="{% if micro_sentiment and micro_sentiment > 0 %}text-green{% elif micro_sentiment and micro_sentiment < 0 %}text-red{% endif %}">
+                                {{ micro_sentiment_display }}
+                            </td>
+                            <td style="text-align:right; color: var(--text-muted);">{{ micro_sentiment_prev_display }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:600;">小台多空指標</td>
+                            <td style="text-align:right" class="{% if mini_sentiment and mini_sentiment > 0 %}text-green{% elif mini_sentiment and mini_sentiment < 0 %}text-red{% endif %}">
+                                {{ mini_sentiment_display }}
+                            </td>
+                            <td style="text-align:right; color: var(--text-muted);">{{ mini_sentiment_prev_display }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:600;">PUT/CALL Ratio</td>
+                            <td style="text-align:right" class="{{ pcr_color }}">{{ pcr_value }}%</td>
+                            <td style="text-align:right; color: var(--text-muted);">{{ pcr_prev_value }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="inst-detail" style="margin-top:12px;">
+                    <div class="detail-box">
+                        <div class="label">Put OI</div>
+                        <div class="value">{{ pcr_put_oi }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">Call OI</div>
+                        <div class="value">{{ pcr_call_oi }}</div>
+                    </div>
+                </div>
+                <div class="metric-sub" style="margin-top:8px; font-size:11px; line-height:1.5;">
+                    PCR &gt;100%：Put 未平倉多於 Call，莊家偏多佈局<br>
+                    PCR &lt;100%：Call 未平倉多於 Put，莊家偏空佈局<br>
+                    微台/小台：正值偏多、負值偏空，反映散戶方向
+                </div>
+            </div>
+
+            <!-- 右: VIX 近7天折線圖 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近7天)</div>
+                <div class="vix-header">
+                    <div>
+                        <span class="vix-current {{ vix_color_class }}">{{ vix_value }}</span>
+                        {% if vix_change is not none %}
+                        <span style="font-size:16px; margin-left:8px;" class="{% if vix_change > 0 %}text-red{% elif vix_change < 0 %}text-green{% endif %}">
+                            {% if vix_change > 0 %}▲{% elif vix_change < 0 %}▼{% endif %} {{ vix_change_display }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <span class="vix-badge" style="{{ vix_label_style }}">{{ vix_label }}</span>
+                </div>
+                <div class="chart-container-sm">
+                    <canvas id="vixChart"></canvas>
+                </div>
+                <div class="metric-sub" style="margin-top:10px; font-size:11px; line-height:1.5;">
+                    &lt;15 極度樂觀（市場過度自滿）<br>
+                    15~20 正常區間<br>
+                    20~25 偏高警戒（波動加大）<br>
+                    25~30 恐慌（市場大幅震盪）<br>
+                    &gt;30 極度恐慌（恐慌性拋售）
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 市場情緒指標 ====== -->
+        <div class="section-title">市場情緒指標</div>
+        <div class="grid grid-3" style="margin-bottom: 16px;">
+
+            <!-- CNN Fear & Greed -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🎭</span> CNN 恐慌貪婪</div>
+                <div style="text-align:center; padding: 6px 0;">
+                    <div class="metric-value {{ cnn_fg_color }}" style="font-size:36px;">{{ cnn_fg_value }}</div>
+                    <span class="vix-badge" style="{{ cnn_fg_style }}; margin-top:6px; display:inline-block;">{{ cnn_fg_label }}</span>
+                    {% if cnn_fg_change is not none %}
+                    <div style="font-size:13px; margin-top:8px;" class="{% if cnn_fg_change > 0 %}text-green{% elif cnn_fg_change < 0 %}text-red{% endif %}">
+                        {% if cnn_fg_change > 0 %}▲{% elif cnn_fg_change < 0 %}▼{% endif %} {{ cnn_fg_change }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="metric-sub" style="text-align:center; margin-top:6px; font-size:11px; line-height:1.4;">0=極度恐慌 → 100=極度貪婪</div>
+            </div>
+
+            <!-- 比特幣恐慌貪婪 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">₿</span> 加密貨幣恐慌貪婪</div>
+                <div style="text-align:center; padding: 6px 0;">
+                    <div class="metric-value {{ crypto_fg_color }}" style="font-size:36px;">{{ crypto_fg_value }}</div>
+                    <span class="vix-badge" style="{{ crypto_fg_style }}; margin-top:6px; display:inline-block;">{{ crypto_fg_label }}</span>
+                    {% if crypto_fg_change is not none %}
+                    <div style="font-size:13px; margin-top:8px;" class="{% if crypto_fg_change > 0 %}text-green{% elif crypto_fg_change < 0 %}text-red{% endif %}">
+                        {% if crypto_fg_change > 0 %}▲{% elif crypto_fg_change < 0 %}▼{% endif %} {{ crypto_fg_change }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="metric-sub" style="text-align:center; margin-top:6px; font-size:11px; line-height:1.4;">0=極度恐慌 → 100=極度貪婪</div>
+            </div>
+
+            <!-- 融資維持率 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🏦</span> 融資維持率</div>
+                <div style="text-align:center; padding: 6px 0;">
+                    <div class="metric-value {{ margin_ratio_color }}" style="font-size:36px;">{{ margin_ratio_value }}%</div>
+                    {% if margin_ratio_label %}
+                    <span class="vix-badge" style="{{ margin_ratio_style }}; margin-top:6px; display:inline-block;">{{ margin_ratio_label }}</span>
+                    {% endif %}
+                </div>
+                <div class="metric-sub" style="text-align:center; margin-top:8px; font-size:11px; line-height:1.4;">
+                    &lt;130% 追繳 · &lt;120% 斷頭
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ====== 漲跌家數 ====== -->
+        <div class="section-title">漲跌家數</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+            <div class="card">
+                <div class="card-title"><span class="icon">🏢</span> 上市 (TWSE)</div>
+                {% if tse_up is not none and tse_down is not none %}
+                {% set tse_total = tse_up + tse_down + (tse_flat or 0) %}
+                <div class="breadth-bar">
+                    <div class="up" style="width: {{ (tse_up / tse_total * 100) if tse_total > 0 else 50 }}%">{{ tse_up }}</div>
+                    {% if tse_flat %}<div class="flat" style="width: {{ (tse_flat / tse_total * 100) if tse_total > 0 else 0 }}%">{{ tse_flat }}</div>{% endif %}
+                    <div class="down" style="width: {{ (tse_down / tse_total * 100) if tse_total > 0 else 50 }}%">{{ tse_down }}</div>
+                </div>
+                <div class="breadth-legend">
+                    <span><span class="dot dot-green"></span> 上漲 {{ tse_up }}</span>
+                    {% if tse_flat %}<span><span class="dot dot-gray"></span> 持平 {{ tse_flat }}</span>{% endif %}
+                    <span><span class="dot dot-red"></span> 下跌 {{ tse_down }}</span>
+                </div>
+                {% else %}
+                <div class="metric-sub">資料尚未更新</div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">🏬</span> 上櫃 (TPEx)</div>
+                {% if otc_up is not none and otc_down is not none %}
+                {% set otc_total = otc_up + otc_down + (otc_flat or 0) %}
+                <div class="breadth-bar">
+                    <div class="up" style="width: {{ (otc_up / otc_total * 100) if otc_total > 0 else 50 }}%">{{ otc_up }}</div>
+                    {% if otc_flat %}<div class="flat" style="width: {{ (otc_flat / otc_total * 100) if otc_total > 0 else 0 }}%">{{ otc_flat }}</div>{% endif %}
+                    <div class="down" style="width: {{ (otc_down / otc_total * 100) if otc_total > 0 else 50 }}%">{{ otc_down }}</div>
+                </div>
+                <div class="breadth-legend">
+                    <span><span class="dot dot-green"></span> 上漲 {{ otc_up }}</span>
+                    {% if otc_flat %}<span><span class="dot dot-gray"></span> 持平 {{ otc_flat }}</span>{% endif %}
+                    <span><span class="dot dot-red"></span> 下跌 {{ otc_down }}</span>
+                </div>
+                {% else %}
+                <div class="metric-sub">資料尚未更新</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ====== 外資排行 ====== -->
+        <div class="section-title">外資買賣超排行</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+            <div class="card">
+                <div class="card-title"><span class="icon">🟢</span> 外資買超前十名</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr><th>#</th><th>股票</th><th style="text-align:right">買超(張)</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in top_buy %}
+                        <tr>
+                            <td class="rank">{{ loop.index }}</td>
+                            <td>{{ stock.stock_name }} <span class="stock-id">{{ stock.stock_id }}</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+{{ stock.net_display }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not top_buy %}
+                        <tr><td colspan="3" style="text-align:center;color:var(--text-muted)">資料尚未更新</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">🔴</span> 外資賣超前十名</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr><th>#</th><th>股票</th><th style="text-align:right">賣超(張)</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in top_sell %}
+                        <tr>
+                            <td class="rank">{{ loop.index }}</td>
+                            <td>{{ stock.stock_name }} <span class="stock-id">{{ stock.stock_id }}</span></td>
+                            <td style="text-align:right" class="text-red nowrap">{{ stock.net_display }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not top_sell %}
+                        <tr><td colspan="3" style="text-align:center;color:var(--text-muted)">資料尚未更新</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ====== 國際指標趨勢 ====== -->
+        <div class="section-title">國際指標趨勢</div>
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-title"><span class="icon">💵</span> 美元指數 (DXY) · 近30天</div>
+                {% if usd_latest %}
+                <div class="metric-value text-blue">{{ usd_latest }}</div>
+                {% endif %}
+                <div class="chart-container">
+                    <canvas id="usdChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">💴</span> 美元兌日圓 (USD/JPY) · 近30天</div>
+                {% if jpy_latest %}
+                <div class="metric-value text-purple">{{ jpy_latest }}</div>
+                {% endif %}
+                <div class="chart-container">
+                    <canvas id="jpyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近7天</div>
+                <div style="display:flex; align-items:baseline; gap:8px;">
+                    <div class="metric-value text-cyan">{{ us10y_value }}%</div>
+                    {% if us10y_change is not none %}
+                    <span style="font-size:14px;" class="{% if us10y_change > 0 %}text-red{% elif us10y_change < 0 %}text-green{% endif %}">
+                        {% if us10y_change > 0 %}▲{% elif us10y_change < 0 %}▼{% endif %} {{ us10y_change_display }}%
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="chart-container">
+                    <canvas id="us10yChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>台灣股市每日戰略儀表板 | 資料來源: 台灣證券交易所、證券櫃檯買賣中心、台灣期貨交易所、Yahoo Finance</p>
+            <p>本頁面僅供參考，不構成任何投資建議</p>
+        </div>
+    </div>
+
+    <script>
+        const chartDefaults = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#e2e8f0',
+                    bodyColor: '#e2e8f0',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: false,
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(30, 45, 61, 0.5)' },
+                    ticks: { color: '#64748b', maxTicksLimit: 6, font: { size: 11 } }
+                },
+                y: {
+                    grid: { color: 'rgba(30, 45, 61, 0.5)' },
+                    ticks: { color: '#64748b', font: { size: 11 } }
+                }
+            },
+            elements: {
+                point: { radius: 2, hoverRadius: 5 },
+                line: { tension: 0.3, borderWidth: 2 }
+            }
+        };
+
+        function makeGradient(ctx, color) {
+            const g = ctx.createLinearGradient(0, 0, 0, 200);
+            g.addColorStop(0, color.replace(')', ', 0.3)').replace('rgb', 'rgba'));
+            g.addColorStop(1, color.replace(')', ', 0.02)').replace('rgb', 'rgba'));
+            return g;
+        }
+
+        // VIX 近7天折線圖
+        const vixData = {{ vix_chart_data | safe }};
+        if (vixData.labels.length > 0) {
+            const vixCtx = document.getElementById('vixChart').getContext('2d');
+
+            // VIX 顏色依數值變化
+            const vixColors = vixData.values.map(v => {
+                if (v < 15) return 'rgba(34, 197, 94, 1)';
+                if (v < 20) return 'rgba(59, 130, 246, 1)';
+                if (v < 25) return 'rgba(234, 179, 8, 1)';
+                return 'rgba(239, 68, 68, 1)';
+            });
+
+            new Chart(vixCtx, {
+                type: 'line',
+                data: {
+                    labels: vixData.labels,
+                    datasets: [{
+                        data: vixData.values,
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: makeGradient(vixCtx, 'rgb(249, 115, 22)'),
+                        fill: true,
+                        pointBackgroundColor: vixColors,
+                        pointBorderColor: vixColors,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                    }]
+                },
+                options: {
+                    ...chartDefaults,
+                    plugins: {
+                        ...chartDefaults.plugins,
+                        tooltip: {
+                            ...chartDefaults.plugins.tooltip,
+                            callbacks: {
+                                label: function(context) {
+                                    const v = context.parsed.y;
+                                    let level = '';
+                                    if (v < 15) level = '極度樂觀';
+                                    else if (v < 20) level = '正常';
+                                    else if (v < 25) level = '偏高警戒';
+                                    else if (v < 30) level = '恐慌';
+                                    else level = '極度恐慌';
+                                    return `VIX: ${v} (${level})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        ...chartDefaults.scales,
+                        x: {
+                            ...chartDefaults.scales.x,
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                    }
+                }
+            });
+        }
+
+        // 美元指數圖
+        const usdData = {{ usd_chart_data | safe }};
+        if (usdData.labels.length > 0) {
+            const usdCtx = document.getElementById('usdChart').getContext('2d');
+            new Chart(usdCtx, {
+                type: 'line',
+                data: {
+                    labels: usdData.labels,
+                    datasets: [{
+                        data: usdData.values,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: makeGradient(usdCtx, 'rgb(59, 130, 246)'),
+                        fill: true,
+                    }]
+                },
+                options: chartDefaults
+            });
+        }
+
+        // 日圓圖
+        const jpyData = {{ jpy_chart_data | safe }};
+        if (jpyData.labels.length > 0) {
+            const jpyCtx = document.getElementById('jpyChart').getContext('2d');
+            new Chart(jpyCtx, {
+                type: 'line',
+                data: {
+                    labels: jpyData.labels,
+                    datasets: [{
+                        data: jpyData.values,
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: makeGradient(jpyCtx, 'rgb(168, 85, 247)'),
+                        fill: true,
+                    }]
+                },
+                options: chartDefaults
+            });
+        }
+
+        // 美國10年期公債殖利率
+        const us10yData = {{ us10y_chart_data | safe }};
+        if (us10yData.labels.length > 0) {
+            const us10yCtx = document.getElementById('us10yChart').getContext('2d');
+            new Chart(us10yCtx, {
+                type: 'line',
+                data: {
+                    labels: us10yData.labels,
+                    datasets: [{
+                        data: us10yData.values,
+                        borderColor: 'rgb(6, 182, 212)',
+                        backgroundColor: makeGradient(us10yCtx, 'rgb(6, 182, 212)'),
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 7,
+                    }]
+                },
+                options: {
+                    ...chartDefaults,
+                    scales: {
+                        ...chartDefaults.scales,
+                        x: {
+                            ...chartDefaults.scales.x,
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
