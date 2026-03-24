@@ -1,384 +1,514 @@
 {
   "date": "20260324",
-  "generated_at": "2026-03-24 12:47:32",
+  "generated_at": "2026-03-24 10:52:25",
   "taiex": {
-    "index": 32612.24,
-    "change": -110.26,
-    "change_pct": -0.34,
-    "volume": 690091065536.0,
-    "prev_volume": 712578117331.0,
-    "volume_change": -3.16,
-    "date": "20260324"
+    "index": 22856.73,
+    "change": -128.45,
+    "change_pct": -0.56,
+    "volume": 328700000000,
+    "prev_volume": 295600000000,
+    "volume_change": 11.2
   },
   "institutional": {
-    "foreign_buy": 244972307741.0,
-    "foreign_sell": 257278047154.0,
-    "foreign_net": -12305739413.0,
-    "foreign_prev_net": -83922601792.0,
-    "trust_buy": 12126477693.0,
-    "trust_sell": 9746868124.0,
-    "trust_net": 2379609569.0,
-    "trust_prev_net": 10534823636.0,
-    "dealer_net": -1698808314.0,
-    "dealer_buy": 8188487740.0,
-    "dealer_sell": 9887296054.0
+    "foreign_net": -83923000000,
+    "foreign_buy": 82560000000,
+    "foreign_sell": 166483000000,
+    "foreign_prev_net": -43600000000,
+    "trust_net": 10407000000,
+    "trust_buy": 12890000000,
+    "trust_sell": 2483000000,
+    "trust_prev_net": 1870000000,
+    "dealer_net": -31112000000
   },
   "foreign_top10": {
     "top_buy": [
       {
-        "stock_id": "*",
-        "stock_name": "6770",
-        "buy": null,
-        "sell": 76913288.0,
-        "net": 157719107.0
+        "stock_id": "2330",
+        "stock_name": "台積電",
+        "net": 12580
       },
       {
-        "stock_id": "*",
-        "stock_name": "3481",
-        "buy": null,
-        "sell": 97231429.0,
-        "net": 139720063.0
+        "stock_id": "2454",
+        "stock_name": "聯發科",
+        "net": 4230
       },
       {
-        "stock_id": "*",
-        "stock_name": "2344",
-        "buy": null,
-        "sell": 58968342.0,
-        "net": 73611298.0
+        "stock_id": "2881",
+        "stock_name": "富邦金",
+        "net": 3870
       },
       {
-        "stock_id": "",
-        "stock_name": "00981A",
-        "buy": null,
-        "sell": 46485382.0,
-        "net": 52096000.0
+        "stock_id": "2882",
+        "stock_name": "國泰金",
+        "net": 3120
       },
       {
-        "stock_id": "",
-        "stock_name": "2887",
-        "buy": null,
-        "sell": 38427507.0,
-        "net": 43733262.0
+        "stock_id": "2303",
+        "stock_name": "聯電",
+        "net": 2890
       },
       {
-        "stock_id": "*",
-        "stock_name": "2408",
-        "buy": null,
-        "sell": 54663662.0,
-        "net": 41597473.0
+        "stock_id": "3711",
+        "stock_name": "日月光投控",
+        "net": 2450
       },
       {
-        "stock_id": "*",
-        "stock_name": "2409",
-        "buy": null,
-        "sell": 10599332.0,
-        "net": 35783288.0
+        "stock_id": "2891",
+        "stock_name": "中信金",
+        "net": 2180
       },
       {
-        "stock_id": "*",
-        "stock_name": "2303",
-        "buy": null,
-        "sell": 29290768.0,
-        "net": 33497720.0
+        "stock_id": "2308",
+        "stock_name": "台達電",
+        "net": 1950
       },
       {
-        "stock_id": "",
-        "stock_name": "2367",
-        "buy": null,
-        "sell": 30514143.0,
-        "net": 32450089.0
+        "stock_id": "2412",
+        "stock_name": "中華電",
+        "net": 1680
       },
       {
-        "stock_id": "",
-        "stock_name": "0050",
-        "buy": null,
-        "sell": 4413442.0,
-        "net": 26307592.0
+        "stock_id": "2886",
+        "stock_name": "兆豐金",
+        "net": 1520
       }
     ],
-    "top_sell": []
+    "top_sell": [
+      {
+        "stock_id": "2317",
+        "stock_name": "鴻海",
+        "net": -8920
+      },
+      {
+        "stock_id": "2382",
+        "stock_name": "廣達",
+        "net": -5430
+      },
+      {
+        "stock_id": "3037",
+        "stock_name": "欣興",
+        "net": -4120
+      },
+      {
+        "stock_id": "2603",
+        "stock_name": "長榮",
+        "net": -3780
+      },
+      {
+        "stock_id": "2609",
+        "stock_name": "陽明",
+        "net": -3250
+      },
+      {
+        "stock_id": "3034",
+        "stock_name": "聯詠",
+        "net": -2890
+      },
+      {
+        "stock_id": "2357",
+        "stock_name": "華碩",
+        "net": -2460
+      },
+      {
+        "stock_id": "2345",
+        "stock_name": "智邦",
+        "net": -2180
+      },
+      {
+        "stock_id": "3661",
+        "stock_name": "世芯-KY",
+        "net": -1920
+      },
+      {
+        "stock_id": "6669",
+        "stock_name": "緯穎",
+        "net": -1750
+      }
+    ]
   },
   "margin": {
-    "margin_balance": null,
-    "margin_change": null,
-    "margin_balance_amount": null,
-    "short_balance": null,
-    "short_change": null
+    "margin_balance": 582345,
+    "margin_balance_amount": 189200000000,
+    "short_balance": 52341
   },
   "breadth": {
-    "tse_up": null,
-    "tse_down": null,
-    "tse_flat": null,
-    "otc_up": null,
-    "otc_down": null,
-    "otc_flat": null
+    "tse_up": 312,
+    "tse_down": 589,
+    "tse_flat": 72,
+    "otc_up": 287,
+    "otc_down": 465,
+    "otc_flat": 56
   },
-  "usd_index": [],
-  "jpy_rate": [
+  "usd_index": [
     {
-      "date": "2026-02-04",
-      "close": 155.8
-    },
-    {
-      "date": "2026-02-05",
-      "close": 156.92
-    },
-    {
-      "date": "2026-02-06",
-      "close": 156.78
-    },
-    {
-      "date": "2026-02-09",
-      "close": 157.24
-    },
-    {
-      "date": "2026-02-10",
-      "close": 156.13
-    },
-    {
-      "date": "2026-02-11",
-      "close": 154.48
-    },
-    {
-      "date": "2026-02-12",
-      "close": 153.27
-    },
-    {
-      "date": "2026-02-13",
-      "close": 152.82
-    },
-    {
-      "date": "2026-02-16",
-      "close": 152.78
-    },
-    {
-      "date": "2026-02-17",
-      "close": 153.61
-    },
-    {
-      "date": "2026-02-18",
-      "close": 153.15
-    },
-    {
-      "date": "2026-02-19",
-      "close": 154.69
-    },
-    {
-      "date": "2026-02-20",
-      "close": 155.16
+      "date": "2026-02-22",
+      "close": 106.32
     },
     {
       "date": "2026-02-23",
-      "close": 154.34
+      "close": 106.18
     },
     {
       "date": "2026-02-24",
-      "close": 154.63
+      "close": 105.95
     },
     {
       "date": "2026-02-25",
-      "close": 155.88
+      "close": 106.45
     },
     {
       "date": "2026-02-26",
-      "close": 156.2
+      "close": 106.72
     },
     {
       "date": "2026-02-27",
-      "close": 155.86
+      "close": 106.58
+    },
+    {
+      "date": "2026-02-28",
+      "close": 106.89
+    },
+    {
+      "date": "2026-03-01",
+      "close": 107.12
     },
     {
       "date": "2026-03-02",
-      "close": 156.63
+      "close": 106.98
     },
     {
       "date": "2026-03-03",
-      "close": 157.26
+      "close": 106.75
     },
     {
       "date": "2026-03-04",
-      "close": 157.77
+      "close": 106.42
     },
     {
       "date": "2026-03-05",
-      "close": 156.98
+      "close": 106.28
     },
     {
       "date": "2026-03-06",
-      "close": 157.53
+      "close": 105.95
+    },
+    {
+      "date": "2026-03-07",
+      "close": 105.78
+    },
+    {
+      "date": "2026-03-08",
+      "close": 105.62
     },
     {
       "date": "2026-03-09",
-      "close": 158.43
+      "close": 105.89
     },
     {
       "date": "2026-03-10",
-      "close": 157.85
+      "close": 106.15
     },
     {
       "date": "2026-03-11",
-      "close": 158.11
+      "close": 106.32
     },
     {
       "date": "2026-03-12",
-      "close": 159.07
+      "close": 106.08
     },
     {
       "date": "2026-03-13",
-      "close": 159.21
+      "close": 105.85
+    },
+    {
+      "date": "2026-03-14",
+      "close": 105.62
+    },
+    {
+      "date": "2026-03-15",
+      "close": 105.48
     },
     {
       "date": "2026-03-16",
-      "close": 159.57
+      "close": 105.32
     },
     {
       "date": "2026-03-17",
-      "close": 159.1
+      "close": 105.18
     },
     {
       "date": "2026-03-18",
-      "close": 158.89
+      "close": 104.95
     },
     {
       "date": "2026-03-19",
-      "close": 159.79
+      "close": 104.78
     },
     {
       "date": "2026-03-20",
-      "close": 157.92
+      "close": 104.62
+    },
+    {
+      "date": "2026-03-21",
+      "close": 104.85
+    },
+    {
+      "date": "2026-03-22",
+      "close": 104.72
     },
     {
       "date": "2026-03-23",
-      "close": 159.23
+      "close": 104.58
+    },
+    {
+      "date": "2026-03-24",
+      "close": 104.42
+    }
+  ],
+  "jpy_rate": [
+    {
+      "date": "2026-02-22",
+      "close": 149.82
+    },
+    {
+      "date": "2026-02-23",
+      "close": 149.65
+    },
+    {
+      "date": "2026-02-24",
+      "close": 149.48
+    },
+    {
+      "date": "2026-02-25",
+      "close": 149.92
+    },
+    {
+      "date": "2026-02-26",
+      "close": 150.15
+    },
+    {
+      "date": "2026-02-27",
+      "close": 150.38
+    },
+    {
+      "date": "2026-02-28",
+      "close": 150.62
+    },
+    {
+      "date": "2026-03-01",
+      "close": 150.45
+    },
+    {
+      "date": "2026-03-02",
+      "close": 150.28
+    },
+    {
+      "date": "2026-03-03",
+      "close": 150.12
+    },
+    {
+      "date": "2026-03-04",
+      "close": 149.95
+    },
+    {
+      "date": "2026-03-05",
+      "close": 149.78
+    },
+    {
+      "date": "2026-03-06",
+      "close": 149.52
+    },
+    {
+      "date": "2026-03-07",
+      "close": 149.35
+    },
+    {
+      "date": "2026-03-08",
+      "close": 149.18
+    },
+    {
+      "date": "2026-03-09",
+      "close": 149.42
+    },
+    {
+      "date": "2026-03-10",
+      "close": 149.65
+    },
+    {
+      "date": "2026-03-11",
+      "close": 149.88
+    },
+    {
+      "date": "2026-03-12",
+      "close": 149.72
+    },
+    {
+      "date": "2026-03-13",
+      "close": 149.55
+    },
+    {
+      "date": "2026-03-14",
+      "close": 149.38
+    },
+    {
+      "date": "2026-03-15",
+      "close": 149.22
+    },
+    {
+      "date": "2026-03-16",
+      "close": 149.05
+    },
+    {
+      "date": "2026-03-17",
+      "close": 148.88
+    },
+    {
+      "date": "2026-03-18",
+      "close": 148.72
+    },
+    {
+      "date": "2026-03-19",
+      "close": 148.55
+    },
+    {
+      "date": "2026-03-20",
+      "close": 148.38
+    },
+    {
+      "date": "2026-03-21",
+      "close": 148.62
+    },
+    {
+      "date": "2026-03-22",
+      "close": 148.48
+    },
+    {
+      "date": "2026-03-23",
+      "close": 148.32
+    },
+    {
+      "date": "2026-03-24",
+      "close": 148.15
     }
   ],
   "vix": {
-    "value": 26.72,
-    "date": "2026-03-24",
-    "prev_value": 26.15,
+    "value": 22.45,
+    "prev_value": 21.18,
     "chart": [
       {
-        "date": "2026-03-16",
-        "close": 23.51
-      },
-      {
-        "date": "2026-03-17",
-        "close": 22.37
-      },
-      {
         "date": "2026-03-18",
-        "close": 25.09
+        "close": 19.32
       },
       {
         "date": "2026-03-19",
-        "close": 24.06
+        "close": 20.15
       },
       {
         "date": "2026-03-20",
-        "close": 26.78
+        "close": 21.78
+      },
+      {
+        "date": "2026-03-21",
+        "close": 21.18
+      },
+      {
+        "date": "2026-03-22",
+        "close": 20.85
       },
       {
         "date": "2026-03-23",
-        "close": 26.15
+        "close": 21.52
       },
       {
         "date": "2026-03-24",
-        "close": 26.72
+        "close": 22.45
       }
     ]
   },
   "futures": {
-    "close": 32771.0,
-    "change": 212.0,
-    "change_pct": 0.65,
-    "volume": null,
-    "settlement": 92474.0,
-    "open": 33280.0,
-    "high": 33393.0,
-    "low": 32342.0,
-    "contract_month": "202604"
+    "close": 22830,
+    "change": -135,
+    "change_pct": -0.59,
+    "open": 22960,
+    "high": 22985,
+    "low": 22810,
+    "volume": 128456
   },
   "margin_ratio": {
-    "ratio": null,
-    "date": "20260324"
+    "ratio": 162.5
   },
   "cnn_fg": {
-    "value": 15.9,
-    "label": "extreme fear",
-    "prev_value": 16.1,
-    "prev_label": null,
-    "week_ago_value": 21.7
+    "value": 38,
+    "label": "Fear",
+    "prev_value": 42
   },
   "crypto_fg": {
-    "value": 11,
-    "label": "Extreme Fear",
-    "prev_value": 8,
-    "prev_label": "Extreme Fear"
+    "value": 45,
+    "label": "Neutral",
+    "prev_value": 51
   },
   "pcr": {
-    "ratio": 111.3,
-    "put_oi": 305139.0,
-    "call_oi": 285620.0
+    "ratio": 110.09,
+    "put_oi": 296542,
+    "call_oi": 269380
   },
   "us10y": {
-    "value": 4.38,
-    "date": "2026-03-24",
-    "prev_value": 4.33,
+    "value": 4.285,
+    "prev_value": 4.312,
     "chart": [
       {
-        "date": "2026-03-16",
-        "close": 4.22
-      },
-      {
-        "date": "2026-03-17",
-        "close": 4.2
-      },
-      {
         "date": "2026-03-18",
-        "close": 4.26
+        "close": 4.352
       },
       {
         "date": "2026-03-19",
-        "close": 4.28
+        "close": 4.338
       },
       {
         "date": "2026-03-20",
-        "close": 4.39
+        "close": 4.315
+      },
+      {
+        "date": "2026-03-21",
+        "close": 4.312
+      },
+      {
+        "date": "2026-03-22",
+        "close": 4.298
       },
       {
         "date": "2026-03-23",
-        "close": 4.33
+        "close": 4.292
       },
       {
         "date": "2026-03-24",
-        "close": 4.38
+        "close": 4.285
       }
     ]
   },
   "futures_oi": {
     "foreign": {
-      "change": 3445,
-      "oi": -34108
+      "change": -1351,
+      "oi": -37717
     },
     "trust": {
-      "change": 320,
-      "oi": 37781
+      "change": 801,
+      "oi": 37461
     },
     "dealer": {
-      "change": -739,
-      "oi": -788
+      "change": 532,
+      "oi": -54
     },
     "total": {
-      "change": 3026,
-      "oi": 2885
+      "change": -18,
+      "oi": -310
     }
   },
   "sentiment": {
-    "micro_sentiment": 13.7,
-    "micro_sentiment_prev": -24.34,
-    "mini_sentiment": 13.7,
-    "mini_sentiment_prev": -5.93,
-    "pcr_today": 106.83,
-    "pcr_prev": 94.63
+    "micro_sentiment": 50.53,
+    "micro_sentiment_prev": 41.89,
+    "mini_sentiment": 12.52,
+    "mini_sentiment_prev": -0.1,
+    "pcr_prev": 145.58
   }
 }

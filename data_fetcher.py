@@ -1,28 +1,21 @@
 """
-台灣股市戰略儀表板 - 資料抓取模組 v8
+台灣股市戰略儀表板 - 資料抓取模組 v9
 資料來源：
-  - FinMind API (主要 - 免費無需 token)
-  - 台灣證券交易所 (TWSE) 開放資料 API
+  - FinMind API (免費無需 token, 每小時 300 次)
+  - 台灣證券交易所 (TWSE) 開放資料 API + OpenAPI v1
   - 證券櫃檯買賣中心 (TPEx) API
-  - yfinance (美元指數、日圓、VIX)
+  - 鉅亨網 (cnyes) API (美元指數、日圓、VIX、US10Y)
   - 台灣期貨交易所 (TAIFEX) CSV/HTML
+  - KGI 凱基證券 (融資維持率)
 """
 
 import requests
 import json
 import time
 import os
+import re
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
-
-# 嘗試載入 yfinance
-try:
-    import yfinance as yf
-    HAS_YFINANCE = True
-    print("[模組] yfinance 已載入")
-except ImportError:
-    HAS_YFINANCE = False
-    print("[模組] yfinance 未安裝，Yahoo Finance 資料將不可用")
 
 # 共用 headers
 HEADERS = {
@@ -327,6 +320,67 @@ def fetch_institutional(date_str=None):
     except Exception as e:
         print(f"  [錯誤] 解析三大法人失敗: {e}")
 
+    # ===== 備用1: TWSE OpenAPI v1 (最新資料，不需日期) =====
+    if result["foreign_net"] is None:
+        print("  [備用] TWSE OpenAPI v1...")
+        try:
+            oa_url = "https://openapi.twse.com.tw/v1/exchangeReport/BFIAMU"
+            resp_oa = _safe_get(oa_url, timeout=10)
+            if resp_oa:
+                oa_data = resp_oa.json()
+                if isinstance(oa_data, list):
+                    for item in oa_data:
+                        name = item.get("Name", "") or item.get("name", "")
+                        buy = _parse_number(str(item.get("BuyAmount", "") or item.get("buy", "")))
+                        sell = _parse_number(str(item.get("SellAmount", "") or item.get("sell", "")))
+                        net = _parse_number(str(item.get("NetAmount", "") or item.get("net", "")))
+                        if not net and buy and sell:
+                            net = buy - sell
+                        if "外資" in name and result["foreign_net"] is None:
+                            result["foreign_buy"] = buy
+                            result["foreign_sell"] = sell
+                            result["foreign_net"] = net
+                        elif "投信" in name:
+                            result["trust_buy"] = buy
+                            result["trust_sell"] = sell
+                            result["trust_net"] = net
+                        elif "自營" in name and result["dealer_net"] is None:
+                            result["dealer_net"] = net
+                    if result["foreign_net"] is not None:
+                        print(f"  [TWSE OpenAPI] ✅ 外資={result['foreign_net']}")
+        except Exception as e:
+            print(f"  [TWSE OpenAPI] ❌ {e}")
+
+    # ===== 備用2: FinMind TaiwanStockTotalInstitutionalInvestors =====
+    if result["foreign_net"] is None:
+        print("  [備用] FinMind...")
+        fm_data = _finmind_fetch("TaiwanStockTotalInstitutionalInvestors", "", date_str, date_str)
+        if fm_data:
+            try:
+                for row in fm_data:
+                    name = row.get("name", "")
+                    buy = row.get("buy")
+                    sell = row.get("sell")
+                    if buy is not None and sell is not None:
+                        net = int(buy) - int(sell)
+                        if "外資" in name and result["foreign_net"] is None:
+                            result["foreign_buy"] = int(buy)
+                            result["foreign_sell"] = int(sell)
+                            result["foreign_net"] = net
+                        elif "投信" in name:
+                            result["trust_buy"] = int(buy)
+                            result["trust_sell"] = int(sell)
+                            result["trust_net"] = net
+                        elif "自營" in name and result["dealer_net"] is None:
+                            result["dealer_net"] = net
+                if result["foreign_net"] is not None:
+                    print(f"  [FinMind] ✅ 外資={result['foreign_net']}")
+            except Exception as e:
+                print(f"  [FinMind] ❌ {e}")
+
+    if result["foreign_net"] is None:
+        print("  ⚠️ 三大法人: 所有方法均失敗")
+
     # 抓取前一日的資料來比較
     prev_date = _get_prev_trading_date(date_str)
     if prev_date:
@@ -374,14 +428,22 @@ def fetch_foreign_top10(date_str=None):
 
     try:
         data = resp.json()
-        if "data" in data:
+        if "data" in data and len(data["data"]) > 0:
             for row in data["data"]:
+                stock_id = str(row[0]).strip()
+                stock_name = str(row[1]).strip().replace("*", "").strip()
+                if not stock_name or len(stock_name) < 1:
+                    stock_name = stock_id
+                raw_buy = _parse_number(row[2])
+                raw_sell = _parse_number(row[3])
+                raw_net = _parse_number(row[4])
+                # TWT38U 的數字是「股數」，轉為「張」(1張=1000股)
                 item = {
-                    "stock_id": str(row[0]).strip(),
-                    "stock_name": str(row[1]).strip(),
-                    "buy": _parse_number(row[2]),
-                    "sell": _parse_number(row[3]),
-                    "net": _parse_number(row[4]),
+                    "stock_id": stock_id,
+                    "stock_name": stock_name,
+                    "buy": round(raw_buy / 1000) if raw_buy else None,
+                    "sell": round(raw_sell / 1000) if raw_sell else None,
+                    "net": round(raw_net / 1000) if raw_net else None,
                 }
                 if item["net"] and item["net"] > 0:
                     result["top_buy"].append(item)
@@ -390,6 +452,10 @@ def fetch_foreign_top10(date_str=None):
 
             result["top_buy"] = sorted(result["top_buy"], key=lambda x: x["net"], reverse=True)[:10]
             result["top_sell"] = sorted(result["top_sell"], key=lambda x: x["net"])[:10]
+            print(f"  [TWT38U] ✅ 買超 {len(result['top_buy'])} 檔, 賣超 {len(result['top_sell'])} 檔")
+        else:
+            print("  [TWT38U] 無資料，使用 T86 備用")
+            return _fetch_foreign_top10_from_t86(date_str)
     except Exception as e:
         print(f"  [錯誤] 解析外資排行失敗: {e}")
         return _fetch_foreign_top10_from_t86(date_str)
@@ -476,12 +542,8 @@ def fetch_margin_trading(date_str=None):
     print("  [主要] FinMind TaiwanStockTotalMarginPurchaseShortSale...")
     fm_data = _finmind_fetch("TaiwanStockTotalMarginPurchaseShortSale", "", date_str, date_str)
 
-    # FinMind 可能沒有當天資料（盤後才更新），嘗試前一個交易日
     if not fm_data:
-        prev = _get_prev_trading_date(date_str)
-        if prev:
-            print(f"  [FinMind] 今日無資料，嘗試前一交易日 {prev}...")
-            fm_data = _finmind_fetch("TaiwanStockTotalMarginPurchaseShortSale", "", prev, prev)
+        print("  [FinMind] ❌ 今日融資融券無資料")
 
     if fm_data:
         try:
@@ -545,6 +607,60 @@ def fetch_margin_trading(date_str=None):
                     print(f"    [TWSE] 融資={result['margin_balance']}, 融券={result['short_balance']}")
             except Exception as e:
                 print(f"  [錯誤] TWSE MI_MARGN 解析: {e}")
+
+    # ===== 方法3 (備用): TWSE MI_MARGN selectType=ALL 個股加總 =====
+    if result["margin_balance"] is None:
+        print("  [備用3] 嘗試 TWSE MI_MARGN ALL (個股加總)...")
+        url3 = "https://www.twse.com.tw/exchangeReport/MI_MARGN"
+        params3 = {"response": "json", "date": date_str, "selectType": "ALL"}
+        resp3 = _safe_get(url3, params3)
+        if resp3:
+            try:
+                data3 = resp3.json()
+                if "data" in data3 and len(data3["data"]) > 0:
+                    total_margin = 0
+                    total_short = 0
+                    count = 0
+                    for row in data3["data"]:
+                        if len(row) >= 7:
+                            # 格式: 代號, 名稱, 融資買進, 融資賣出, 融資現償, 融資餘額, ...融券
+                            m_bal = _parse_number(row[6]) if len(row) > 6 else None  # 融資今日餘額
+                            s_bal = _parse_number(row[12]) if len(row) > 12 else None  # 融券今日餘額
+                            if m_bal is not None:
+                                total_margin += m_bal
+                                count += 1
+                            if s_bal is not None:
+                                total_short += s_bal
+                    if count > 0:
+                        result["margin_balance"] = total_margin
+                        result["short_balance"] = total_short
+                        print(f"    [TWSE ALL] ✅ 加總 {count} 檔: 融資={total_margin}, 融券={total_short}")
+            except Exception as e:
+                print(f"  [錯誤] TWSE ALL 解析: {e}")
+
+    # ===== 方法4 (備用): 鉅亨網 API =====
+    if result["margin_balance"] is None:
+        print("  [備用4] 嘗試鉅亨網...")
+        try:
+            url4 = "https://ws.api.cnyes.com/ws/api/v1/charting/history"
+            for symbol, key in [
+                ("TWS:MARGIN_TRADING_BALANCE:STOCK", "margin_balance"),
+                ("TWS:SHORT_SELLING_BALANCE:STOCK", "short_balance"),
+            ]:
+                params4 = {"resolution": "D", "symbol": symbol, "quote": 1}
+                resp4 = _safe_get(url4, params4, timeout=8)
+                if resp4:
+                    data4 = resp4.json()
+                    if "data" in data4 and "quote" in data4["data"]:
+                        val = data4["data"]["quote"].get("6") or data4["data"]["quote"].get("closePrice")
+                        if val:
+                            result[key] = float(val)
+                            print(f"    [鉅亨] ✅ {key}={val}")
+        except Exception as e:
+            print(f"    [鉅亨] ❌ {e}")
+
+    if result["margin_balance"] is None:
+        print("  ⚠️ 融資融券: 所有方法均失敗")
 
     return result
 
@@ -668,95 +784,191 @@ def fetch_market_breadth(date_str=None):
             except:
                 pass
 
+    # 備用: TWSE OpenAPI v1 取最新行情，自己統計漲跌
+    if result["tse_up"] is None:
+        print("  [備用] 嘗試 TWSE OpenAPI v1 統計漲跌...")
+        try:
+            oa_url = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"
+            resp_oa = _safe_get(oa_url, timeout=12)
+            if resp_oa:
+                oa_data = resp_oa.json()
+                if isinstance(oa_data, list) and len(oa_data) > 50:
+                    up = down = flat = 0
+                    for item in oa_data:
+                        change = item.get("Change") or item.get("change") or ""
+                        val = _parse_number(str(change))
+                        if val is not None:
+                            if val > 0:
+                                up += 1
+                            elif val < 0:
+                                down += 1
+                            else:
+                                flat += 1
+                    if up > 0 or down > 0:
+                        result["tse_up"] = up
+                        result["tse_down"] = down
+                        result["tse_flat"] = flat
+                        print(f"  [TWSE OpenAPI] ✅ 漲{up} 跌{down} 平{flat}")
+        except Exception as e:
+            print(f"  [TWSE OpenAPI] ❌ 漲跌家數: {e}")
+
     return result
 
 
 # ============================================================
-# 6. 美元指數、日圓、VIX (Yahoo Finance)
+# 6. 美元指數、日圓、VIX (鉅亨網 + investing.com)
 # ============================================================
-def fetch_yahoo_chart(symbol, period="30d", interval="1d"):
+def _fetch_cnyes_chart(cnyes_symbol, days=30):
     """
-    從 Yahoo Finance 抓取歷史價格 (使用 yfinance 套件)
-    symbol: "DX=F" (美元指數), "JPY=X" (USD/JPY), "^VIX"
+    從鉅亨網 API 抓取歷史價格
+    cnyes_symbol: 鉅亨網代號, 如 "FX:USDTWD", "GI:DXY", "GI:VIX", "GI:US10Y"
     回傳: [{"date": "2024-01-01", "close": 104.5}, ...]
     """
-    # ===== 方法1 (主要): yfinance 套件 =====
-    if HAS_YFINANCE:
+    print(f"  [鉅亨] 取得 {cnyes_symbol} (近{days}天)...")
+    end_ts = int(time.time())
+    start_ts = end_ts - days * 86400
+
+    # 方法1: charting/history
+    url = "https://ws.api.cnyes.com/ws/api/v1/charting/history"
+    params = {
+        "resolution": "D",
+        "symbol": cnyes_symbol,
+        "from": str(start_ts),
+        "to": str(end_ts),
+    }
+    resp = _safe_get(url, params, timeout=10)
+    if resp:
         try:
-            print(f"  [yfinance] 取得 {symbol} (period={period})...")
-            ticker = yf.Ticker(symbol)
-            df = ticker.history(period=period, interval=interval)
-            if df is not None and len(df) > 0:
-                points = []
-                for idx, row in df.iterrows():
-                    close_val = row.get("Close")
-                    if close_val is not None and not (isinstance(close_val, float) and close_val != close_val):
-                        points.append({
-                            "date": idx.strftime("%Y-%m-%d"),
-                            "close": round(float(close_val), 2)
-                        })
-                if points:
-                    print(f"  [yfinance] ✅ {symbol} 共 {len(points)} 筆")
-                    return points
-            print(f"  [yfinance] ❌ {symbol} 無資料")
+            data = resp.json()
+            if data.get("statusCode") == 200 or "data" in data:
+                chart_data = data.get("data", {})
+                timestamps = chart_data.get("t", [])
+                closes = chart_data.get("c", [])
+                if timestamps and closes:
+                    points = []
+                    for ts, c in zip(timestamps, closes):
+                        if c is not None:
+                            dt = datetime.fromtimestamp(ts)
+                            points.append({"date": dt.strftime("%Y-%m-%d"), "close": round(float(c), 2)})
+                    if points:
+                        print(f"  [鉅亨] ✅ {cnyes_symbol} 共 {len(points)} 筆")
+                        return points
         except Exception as e:
-            print(f"  [yfinance] ❌ {symbol} 錯誤: {e}")
+            print(f"  [鉅亨] ❌ {cnyes_symbol} 解析失敗: {e}")
 
-    # ===== 方法2 (備用): 直接 API 請求 =====
-    print(f"  [Yahoo] 嘗試直接 API (symbol={symbol})...")
-    urls = [
-        f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}",
-        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
-    ]
-    params = {"range": period, "interval": interval, "includePrePost": "false"}
+    # 方法2: quote API (只取最新價)
+    url2 = "https://ws.api.cnyes.com/ws/api/v1/charting/history"
+    params2 = {"resolution": "D", "symbol": cnyes_symbol, "quote": 1}
+    resp2 = _safe_get(url2, params2, timeout=10)
+    if resp2:
+        try:
+            data2 = resp2.json()
+            quote = data2.get("data", {}).get("quote", {})
+            close_val = quote.get("6") or quote.get("closePrice") or quote.get("priceClose")
+            if close_val:
+                today_str = datetime.now().strftime("%Y-%m-%d")
+                print(f"  [鉅亨 quote] ✅ {cnyes_symbol} = {close_val}")
+                return [{"date": today_str, "close": round(float(close_val), 2)}]
+        except Exception as e:
+            print(f"  [鉅亨 quote] ❌ {cnyes_symbol}: {e}")
 
-    for url in urls:
-        resp = _safe_get(url, params)
-        if resp and resp.status_code == 200:
-            try:
-                data = resp.json()
-                result_data = data["chart"]["result"][0]
-                timestamps = result_data["timestamp"]
-                closes = result_data["indicators"]["quote"][0]["close"]
+    print(f"  [鉅亨] ⚠️ {cnyes_symbol} 無資料")
+    return []
+
+
+def _fetch_investing_data(pair_id, days=30):
+    """
+    從 investing.com API 取得歷史資料
+    pair_id: investing.com 的 pair ID
+    """
+    print(f"  [Investing] 取得 pair_id={pair_id}...")
+    url = f"https://api.investing.com/api/financialdata/{pair_id}/historical/chart/"
+    params = {
+        "period": "P1M",
+        "interval": "P1D",
+        "pointscount": days,
+    }
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "domain-id": "www",
+    }
+    try:
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            if "data" in data:
                 points = []
-                for ts, close in zip(timestamps, closes):
-                    if close is not None:
-                        dt = datetime.fromtimestamp(ts)
-                        points.append({"date": dt.strftime("%Y-%m-%d"), "close": round(close, 2)})
+                for item in data["data"]:
+                    ts = item.get("date_utc") or item.get("rowDateTimestamp")
+                    close = item.get("last_close") or item.get("last_numeric")
+                    if ts and close:
+                        dt = datetime.fromtimestamp(ts / 1000) if ts > 1e10 else datetime.fromtimestamp(ts)
+                        points.append({"date": dt.strftime("%Y-%m-%d"), "close": round(float(close), 2)})
                 if points:
-                    print(f"  [Yahoo API] ✅ {symbol} 共 {len(points)} 筆")
+                    print(f"  [Investing] ✅ pair_id={pair_id} 共 {len(points)} 筆")
                     return points
-            except Exception as e:
-                print(f"  [Yahoo API] ❌ {symbol}: {e}")
-
-    print(f"  [Yahoo] ⚠️ {symbol} 所有方法都失敗")
+    except Exception as e:
+        print(f"  [Investing] ❌ pair_id={pair_id}: {e}")
     return []
 
 
 def fetch_usd_index():
-    """抓取美元指數近30天"""
+    """
+    抓取美元指數近30天
+    鉅亨網代號: GI:DXY
+    """
     print("💵 抓取美元指數...")
-    return fetch_yahoo_chart("DX=F", "35d", "1d")
+    # 方法1: 鉅亨網
+    data = _fetch_cnyes_chart("GI:DXY", 35)
+    if data:
+        return data
+    # 方法2: investing.com (DXY pair_id=8827)
+    data = _fetch_investing_data(8827, 35)
+    if data:
+        return data
+    print("  ⚠️ 美元指數: 所有來源失敗")
+    return []
 
 
 def fetch_jpy_rate():
-    """抓取日圓匯率近30天 (USD/JPY)"""
+    """
+    抓取日圓匯率近30天 (USD/JPY)
+    鉅亨網代號: FX:USDJPY
+    """
     print("💴 抓取日圓匯率...")
-    return fetch_yahoo_chart("JPY=X", "35d", "1d")
+    # 方法1: 鉅亨網
+    data = _fetch_cnyes_chart("FX:USDJPY", 35)
+    if data:
+        return data
+    # 方法2: investing.com (USDJPY pair_id=3)
+    data = _fetch_investing_data(3, 35)
+    if data:
+        return data
+    print("  ⚠️ 日圓匯率: 所有來源失敗")
+    return []
 
 
 def fetch_vix():
-    """抓取 VIX 指數 (近7天含圖表資料)"""
+    """
+    抓取 VIX 指數 (近7天含圖表資料)
+    鉅亨網代號: GI:VIX
+    """
     print("😱 抓取 VIX 指數 (近7天)...")
-    data = fetch_yahoo_chart("^VIX", "10d", "1d")
-    # 只取最近7筆
+    # 方法1: 鉅亨網
+    data = _fetch_cnyes_chart("GI:VIX", 10)
+    # 方法2: investing.com (VIX pair_id=44336)
+    if not data:
+        data = _fetch_investing_data(44336, 10)
+    if not data:
+        print("  ⚠️ VIX: 所有來源失敗")
+
     data = data[-7:] if len(data) > 7 else data
     if data:
         return {
             "value": data[-1]["close"],
             "date": data[-1]["date"],
             "prev_value": data[-2]["close"] if len(data) >= 2 else None,
-            "chart": data,  # 近7天完整資料供畫圖
+            "chart": data,
         }
     return {"value": None, "date": None, "prev_value": None, "chart": []}
 
@@ -1115,19 +1327,23 @@ def _calc_sentiment_from_finmind(fm_data):
 
 
 def _calc_sentiment_from_taifex(resp_text, contract_id):
-    """從期交所 CSV 資料計算多空指標"""
+    """從期交所 CSV 或 HTML 資料計算多空指標"""
     if not resp_text:
         return None
     try:
-        lines = resp_text.strip().split("\n")
-        print(f"    [TAIFEX] {contract_id}: 共 {len(lines)} 行")
+        text = resp_text.strip()
+        first_line = text.split("\n")[0].lower()
+
+        # ===== 如果是 HTML → 用 BeautifulSoup 解析表格 =====
+        if "<html" in first_line or "<!doctype" in first_line or "<table" in first_line:
+            print(f"    [TAIFEX] {contract_id}: 回傳 HTML，改用表格解析...")
+            return _calc_sentiment_from_taifex_html(resp_text, contract_id)
+
+        # ===== CSV 解析 =====
+        lines = text.split("\n")
+        print(f"    [TAIFEX] {contract_id}: 共 {len(lines)} 行 CSV")
         if len(lines) > 0:
             print(f"    [TAIFEX] 標頭: {lines[0][:300]}")
-
-        # 檢查是否是 HTML 而非 CSV
-        if "<html" in lines[0].lower() or "<table" in lines[0].lower():
-            print(f"    [TAIFEX] {contract_id}: 回傳 HTML 而非 CSV，跳過")
-            return None
 
         # 動態偵測欄位位置
         header_fields = [f.strip().strip('"') for f in lines[0].split(",")]
@@ -1169,9 +1385,87 @@ def _calc_sentiment_from_taifex(resp_text, contract_id):
             print(f"    [TAIFEX] {contract_id}: {sentiment}% (long={total_long_oi}, short={total_short_oi})")
             return sentiment
         elif not found_data:
-            print(f"    [TAIFEX] {contract_id}: 無有效資料")
+            print(f"    [TAIFEX] {contract_id}: CSV 無有效資料")
     except Exception as e:
         print(f"  [錯誤] 解析{contract_id}多空指標失敗: {e}")
+    return None
+
+
+def _calc_sentiment_from_taifex_html(html_text, contract_id):
+    """從期交所 HTML 表格解析多空指標 (MTX 等會回傳 HTML)"""
+    try:
+        soup = BeautifulSoup(html_text, "html.parser")
+        tables = soup.find_all("table")
+        total_long_oi = 0
+        total_short_oi = 0
+        found_data = False
+
+        for table in tables:
+            rows = table.find_all("tr")
+            # 先找表頭，定位欄位
+            header_row = None
+            for row in rows:
+                ths = row.find_all("th")
+                if ths:
+                    header_text = [th.get_text(strip=True) for th in ths]
+                    if any("未平倉" in h for h in header_text):
+                        header_row = header_text
+                        break
+
+            # 解析資料行
+            for row in rows:
+                cells = row.find_all("td")
+                if len(cells) < 5:
+                    continue
+                cell_text = [c.get_text(strip=True).replace(",", "") for c in cells]
+
+                # 找身份別 (外資/投信/自營商)
+                identity = ""
+                for ct in cell_text:
+                    if "外資" in ct or "投信" in ct or "自營" in ct:
+                        identity = ct
+                        break
+                if not identity:
+                    continue
+
+                # 在這一行找多方/空方未平倉口數
+                # 通常表格結構: 身份別 | 多方交易口數 | ... | 多方未平倉口數 | 多方未平倉金額 | 空方未平倉口數 | ...
+                nums = []
+                for ct in cell_text:
+                    v = _parse_number(ct)
+                    if v is not None:
+                        nums.append(v)
+
+                # 期交所表格: 通常有 12+ 數字欄位
+                # 多方未平倉口數 在位置 6 (0-indexed)，空方在位置 8
+                if len(nums) >= 10:
+                    long_oi = int(nums[6])   # 多方未平倉口數
+                    short_oi = int(nums[8])  # 空方未平倉口數
+                    total_long_oi += long_oi
+                    total_short_oi += short_oi
+                    found_data = True
+                    print(f"      [HTML] {identity}: long_oi={long_oi}, short_oi={short_oi}")
+                elif len(nums) >= 4:
+                    # 較短的表格格式
+                    long_oi = int(nums[-4]) if nums[-4] > 0 else 0
+                    short_oi = int(nums[-2]) if nums[-2] > 0 else 0
+                    if long_oi > 0 or short_oi > 0:
+                        total_long_oi += long_oi
+                        total_short_oi += short_oi
+                        found_data = True
+                        print(f"      [HTML] {identity}: long_oi={long_oi}, short_oi={short_oi}")
+
+        total = total_long_oi + total_short_oi
+        if total > 0:
+            sentiment = round((total_long_oi - total_short_oi) / total * 100, 2)
+            print(f"    [TAIFEX HTML] {contract_id}: {sentiment}% (long={total_long_oi}, short={total_short_oi})")
+            return sentiment
+        elif not found_data:
+            print(f"    [TAIFEX HTML] {contract_id}: 表格無有效資料")
+    except Exception as e:
+        print(f"  [錯誤] HTML解析{contract_id}失敗: {e}")
+        import traceback
+        traceback.print_exc()
     return None
 
 
@@ -1200,12 +1494,10 @@ def fetch_sentiment_indicators(date_str=None):
     # ===== 方法1 (主要): FinMind TaiwanFuturesInstitutionalInvestors =====
     for data_id, key_prefix, label in [("MXF", "micro", "微台"), ("MTX", "mini", "小台")]:
         print(f"  [FinMind] 取得{label}多空指標 (data_id={data_id})...")
-        # 今日
+        # 今日 (不用前一交易日替代)
         fm_data = _finmind_fetch("TaiwanFuturesInstitutionalInvestors", data_id, date_str, date_str)
-        # 若今日無資料，嘗試前一個交易日
-        if not fm_data and prev_date:
-            print(f"    [FinMind] {label}今日無資料，嘗試前日 {prev_date}...")
-            fm_data = _finmind_fetch("TaiwanFuturesInstitutionalInvestors", data_id, prev_date, prev_date)
+        if not fm_data:
+            print(f"    [FinMind] ❌ {label}今日無資料")
         if fm_data:
             sentiment = _calc_sentiment_from_finmind(fm_data)
             if sentiment is not None:
@@ -1238,6 +1530,23 @@ def fetch_sentiment_indicators(date_str=None):
             if sentiment is not None:
                 result[f"{key_prefix}_sentiment"] = sentiment
 
+        # 方法2 仍失敗 → 方法3: TAIFEX HTML 頁面 (非下載)
+        if result[f"{key_prefix}_sentiment"] is None:
+            print(f"  [TAIFEX HTML備用] 取得{label}多空 (commodity_id={contract_id})...")
+            url_html = "https://www.taifex.com.tw/cht/3/futContractsDate"
+            params_html = {
+                "queryType": "1",
+                "marketCode": "0",
+                "commodity_id": contract_id,
+                "queryDate": formatted_date,
+            }
+            resp_html = _safe_get(url_html, params_html)
+            if resp_html:
+                sentiment = _calc_sentiment_from_taifex_html(resp_html.text, contract_id)
+                if sentiment is not None:
+                    result[f"{key_prefix}_sentiment"] = sentiment
+                    print(f"    [TAIFEX HTML] ✅ {label}多空: {sentiment}%")
+
         # 前日
         if prev_date and result[f"{key_prefix}_sentiment_prev"] is None:
             prev_formatted = f"{prev_date[:4]}/{prev_date[4:6]}/{prev_date[6:8]}"
@@ -1255,9 +1564,8 @@ def fetch_sentiment_indicators(date_str=None):
     # ===== PCR (Put/Call Ratio) - FinMind 為主要 =====
     print("  [FinMind] 取得 PCR...")
     fm_pcr = _finmind_fetch("TaiwanOptionPutCallRatio", "", date_str, date_str)
-    if not fm_pcr and prev_date:
-        print(f"    [FinMind] PCR 今日無資料，嘗試 {prev_date}...")
-        fm_pcr = _finmind_fetch("TaiwanOptionPutCallRatio", "", prev_date, prev_date)
+    if not fm_pcr:
+        print("    [FinMind] ❌ PCR 今日無資料")
     if fm_pcr:
         for row in fm_pcr:
             pcr_val = row.get("PutCallRatio")
@@ -1382,11 +1690,7 @@ def fetch_margin_maintenance_ratio(date_str=None):
         target_date = date_str
         fm_data = _finmind_fetch("TaiwanStockTotalMarginPurchaseShortSale", "", target_date, target_date)
         if not fm_data:
-            prev = _get_prev_trading_date(date_str)
-            if prev:
-                print(f"    [FinMind] 今日無資料，嘗試 {prev}...")
-                fm_data = _finmind_fetch("TaiwanStockTotalMarginPurchaseShortSale", "", prev, prev)
-                target_date = prev
+            print("    [FinMind] ❌ 今日融資金額無資料")
 
         if fm_data:
             fm_margin_amt = None
@@ -1446,21 +1750,67 @@ def fetch_margin_maintenance_ratio(date_str=None):
         except Exception as e:
             print(f"    [Goodinfo] ❌ {e}")
 
-    # ===== 方法4: 嘗試 Cnyes 鉅亨網 =====
+    # ===== 方法4: KGI 凱基證券頁面爬蟲 =====
     if result["ratio"] is None:
-        print("  [方法4] 嘗試鉅亨網...")
+        print("  [方法4] 嘗試 KGI 凱基證券...")
         try:
-            url4 = "https://ws.api.cnyes.com/ws/api/v1/charting/history"
-            params4 = {
+            kgi_url = "https://www.kgi.com.tw/zh-tw/product-market/stock-market-overview/tw-stock-market/tw-stock-market-detail"
+            kgi_params = {
+                "a": "B658010E71E243C4A1D6B5F7BE914BDC",
+                "b": "5D48401A7CE148CD8ABAC965F9B5AFBF",
+            }
+            resp_kgi = requests.get(kgi_url, params=kgi_params, headers=HEADERS, timeout=12)
+            if resp_kgi.status_code == 200:
+                soup = BeautifulSoup(resp_kgi.text, "html.parser")
+                page_text = soup.get_text()
+                # 找維持率數字 (通常在 130-200 之間)
+                patterns = [
+                    r'(?:整體)?融資維持率[^\d]*?(\d{2,3}\.?\d*)\s*%?',
+                    r'維持率[^\d]*?(\d{2,3}\.?\d*)\s*%?',
+                    r'(\d{2,3}\.\d{1,2})\s*%',  # 找任何百分比
+                ]
+                for pattern in patterns:
+                    matches = re.findall(pattern, page_text)
+                    for m in matches:
+                        val = float(m)
+                        if 100 < val < 300:
+                            result["ratio"] = round(val, 1)
+                            print(f"    [KGI] ✅ 融資維持率: {result['ratio']}%")
+                            break
+                    if result["ratio"]:
+                        break
+                # 也嘗試找 JSON-LD 或 script 中的數據
+                if result["ratio"] is None:
+                    scripts = soup.find_all("script")
+                    for s in scripts:
+                        if s.string and ("維持率" in s.string or "maintenance" in s.string.lower()):
+                            nums = re.findall(r'(\d{2,3}\.\d{1,2})', s.string)
+                            for n in nums:
+                                val = float(n)
+                                if 100 < val < 300:
+                                    result["ratio"] = round(val, 1)
+                                    print(f"    [KGI script] ✅ 融資維持率: {result['ratio']}%")
+                                    break
+                            if result["ratio"]:
+                                break
+        except Exception as e:
+            print(f"    [KGI] ❌ {e}")
+
+    # ===== 方法5: 鉅亨網 API =====
+    if result["ratio"] is None:
+        print("  [方法5] 嘗試鉅亨網 API...")
+        try:
+            url5 = "https://ws.api.cnyes.com/ws/api/v1/charting/history"
+            params5 = {
                 "resolution": "D",
                 "symbol": "TWS:MARGIN_MAINTENANCE_RATIO:STOCK",
                 "quote": 1,
             }
-            resp4 = _safe_get(url4, params4, timeout=8)
-            if resp4:
-                data4 = resp4.json()
-                if "data" in data4 and "quote" in data4["data"]:
-                    quote = data4["data"]["quote"]
+            resp5 = _safe_get(url5, params5, timeout=8)
+            if resp5:
+                data5 = resp5.json()
+                if "data" in data5 and "quote" in data5["data"]:
+                    quote = data5["data"]["quote"]
                     val = quote.get("6") or quote.get("closePrice")
                     if val and 100 < float(val) < 300:
                         result["ratio"] = round(float(val), 1)
@@ -1468,8 +1818,59 @@ def fetch_margin_maintenance_ratio(date_str=None):
         except Exception as e:
             print(f"    [鉅亨] ❌ {e}")
 
+    # ===== 方法6: MacroMicro 圖表 API =====
     if result["ratio"] is None:
-        print("  ⚠️ 無法取得融資維持率 (所有方法均失敗)")
+        print("  [方法6] 嘗試 MacroMicro...")
+        try:
+            mm_url = "https://www.macromicro.me/charts/data/53117"
+            resp_mm = requests.get(mm_url, headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json",
+                "Referer": "https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin",
+            }, timeout=10)
+            if resp_mm.status_code == 200:
+                mm_data = resp_mm.json()
+                # MacroMicro 回傳格式: {"data": {"series": [{"data": [[timestamp, value], ...]}]}}
+                series = mm_data.get("data", {}).get("series", [])
+                if series:
+                    points = series[0].get("data", [])
+                    if points:
+                        latest = points[-1]
+                        val = float(latest[-1]) if isinstance(latest, list) else float(latest)
+                        if 100 < val < 300:
+                            result["ratio"] = round(val, 1)
+                            print(f"    [MacroMicro] ✅ 融資維持率: {result['ratio']}%")
+        except Exception as e:
+            print(f"    [MacroMicro] ❌ {e}")
+
+    # ===== 方法7: TWSE OpenAPI v1 (最新資料) =====
+    if result["ratio"] is None:
+        print("  [方法7] 嘗試 TWSE OpenAPI v1...")
+        try:
+            oa_url = "https://openapi.twse.com.tw/v1/exchangeReport/MI_MARGN"
+            resp_oa = _safe_get(oa_url, timeout=10)
+            if resp_oa:
+                oa_data = resp_oa.json()
+                if isinstance(oa_data, list) and len(oa_data) > 0:
+                    # OpenAPI v1 回傳 JSON array，找融資金額和擔保品
+                    oa_margin = None
+                    oa_collateral = None
+                    for item in oa_data:
+                        name = item.get("Name", "") or item.get("ItemName", "")
+                        val_str = item.get("TodayBalance", "") or item.get("Balance", "")
+                        val = _parse_number(str(val_str))
+                        if "融資金額" in name and val:
+                            oa_margin = val * 1000 if val < 1e9 else val
+                        elif ("擔保" in name or "市值" in name) and val:
+                            oa_collateral = val * 1000 if val < 1e9 else val
+                    if oa_margin and oa_collateral and oa_margin > 0:
+                        result["ratio"] = round(oa_collateral / oa_margin * 100, 1)
+                        print(f"    [TWSE OpenAPI] ✅ 融資維持率: {result['ratio']}%")
+        except Exception as e:
+            print(f"    [TWSE OpenAPI] ❌ {e}")
+
+    if result["ratio"] is None:
+        print("  ⚠️ 融資維持率: 所有 7 種方法均失敗")
 
     return result
 
@@ -1648,11 +2049,17 @@ def fetch_put_call_ratio(date_str=None):
 def fetch_us10y():
     """
     抓取美國 10 年期公債殖利率
-    來源: Yahoo Finance (^TNX)
-    回傳: {value, change, chart (近7天)}
+    鉅亨網代號: GI:US10Y
     """
     print("🏛️ 抓取美國10年期公債殖利率...")
-    data = fetch_yahoo_chart("%5ETNX", "10d", "1d")
+    # 方法1: 鉅亨網
+    data = _fetch_cnyes_chart("GI:US10Y", 10)
+    # 方法2: investing.com (US10Y pair_id=23705)
+    if not data:
+        data = _fetch_investing_data(23705, 10)
+    if not data:
+        print("  ⚠️ US10Y: 所有來源失敗")
+
     data = data[-7:] if len(data) > 7 else data
 
     if data:
