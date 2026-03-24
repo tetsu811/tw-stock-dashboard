@@ -132,8 +132,17 @@ def fetch_institutional(date_str=None):
         date_str = datetime.now().strftime("%Y%m%d")
 
     url = "https://www.twse.com.tw/fund/BFI82U"
-    params = {"response": "json", "dayDate": "", "weekDate": "", "monthDate": "", "type": "day"}
+    params = {"response": "json", "dayDate": date_str, "weekDate": "", "monthDate": "", "type": "day"}
     resp = _safe_get(url, params)
+
+    # 若指定日期無資料，嘗試不帶日期取最新
+    if resp:
+        try:
+            test_data = resp.json()
+            if "data" not in test_data or len(test_data.get("data", [])) == 0:
+                resp = _safe_get(url, {"response": "json", "dayDate": "", "weekDate": "", "monthDate": "", "type": "day"})
+        except:
+            resp = _safe_get(url, {"response": "json", "dayDate": "", "weekDate": "", "monthDate": "", "type": "day"})
 
     result = {
         "foreign_buy": None, "foreign_sell": None, "foreign_net": None,
@@ -156,7 +165,7 @@ def fetch_institutional(date_str=None):
                 sell = _parse_number(row[2])
                 net = _parse_number(row[3])
 
-                if "外資" in name and "自營" not in name and "外資及陸資" in name:
+                if ("外資及陸資" in name or ("外資" in name and "自營" not in name)) and result["foreign_net"] is None:
                     result["foreign_buy"] = buy
                     result["foreign_sell"] = sell
                     result["foreign_net"] = net
@@ -164,8 +173,12 @@ def fetch_institutional(date_str=None):
                     result["trust_buy"] = buy
                     result["trust_sell"] = sell
                     result["trust_net"] = net
-                elif "自營商" in name and "合計" in name:
-                    result["dealer_net"] = net
+                elif "自營商" in name:
+                    if "合計" in name or result["dealer_net"] is None:
+                        result["dealer_net"] = net
+                        if buy is not None and sell is not None:
+                            result["dealer_buy"] = buy
+                            result["dealer_sell"] = sell
     except Exception as e:
         print(f"  [錯誤] 解析三大法人失敗: {e}")
 
@@ -256,13 +269,21 @@ def _fetch_foreign_top10_from_t86(date_str):
             items = []
             for row in data["data"]:
                 net_shares = _parse_number(row[4])  # 買賣超股數
-                if net_shares is not None:
+                if net_shares is not None and net_shares != 0:
+                    stock_id = str(row[0]).strip()
+                    stock_name = str(row[1]).strip()
+                    # 清理股票名稱 (移除多餘空白和 *)
+                    stock_name = stock_name.replace("*", "").strip()
+                    if not stock_name or len(stock_name) < 1:
+                        stock_name = stock_id
+                    # T86 的數字是股數，轉為張 (1張=1000股)
+                    net_zhang = round(net_shares / 1000)
                     items.append({
-                        "stock_id": str(row[0]).strip(),
-                        "stock_name": str(row[1]).strip(),
-                        "buy": _parse_number(row[2]),
-                        "sell": _parse_number(row[3]),
-                        "net": net_shares,
+                        "stock_id": stock_id,
+                        "stock_name": stock_name,
+                        "buy": round((_parse_number(row[2]) or 0) / 1000),
+                        "sell": round((_parse_number(row[3]) or 0) / 1000),
+                        "net": net_zhang,
                     })
 
             buys = sorted([x for x in items if x["net"] > 0], key=lambda x: x["net"], reverse=True)
@@ -337,34 +358,14 @@ def fetch_market_breadth(date_str=None):
         "otc_up": None, "otc_down": None, "otc_flat": None,
     }
 
-    # 上市 - 從 MI_INDEX 取得
-    url = "https://www.twse.com.tw/exchangeReport/MI_INDEX"
-    params = {"response": "json", "date": date_str, "type": "MS"}
-    resp = _safe_get(url, params)
+    # 上市 - 從 TWSE 每日收盤行情取得漲跌家數
+    # 方法1: 從 TAIEX 指數頁面直接取得統計
+    url_stat = "https://www.twse.com.tw/exchangeReport/BWIBBU_d"
+    params_stat = {"response": "json", "date": date_str, "selectType": "ALL"}
 
-    if resp:
-        try:
-            data = resp.json()
-            # 嘗試從各個 data key 找漲跌家數
-            for key in sorted(data.keys()):
-                if key.startswith("data") and isinstance(data[key], list):
-                    for row in data[key]:
-                        row_str = str(row)
-                        if "上漲" in row_str and "下跌" in row_str:
-                            # 這可能是漲跌統計列
-                            pass
-
-            # 另外嘗試 groups 欄位
-            if "groups" in data:
-                for group in data["groups"]:
-                    if "漲跌" in str(group):
-                        pass
-        except:
-            pass
-
-    # 用另一個 API 取得漲跌統計
+    # 方法2: 從個股行情計算漲跌家數
     url2 = "https://www.twse.com.tw/exchangeReport/MI_INDEX"
-    params2 = {"response": "json", "date": date_str, "type": "ALL"}
+    params2 = {"response": "json", "date": date_str, "type": "ALLBUT0999"}
     resp2 = _safe_get(url2, params2)
 
     if resp2:
@@ -374,25 +375,45 @@ def fetch_market_breadth(date_str=None):
             down_count = 0
             flat_count = 0
 
-            # 從個股資料計算
-            for key in ["data8", "data9", "data7"]:
-                if key in data2 and isinstance(data2[key], list):
-                    for row in data2[key]:
-                        try:
-                            change_dir = str(row[9]).strip() if len(row) > 9 else ""
-                            if "+" in change_dir or "▲" in change_dir or change_dir.startswith("+"):
-                                up_count += 1
-                            elif "-" in change_dir or "▼" in change_dir or change_dir.startswith("-"):
-                                down_count += 1
-                            else:
-                                flat_count += 1
-                        except:
-                            pass
-                    if up_count > 0:
-                        result["tse_up"] = up_count
-                        result["tse_down"] = down_count
-                        result["tse_flat"] = flat_count
-                        break
+            # 遍歷所有 data 欄位找個股資料
+            for key in sorted(data2.keys()):
+                if not key.startswith("data") or not isinstance(data2[key], list):
+                    continue
+                rows = data2[key]
+                if len(rows) < 10:
+                    continue
+
+                for row in rows:
+                    if not isinstance(row, list) or len(row) < 10:
+                        continue
+                    try:
+                        # 漲跌方向通常在第9或第10欄
+                        for ci in [9, 8, 10]:
+                            if ci < len(row):
+                                val_str = str(row[ci]).strip()
+                                if val_str in ["+", "-", "X", " "]:
+                                    if val_str == "+":
+                                        up_count += 1
+                                    elif val_str == "-":
+                                        down_count += 1
+                                    elif val_str == "X" or val_str == " ":
+                                        flat_count += 1
+                                    break
+                                # 也可能是帶符號的數字
+                                elif val_str.startswith("+") or "▲" in val_str:
+                                    up_count += 1
+                                    break
+                                elif val_str.startswith("-") or "▼" in val_str:
+                                    down_count += 1
+                                    break
+                    except:
+                        pass
+
+                if up_count > 0:
+                    result["tse_up"] = up_count
+                    result["tse_down"] = down_count
+                    result["tse_flat"] = flat_count
+                    break
         except:
             pass
 
@@ -533,57 +554,57 @@ def fetch_taiex_futures(date_str=None):
         "contract_month": None,
     }
 
-    # 台灣期貨交易所每日行情 API
+    # 優先使用 CSV 下載 (更穩定)
+    result = _fetch_futures_backup(date_str)
+    if result["close"] is not None:
+        return result
+
+    # 備用: HTML 解析
     url = "https://www.taifex.com.tw/cht/3/futContractsDate"
     params = {
         "queryType": "1",
         "marketCode": "0",
         "dateaddcnt": "",
-        "commodity_id": "TX",  # 台股期貨
+        "commodity_id": "TX",
         "queryDate": formatted_date,
     }
     resp = _safe_get(url, params)
 
     if resp is None:
-        # 備用: 嘗試從期交所的另一個 API
-        return _fetch_futures_backup(date_str)
+        return result
 
     try:
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(resp.text, "html.parser")
-        table = soup.find("table", class_="table_f")
-        if table is None:
-            # 嘗試找其他表格
-            tables = soup.find_all("table")
-            for t in tables:
-                if "臺股期貨" in t.get_text() or "TX" in t.get_text():
-                    table = t
-                    break
-
-        if table:
+        tables = soup.find_all("table")
+        for table in tables:
             rows = table.find_all("tr")
             for row in rows:
                 cells = row.find_all("td")
-                if len(cells) >= 10:
+                if len(cells) >= 8:
                     cell_text = [c.get_text(strip=True) for c in cells]
-                    # 找近月合約 (通常是第一筆有資料的)
-                    if cell_text[0] and ("TX" in cell_text[0] or "臺股期貨" in cell_text[0]):
-                        result["contract_month"] = cell_text[1] if len(cell_text) > 1 else None
-                        result["open"] = _parse_number(cell_text[2]) if len(cell_text) > 2 else None
-                        result["high"] = _parse_number(cell_text[3]) if len(cell_text) > 3 else None
-                        result["low"] = _parse_number(cell_text[4]) if len(cell_text) > 4 else None
-                        result["close"] = _parse_number(cell_text[5]) if len(cell_text) > 5 else None
-                        result["change"] = _parse_number(cell_text[6]) if len(cell_text) > 6 else None
-                        result["volume"] = _parse_number(cell_text[8]) if len(cell_text) > 8 else None
-                        result["settlement"] = _parse_number(cell_text[7]) if len(cell_text) > 7 else None
-                        if result["close"] and result["change"]:
-                            prev = result["close"] - result["change"]
-                            if prev != 0:
-                                result["change_pct"] = round(result["change"] / prev * 100, 2)
-                        break
+                    row_text = " ".join(cell_text)
+                    # 找近月合約
+                    if ("TX" in row_text or "臺股期貨" in row_text) and result["close"] is None:
+                        for i, t in enumerate(cell_text):
+                            val = _parse_number(t)
+                            if val and 10000 < val < 50000 and result["close"] is None:
+                                # 可能是收盤價 (介於10000-50000)
+                                result["open"] = _parse_number(cell_text[max(0,i-3)]) if i >= 3 else None
+                                result["high"] = _parse_number(cell_text[max(0,i-2)]) if i >= 2 else None
+                                result["low"] = _parse_number(cell_text[max(0,i-1)]) if i >= 1 else None
+                                result["close"] = val
+                                if i+1 < len(cell_text):
+                                    result["change"] = _parse_number(cell_text[i+1])
+                                if result["close"] and result["change"]:
+                                    prev = result["close"] - result["change"]
+                                    if prev != 0:
+                                        result["change_pct"] = round(result["change"] / prev * 100, 2)
+                                break
+                        if result["close"]:
+                            break
     except Exception as e:
         print(f"  [錯誤] 解析期貨資料失敗: {e}")
-        return _fetch_futures_backup(date_str)
 
     return result
 
@@ -612,17 +633,50 @@ def _fetch_futures_backup(date_str):
     try:
         lines = resp.text.strip().split("\n")
         if len(lines) > 1:
-            # CSV 格式，找第一筆 TX 近月資料
+            # CSV 格式，找第一筆 TX 近月資料 (非 week/月合約)
+            found = False
             for line in lines[1:]:
                 fields = [f.strip().strip('"') for f in line.split(",")]
-                if len(fields) >= 10 and "TX" in fields[1]:
-                    result["contract_month"] = fields[2]
-                    result["open"] = _parse_number(fields[3])
-                    result["high"] = _parse_number(fields[4])
-                    result["low"] = _parse_number(fields[5])
-                    result["close"] = _parse_number(fields[6])
-                    result["change"] = _parse_number(fields[7])
-                    result["volume"] = _parse_number(fields[8])
+                if len(fields) < 8:
+                    continue
+                # 契約代碼在前幾個欄位
+                line_text = ",".join(fields[:3])
+                if "TX" not in line_text:
+                    continue
+                # 跳過小台(MTX)、微台(MXF)、電子期(TE)、金融期(TF)
+                if any(x in line_text for x in ["MTX", "MXF", "TE", "TF"]):
+                    continue
+
+                # 找到數值欄位 (收盤價在10000-50000之間)
+                for i in range(2, min(len(fields), 10)):
+                    val = _parse_number(fields[i])
+                    if val and 10000 < val < 50000:
+                        # 這可能是開盤價，往後找
+                        result["open"] = val
+                        result["high"] = _parse_number(fields[i+1]) if i+1 < len(fields) else None
+                        result["low"] = _parse_number(fields[i+2]) if i+2 < len(fields) else None
+                        result["close"] = _parse_number(fields[i+3]) if i+3 < len(fields) else None
+                        # 如果 close 不在合理範圍，嘗試其他排列
+                        if result["close"] is None or result["close"] < 10000:
+                            result["open"] = _parse_number(fields[3]) if len(fields) > 3 else None
+                            result["high"] = _parse_number(fields[4]) if len(fields) > 4 else None
+                            result["low"] = _parse_number(fields[5]) if len(fields) > 5 else None
+                            result["close"] = _parse_number(fields[6]) if len(fields) > 6 else None
+                        found = True
+                        break
+
+                if not found:
+                    # 嘗試固定欄位位置
+                    result["open"] = _parse_number(fields[3]) if len(fields) > 3 else None
+                    result["high"] = _parse_number(fields[4]) if len(fields) > 4 else None
+                    result["low"] = _parse_number(fields[5]) if len(fields) > 5 else None
+                    result["close"] = _parse_number(fields[6]) if len(fields) > 6 else None
+                    found = True
+
+                if found and result["close"]:
+                    result["contract_month"] = fields[2] if len(fields) > 2 else None
+                    result["change"] = _parse_number(fields[7]) if len(fields) > 7 else None
+                    result["volume"] = _parse_number(fields[8]) if len(fields) > 8 else None
                     result["settlement"] = _parse_number(fields[9]) if len(fields) > 9 else None
                     if result["close"] and result["change"]:
                         prev = result["close"] - result["change"]
@@ -911,14 +965,31 @@ def fetch_margin_maintenance_ratio(date_str=None):
             data = resp.json()
             if "creditList" in data and len(data["creditList"]) > 0:
                 summary = data["creditList"][-1]
-                # 融資餘額金額 & 擔保品市值
-                margin_amt = _parse_number(summary[4]) if len(summary) > 4 else None
-                # 若有擔保品欄位
-                if margin_amt and margin_amt > 0:
-                    # 嘗試從其他欄位取得擔保品市值
-                    collateral = _parse_number(summary[6]) if len(summary) > 6 else None
-                    if collateral and collateral > 0:
-                        result["ratio"] = round(collateral / margin_amt * 100, 1)
+                # 嘗試各種欄位位置組合
+                # creditList 格式可能是: [日期, 融資買進, 融資賣出, 融資餘額(張), 融資餘額(金額), ...]
+                # 或更多欄位包含擔保品市值
+                margin_amt = None
+                collateral = None
+                # 遍歷所有數值欄位，找融資金額和擔保品
+                values = []
+                for i, cell in enumerate(summary):
+                    val = _parse_number(cell)
+                    if val and val > 1e9:  # 大於10億的值
+                        values.append((i, val))
+
+                # 嘗試直接計算: 如果有多個大數值，擔保品通常 > 融資金額
+                if len(values) >= 2:
+                    # 按數值排序，最大的可能是擔保品市值，次大的是融資金額
+                    values_sorted = sorted(values, key=lambda x: x[1], reverse=True)
+                    # 融資維持率 = 擔保品 / 融資 * 100，通常在 130-200 之間
+                    for i in range(len(values_sorted)):
+                        for j in range(i+1, len(values_sorted)):
+                            ratio_test = values_sorted[i][1] / values_sorted[j][1] * 100
+                            if 100 < ratio_test < 300:
+                                result["ratio"] = round(ratio_test, 1)
+                                break
+                        if result["ratio"]:
+                            break
         except:
             pass
 
