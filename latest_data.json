@@ -1,13 +1,13 @@
 {
   "date": "20260325",
-  "generated_at": "2026-03-25 09:37:06",
+  "generated_at": "2026-03-25 10:00:09",
   "taiex": {
-    "index": null,
-    "change": null,
-    "change_pct": null,
-    "volume": null,
-    "prev_volume": null,
-    "volume_change": null,
+    "index": 33439.11,
+    "change": 826.87,
+    "change_pct": 2.54,
+    "volume": 652340765184.0,
+    "prev_volume": 690091065536.0,
+    "volume_change": -5.47,
     "date": "20260325"
   },
   "institutional": {
@@ -26,77 +26,148 @@
   "foreign_top10": {
     "top_buy": [
       {
-        "stock_id": "*",
-        "stock_name": "2344",
-        "buy": null,
-        "sell": 43005,
-        "net": 99516
+        "stock_id": "00919",
+        "stock_name": "群益台灣精選高息",
+        "buy": 28637,
+        "sell": 4707,
+        "net": 23930
       },
       {
-        "stock_id": "",
-        "stock_name": "3481",
-        "buy": null,
-        "sell": 83813,
-        "net": 87745
+        "stock_id": "00991A",
+        "stock_name": "主動復華未來50",
+        "buy": 33637,
+        "sell": 10351,
+        "net": 23286
       },
       {
-        "stock_id": "",
-        "stock_name": "6770",
-        "buy": null,
-        "sell": 64106,
-        "net": 86202
+        "stock_id": "00990A",
+        "stock_name": "主動元大AI新經濟",
+        "buy": 25403,
+        "sell": 2222,
+        "net": 23181
       },
       {
-        "stock_id": "*",
-        "stock_name": "2330",
-        "buy": null,
-        "sell": 32980,
-        "net": 32001
+        "stock_id": "2313",
+        "stock_name": "華通",
+        "buy": 30526,
+        "sell": 7362,
+        "net": 23164
       },
       {
-        "stock_id": "",
-        "stock_name": "1802",
-        "buy": null,
-        "sell": 22624,
-        "net": 31565
+        "stock_id": "00981A",
+        "stock_name": "主動統一台股增長",
+        "buy": 34855,
+        "sell": 12678,
+        "net": 22177
       },
       {
-        "stock_id": "",
-        "stock_name": "2489",
-        "buy": null,
-        "sell": 14178,
-        "net": 30051
+        "stock_id": "00992A",
+        "stock_name": "主動群益科技創新",
+        "buy": 19387,
+        "sell": 4477,
+        "net": 14910
       },
       {
-        "stock_id": "",
-        "stock_name": "2408",
-        "buy": null,
-        "sell": 31643,
-        "net": 27921
+        "stock_id": "2367",
+        "stock_name": "燿華",
+        "buy": 30304,
+        "sell": 15768,
+        "net": 14536
       },
       {
-        "stock_id": "",
-        "stock_name": "2303",
-        "buy": null,
-        "sell": 30410,
-        "net": 27009
+        "stock_id": "00982A",
+        "stock_name": "主動群益台灣強棒",
+        "buy": 13646,
+        "sell": 1829,
+        "net": 11817
       },
       {
-        "stock_id": "",
-        "stock_name": "2887",
-        "buy": null,
-        "sell": 28164,
-        "net": 25881
+        "stock_id": "2317",
+        "stock_name": "鴻海",
+        "buy": 23285,
+        "sell": 13680,
+        "net": 9605
       },
       {
-        "stock_id": "",
-        "stock_name": "2409",
-        "buy": null,
-        "sell": 12757,
-        "net": 25279
+        "stock_id": "00632R",
+        "stock_name": "元大台灣50反1",
+        "buy": 9758,
+        "sell": 330,
+        "net": 9428
       }
     ],
-    "top_sell": []
+    "top_sell": [
+      {
+        "stock_id": "2344",
+        "stock_name": "華邦電",
+        "buy": 38905,
+        "sell": 95416,
+        "net": -56510
+      },
+      {
+        "stock_id": "6770",
+        "stock_name": "力積電",
+        "buy": 64106,
+        "sell": 86202,
+        "net": -22096
+      },
+      {
+        "stock_id": "2489",
+        "stock_name": "瑞軒",
+        "buy": 14178,
+        "sell": 30051,
+        "net": -15874
+      },
+      {
+        "stock_id": "2409",
+        "stock_name": "友達",
+        "buy": 12757,
+        "sell": 25279,
+        "net": -12522
+      },
+      {
+        "stock_id": "00953B",
+        "stock_name": "群益優選非投等債",
+        "buy": 4,
+        "sell": 11520,
+        "net": -11516
+      },
+      {
+        "stock_id": "1314",
+        "stock_name": "中石化",
+        "buy": 4860,
+        "sell": 14536,
+        "net": -9676
+      },
+      {
+        "stock_id": "1802",
+        "stock_name": "台玻",
+        "buy": 22624,
+        "sell": 31565,
+        "net": -8940
+      },
+      {
+        "stock_id": "3231",
+        "stock_name": "緯創",
+        "buy": 7423,
+        "sell": 15526,
+        "net": -8103
+      },
+      {
+        "stock_id": "2105",
+        "stock_name": "正新",
+        "buy": 2497,
+        "sell": 10491,
+        "net": -7994
+      },
+      {
+        "stock_id": "1308",
+        "stock_name": "亞聚",
+        "buy": 3196,
+        "sell": 8019,
+        "net": -4823
+      }
+    ]
   },
   "margin": {
     "margin_balance": null,
@@ -116,13 +187,13 @@
   "usd_index": [
     {
       "date": "2026-03-25",
-      "close": 99.33
+      "close": 99.36
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-03-25",
-      "close": 158.89
+      "close": 158.86
     }
   ],
   "vix": {
