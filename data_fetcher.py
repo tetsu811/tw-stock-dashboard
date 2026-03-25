@@ -95,7 +95,8 @@ def _finmind_fetch(dataset, data_id, start_date, end_date):
             else:
                 msg = data.get("msg", "unknown")
                 status = data.get("status", "?")
-                print(f"    [FinMind] ❌ {dataset}: status={status}, msg={msg}")
+                data_len = len(data.get("data", []))
+                print(f"    [FinMind] ⚠️ {dataset}: status={status}, msg={msg}, data_count={data_len} (可能今日資料尚未發布)")
         else:
             print(f"    [FinMind] ❌ {dataset}: 無回應")
     except Exception as e:
@@ -428,8 +429,22 @@ def fetch_foreign_top10(date_str=None):
 
     try:
         data = resp.json()
-        if "data" in data and len(data["data"]) > 0:
-            for row in data["data"]:
+        print(f"  [TWT38U] keys={list(data.keys())}")
+        if data.get("fields"):
+            print(f"  [TWT38U] fields={data['fields']}")
+        # 嘗試找所有 data 表 (可能買賣分開: data=買超, data1=賣超)
+        all_rows = []
+        for dk in sorted(data.keys()):
+            if dk.startswith("data") and isinstance(data[dk], list):
+                print(f"  [TWT38U] {dk}: {len(data[dk])} rows")
+                if data[dk]:
+                    print(f"  [TWT38U] {dk} sample: {data[dk][0]}")
+                all_rows.extend(data[dk])
+
+        if all_rows:
+            for row in all_rows:
+                if not isinstance(row, list) or len(row) < 5:
+                    continue
                 stock_id = str(row[0]).strip()
                 stock_name = str(row[1]).strip().replace("*", "").strip()
                 if not stock_name or len(stock_name) < 1:
@@ -453,11 +468,21 @@ def fetch_foreign_top10(date_str=None):
             result["top_buy"] = sorted(result["top_buy"], key=lambda x: x["net"], reverse=True)[:10]
             result["top_sell"] = sorted(result["top_sell"], key=lambda x: x["net"])[:10]
             print(f"  [TWT38U] ✅ 買超 {len(result['top_buy'])} 檔, 賣超 {len(result['top_sell'])} 檔")
+
+            # 如果只有買超沒有賣超，用 T86 補充賣超
+            if result["top_buy"] and not result["top_sell"]:
+                print("  [TWT38U] 賣超為空，用 T86 補充...")
+                t86_result = _fetch_foreign_top10_from_t86(date_str)
+                if t86_result.get("top_sell"):
+                    result["top_sell"] = t86_result["top_sell"]
+                    print(f"  [T86] ✅ 補充賣超 {len(result['top_sell'])} 檔")
         else:
             print("  [TWT38U] 無資料，使用 T86 備用")
             return _fetch_foreign_top10_from_t86(date_str)
     except Exception as e:
         print(f"  [錯誤] 解析外資排行失敗: {e}")
+        import traceback
+        traceback.print_exc()
         return _fetch_foreign_top10_from_t86(date_str)
 
     # 確保所有股票都有公司名稱
@@ -644,8 +669,8 @@ def fetch_margin_trading(date_str=None):
         try:
             oa_url = "https://openapi.twse.com.tw/v1/exchangeReport/TWT93U"
             resp_oa = _safe_get(oa_url, timeout=12)
-            if resp_oa:
-                oa_data = resp_oa.json()
+            if resp_oa and resp_oa.text.strip():
+                oa_data = resp_oa.json() if resp_oa.text.strip().startswith('[') or resp_oa.text.strip().startswith('{') else None
                 if isinstance(oa_data, list) and len(oa_data) > 0:
                     print(f"    [TWT93U] 共 {len(oa_data)} 筆, keys={list(oa_data[0].keys())}")
                     for item in oa_data:
@@ -696,11 +721,19 @@ def fetch_margin_trading(date_str=None):
                 resp4 = _safe_get(url4, params4, timeout=8)
                 if resp4:
                     data4 = resp4.json()
-                    if "data" in data4 and "quote" in data4["data"]:
-                        val = data4["data"]["quote"].get("6") or data4["data"]["quote"].get("closePrice")
+                    inner = data4.get("data") if isinstance(data4, dict) else None
+                    quote4 = inner.get("quote") if isinstance(inner, dict) else None
+                    if isinstance(quote4, dict):
+                        val = quote4.get("6") or quote4.get("closePrice")
                         if val:
                             result[key] = float(val)
                             print(f"    [鉅亨] ✅ {key}={val}")
+                    # 也嘗試 c 陣列
+                    elif isinstance(inner, dict) and inner.get("c"):
+                        closes = inner["c"]
+                        if closes:
+                            result[key] = float(closes[-1])
+                            print(f"    [鉅亨 c] ✅ {key}={closes[-1]}")
         except Exception as e:
             print(f"    [鉅亨] ❌ {e}")
 
@@ -984,12 +1017,31 @@ def _fetch_cnyes_chart(cnyes_symbol, days=30):
     if resp2:
         try:
             data2 = resp2.json()
-            quote = data2.get("data", {}).get("quote", {})
-            close_val = quote.get("6") or quote.get("closePrice") or quote.get("priceClose")
-            if close_val:
-                today_str = datetime.now().strftime("%Y-%m-%d")
-                print(f"  [鉅亨 quote] ✅ {cnyes_symbol} = {close_val}")
-                return [{"date": today_str, "close": round(float(close_val), 2)}]
+            # 安全取得 data 和 quote (可能是 None)
+            inner_data = data2.get("data") if isinstance(data2, dict) else None
+            if inner_data is None:
+                inner_data = {}
+
+            # 嘗試從 quote 取得
+            quote = inner_data.get("quote") if isinstance(inner_data, dict) else None
+            if isinstance(quote, dict):
+                close_val = quote.get("6") or quote.get("closePrice") or quote.get("priceClose")
+                if close_val:
+                    today_str = datetime.now().strftime("%Y-%m-%d")
+                    print(f"  [鉅亨 quote] ✅ {cnyes_symbol} = {close_val}")
+                    return [{"date": today_str, "close": round(float(close_val), 2)}]
+
+            # 嘗試從 c (close) 陣列取最後一筆
+            closes = inner_data.get("c", []) if isinstance(inner_data, dict) else []
+            timestamps = inner_data.get("t", []) if isinstance(inner_data, dict) else []
+            if closes:
+                last_close = closes[-1]
+                if last_close is not None:
+                    today_str = datetime.now().strftime("%Y-%m-%d")
+                    if timestamps:
+                        today_str = datetime.fromtimestamp(timestamps[-1]).strftime("%Y-%m-%d")
+                    print(f"  [鉅亨 quote/c] ✅ {cnyes_symbol} = {last_close}")
+                    return [{"date": today_str, "close": round(float(last_close), 2)}]
         except Exception as e:
             print(f"  [鉅亨 quote] ❌ {cnyes_symbol}: {e}")
 
@@ -1902,7 +1954,6 @@ def fetch_margin_maintenance_ratio(date_str=None):
             if resp3.status_code == 200:
                 soup = BeautifulSoup(resp3.text, "html.parser")
                 text = soup.get_text()
-                import re
                 patterns = [
                     r'整體.*?維持率.*?(\d{2,3}\.?\d*)\s*%',
                     r'維持率.*?(\d{2,3}\.?\d*)\s*%',
@@ -1978,12 +2029,20 @@ def fetch_margin_maintenance_ratio(date_str=None):
             resp5 = _safe_get(url5, params5, timeout=8)
             if resp5:
                 data5 = resp5.json()
-                if "data" in data5 and "quote" in data5["data"]:
-                    quote = data5["data"]["quote"]
-                    val = quote.get("6") or quote.get("closePrice")
+                inner5 = data5.get("data") if isinstance(data5, dict) else None
+                quote5 = inner5.get("quote") if isinstance(inner5, dict) else None
+                if isinstance(quote5, dict):
+                    val = quote5.get("6") or quote5.get("closePrice")
                     if val and 100 < float(val) < 300:
                         result["ratio"] = round(float(val), 1)
                         print(f"    [鉅亨] ✅ 融資維持率: {result['ratio']}%")
+                # 也嘗試 c 陣列
+                closes5 = inner5.get("c", []) if isinstance(inner5, dict) else []
+                if closes5 and result["ratio"] is None:
+                    val = float(closes5[-1])
+                    if 100 < val < 300:
+                        result["ratio"] = round(val, 1)
+                        print(f"    [鉅亨 c] ✅ 融資維持率: {result['ratio']}%")
         except Exception as e:
             print(f"    [鉅亨] ❌ {e}")
 
