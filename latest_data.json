@@ -1,6 +1,6 @@
 {
   "date": "20260325",
-  "generated_at": "2026-03-25 17:30:40",
+  "generated_at": "2026-03-25 18:30:56",
   "taiex": {
     "index": 33439.11,
     "change": 826.87,
@@ -187,13 +187,13 @@
   "usd_index": [
     {
       "date": "2026-03-25",
-      "close": 99.54
+      "close": 99.49
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-03-25",
-      "close": 159.2
+      "close": 159.28
     }
   ],
   "vix": {
@@ -207,10 +207,10 @@
     "change": 857.0,
     "change_pct": 2.61,
     "volume": null,
-    "settlement": 65796.0,
+    "settlement": 33623.0,
     "open": 33786.0,
-    "high": 33880.0,
-    "low": 33444.0,
+    "high": 35968.0,
+    "low": 31227.0,
     "contract_month": "202604"
   },
   "margin_ratio": {
@@ -218,7 +218,7 @@
     "date": "20260325"
   },
   "cnn_fg": {
-    "value": 19.8,
+    "value": 19.5,
     "label": "extreme fear",
     "prev_value": 16.9,
     "prev_label": null,
@@ -236,10 +236,15 @@
     "call_oi": 460879.0
   },
   "us10y": {
-    "value": null,
-    "date": null,
+    "value": 3.377,
+    "date": "2026-02-28",
     "prev_value": null,
-    "chart": []
+    "chart": [
+      {
+        "date": "2026-02-28",
+        "close": 3.377
+      }
+    ]
   },
   "futures_oi": {
     "foreign": {

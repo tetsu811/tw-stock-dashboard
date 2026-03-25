@@ -428,7 +428,7 @@
         <div class="header">
             <h1>台灣股市每日戰略儀表板</h1>
             <div class="date">2026/03/25 (星期三)</div>
-            <div class="update-time">資料更新時間: 2026-03-25 17:30:40</div>
+            <div class="update-time">資料更新時間: 2026-03-25 18:30:56</div>
         </div>
 
         <!-- ====== 加權指數 + 台指期 Hero ====== -->
@@ -481,11 +481,11 @@
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">最高</span>
-                        <span class="detail-value text-green">33,880</span>
+                        <span class="detail-value text-green">35,968</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">最低</span>
-                        <span class="detail-value text-red">33,444</span>
+                        <span class="detail-value text-red">31,227</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">成交量</span>
@@ -703,7 +703,7 @@
                     <span class="vix-badge" style="background: rgba(239,68,68,0.15); color: #ef4444;; margin-top:6px; display:inline-block;">extreme fear</span>
                     
                     <div style="font-size:13px; margin-top:8px;" class="text-green">
-                        ▲ 2.9
+                        ▲ 2.6
                     </div>
                     
                 </div>
@@ -923,7 +923,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💵</span> 美元指數 (DXY) · 近30天</div>
                 
-                <div class="metric-value text-blue">99.54</div>
+                <div class="metric-value text-blue">99.49</div>
                 
                 <div class="chart-container">
                     <canvas id="usdChart"></canvas>
@@ -933,7 +933,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💴</span> 美元兌日圓 (USD/JPY) · 近30天</div>
                 
-                <div class="metric-value text-purple">159.20</div>
+                <div class="metric-value text-purple">159.28</div>
                 
                 <div class="chart-container">
                     <canvas id="jpyChart"></canvas>
@@ -943,7 +943,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近7天</div>
                 <div style="display:flex; align-items:baseline; gap:8px;">
-                    <div class="metric-value text-cyan">N/A%</div>
+                    <div class="metric-value text-cyan">3.377%</div>
                     
                 </div>
                 <div class="chart-container">
@@ -1037,9 +1037,9 @@
 
         // Chart data
         const vixData = {"labels": [], "values": []};
-        const usdData = {"labels": ["03-25"], "values": [99.54]};
-        const jpyData = {"labels": ["03-25"], "values": [159.2]};
-        const us10yData = {"labels": [], "values": []};
+        const usdData = {"labels": ["03-25"], "values": [99.49]};
+        const jpyData = {"labels": ["03-25"], "values": [159.28]};
+        const us10yData = {"labels": ["02-28"], "values": [3.377]};
 
         function buildAllCharts() {
             chartDefaults = getChartDefaults();
