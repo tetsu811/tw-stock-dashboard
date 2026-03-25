@@ -1,6 +1,6 @@
 {
   "date": "20260325",
-  "generated_at": "2026-03-25 10:00:09",
+  "generated_at": "2026-03-25 17:30:40",
   "taiex": {
     "index": 33439.11,
     "change": 826.87,
@@ -11,13 +11,13 @@
     "date": "20260325"
   },
   "institutional": {
-    "foreign_buy": 263229240423.0,
-    "foreign_sell": 226901714135.0,
-    "foreign_net": 36327526288.0,
+    "foreign_buy": 272641708278.0,
+    "foreign_sell": 235166944490.0,
+    "foreign_net": 37474763788.0,
     "foreign_prev_net": -12305739413.0,
-    "trust_buy": 9170753187.0,
-    "trust_sell": 7881959040.0,
-    "trust_net": 1288794147.0,
+    "trust_buy": 9785612485.0,
+    "trust_sell": 8627131795.0,
+    "trust_net": 1158480690.0,
     "trust_prev_net": 2379609569.0,
     "dealer_net": 3579929011.0,
     "dealer_buy": 9400680727.0,
@@ -26,82 +26,82 @@
   "foreign_top10": {
     "top_buy": [
       {
-        "stock_id": "00919",
-        "stock_name": "群益台灣精選高息",
-        "buy": 28637,
-        "sell": 4707,
-        "net": 23930
+        "stock_id": "*",
+        "stock_name": "2344",
+        "buy": null,
+        "sell": 43005,
+        "net": 99516
       },
       {
-        "stock_id": "00991A",
-        "stock_name": "主動復華未來50",
-        "buy": 33637,
-        "sell": 10351,
-        "net": 23286
+        "stock_id": "",
+        "stock_name": "3481",
+        "buy": null,
+        "sell": 83813,
+        "net": 87745
       },
       {
-        "stock_id": "00990A",
-        "stock_name": "主動元大AI新經濟",
-        "buy": 25403,
-        "sell": 2222,
-        "net": 23181
+        "stock_id": "",
+        "stock_name": "6770",
+        "buy": null,
+        "sell": 64106,
+        "net": 86202
       },
       {
-        "stock_id": "2313",
-        "stock_name": "華通",
-        "buy": 30526,
-        "sell": 7362,
-        "net": 23164
+        "stock_id": "*",
+        "stock_name": "2330",
+        "buy": null,
+        "sell": 32980,
+        "net": 32001
       },
       {
-        "stock_id": "00981A",
-        "stock_name": "主動統一台股增長",
-        "buy": 34855,
-        "sell": 12678,
-        "net": 22177
+        "stock_id": "",
+        "stock_name": "1802",
+        "buy": null,
+        "sell": 22624,
+        "net": 31565
       },
       {
-        "stock_id": "00992A",
-        "stock_name": "主動群益科技創新",
-        "buy": 19387,
-        "sell": 4477,
-        "net": 14910
+        "stock_id": "",
+        "stock_name": "2489",
+        "buy": null,
+        "sell": 14178,
+        "net": 30051
       },
       {
-        "stock_id": "2367",
-        "stock_name": "燿華",
-        "buy": 30304,
-        "sell": 15768,
-        "net": 14536
+        "stock_id": "",
+        "stock_name": "2408",
+        "buy": null,
+        "sell": 31643,
+        "net": 27921
       },
       {
-        "stock_id": "00982A",
-        "stock_name": "主動群益台灣強棒",
-        "buy": 13646,
-        "sell": 1829,
-        "net": 11817
+        "stock_id": "",
+        "stock_name": "2303",
+        "buy": null,
+        "sell": 30410,
+        "net": 27009
       },
       {
-        "stock_id": "2317",
-        "stock_name": "鴻海",
-        "buy": 23285,
-        "sell": 13680,
-        "net": 9605
+        "stock_id": "",
+        "stock_name": "2887",
+        "buy": null,
+        "sell": 28164,
+        "net": 25881
       },
       {
-        "stock_id": "00632R",
-        "stock_name": "元大台灣50反1",
-        "buy": 9758,
-        "sell": 330,
-        "net": 9428
+        "stock_id": "",
+        "stock_name": "2409",
+        "buy": null,
+        "sell": 12757,
+        "net": 25279
       }
     ],
     "top_sell": [
       {
         "stock_id": "2344",
         "stock_name": "華邦電",
-        "buy": 38905,
-        "sell": 95416,
+        "buy": 43005,
+        "sell": 99516,
         "net": -56510
       },
       {
@@ -187,13 +187,13 @@
   "usd_index": [
     {
       "date": "2026-03-25",
-      "close": 99.36
+      "close": 99.54
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-03-25",
-      "close": 158.86
+      "close": 159.2
     }
   ],
   "vix": {
@@ -218,7 +218,7 @@
     "date": "20260325"
   },
   "cnn_fg": {
-    "value": 17.7,
+    "value": 19.8,
     "label": "extreme fear",
     "prev_value": 16.9,
     "prev_label": null,
