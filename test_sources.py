@@ -512,10 +512,136 @@ def test_foreign():
 
 
 # ============================================================
+def test_vix():
+    """測試 VIX 指數資料來源"""
+    print(f"\n{'='*60}")
+    print("😱 VIX 指數")
+    print(f"{'='*60}")
+
+    # 1. cnyes GI:VIX
+    def t_cnyes_vix():
+        url = "https://ws.api.cnyes.com/ws/api/v1/charting/history"
+        end_ts = int(time.time())
+        start_ts = end_ts - 10 * 86400
+        params = {"resolution": "D", "symbol": "GI:VIX", "from": str(start_ts), "to": str(end_ts)}
+        resp = requests.get(url, params=params, headers=HEADERS, timeout=10)
+        data = resp.json()
+        chart_data = data.get("data", {})
+        if chart_data is None:
+            return f"data=null (cnyes 不提供此 symbol 的資料)"
+        closes = chart_data.get("c", []) if isinstance(chart_data, dict) else []
+        if closes:
+            return f"最新: {closes[-1]}, 共 {len(closes)} 筆"
+        return None
+    test("cnyes GI:VIX", t_cnyes_vix)
+
+    # 2. Stooq ^vix
+    def t_stooq_vix():
+        url = "https://stooq.com/q/d/l/?s=^vix&i=d"
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+        lines = resp.text.strip().split("\n")
+        if len(lines) > 1 and "Date" in lines[0]:
+            last_line = lines[-1].split(",")
+            return f"日期={last_line[0]}, 收盤={last_line[4]}, 共 {len(lines)-1} 筆"
+        return None
+    test("Stooq ^vix", t_stooq_vix)
+
+    # 3. FRED VIXCLS
+    def t_fred_vix():
+        end = datetime.now().strftime("%Y-%m-%d")
+        start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS&cosd={start}&coed={end}"
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+        lines = resp.text.strip().split("\n")
+        if len(lines) > 1 and "DATE" in lines[0].upper():
+            valid_lines = [l for l in lines[1:] if l.split(",")[1].strip() not in ["", "."]]
+            if valid_lines:
+                last = valid_lines[-1].split(",")
+                return f"日期={last[0]}, 值={last[1]}, 共 {len(valid_lines)} 筆"
+        return None
+    test("FRED VIXCLS", t_fred_vix)
+
+    # 4. investing.com VIX
+    def t_investing_vix():
+        url = "https://api.investing.com/api/financialdata/44336/historical/chart/"
+        params = {"period": "P1M", "interval": "P1D", "pointscount": 10}
+        headers = {"User-Agent": "Mozilla/5.0", "domain-id": "www.investing.com", "Referer": "https://www.investing.com/"}
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        data = resp.json()
+        items = data.get("data", [])
+        if items:
+            return f"最新: {items[-1]}, 共 {len(items)} 筆"
+        return None
+    test("investing.com VIX (pair_id=44336)", t_investing_vix)
+
+
+def test_us10y():
+    """測試 US10Y 資料來源"""
+    print(f"\n{'='*60}")
+    print("🏛️ 美國10年期公債殖利率")
+    print(f"{'='*60}")
+
+    # 1. cnyes GI:US10Y
+    def t_cnyes_us10y():
+        url = "https://ws.api.cnyes.com/ws/api/v1/charting/history"
+        end_ts = int(time.time())
+        start_ts = end_ts - 10 * 86400
+        params = {"resolution": "D", "symbol": "GI:US10Y", "from": str(start_ts), "to": str(end_ts)}
+        resp = requests.get(url, params=params, headers=HEADERS, timeout=10)
+        data = resp.json()
+        chart_data = data.get("data", {})
+        if chart_data is None:
+            return f"data=null (cnyes 不提供此 symbol)"
+        closes = chart_data.get("c", []) if isinstance(chart_data, dict) else []
+        if closes:
+            return f"最新: {closes[-1]}, 共 {len(closes)} 筆"
+        return None
+    test("cnyes GI:US10Y", t_cnyes_us10y)
+
+    # 2. FRED DGS10
+    def t_fred_us10y():
+        end = datetime.now().strftime("%Y-%m-%d")
+        start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10&cosd={start}&coed={end}"
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+        lines = resp.text.strip().split("\n")
+        if len(lines) > 1 and "DATE" in lines[0].upper():
+            valid_lines = [l for l in lines[1:] if l.split(",")[1].strip() not in ["", "."]]
+            if valid_lines:
+                last = valid_lines[-1].split(",")
+                return f"日期={last[0]}, 值={last[1]}, 共 {len(valid_lines)} 筆"
+        return None
+    test("FRED DGS10 (最權威來源)", t_fred_us10y)
+
+    # 3. Stooq 10usy.b
+    def t_stooq_us10y():
+        url = "https://stooq.com/q/d/l/?s=10usy.b&i=d"
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+        lines = resp.text.strip().split("\n")
+        if len(lines) > 1 and "Date" in lines[0]:
+            last_line = lines[-1].split(",")
+            return f"日期={last_line[0]}, 收盤={last_line[4]}, 共 {len(lines)-1} 筆"
+        return None
+    test("Stooq 10usy.b", t_stooq_us10y)
+
+    # 4. investing.com US10Y
+    def t_investing_us10y():
+        url = "https://api.investing.com/api/financialdata/23705/historical/chart/"
+        params = {"period": "P1M", "interval": "P1D", "pointscount": 10}
+        headers = {"User-Agent": "Mozilla/5.0", "domain-id": "www.investing.com", "Referer": "https://www.investing.com/"}
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        data = resp.json()
+        items = data.get("data", [])
+        if items:
+            return f"最新: {items[-1]}, 共 {len(items)} 筆"
+        return None
+    test("investing.com US10Y (pair_id=23705)", t_investing_us10y)
+
+
 if __name__ == "__main__":
     section = "all"
     if len(sys.argv) > 1:
-        if sys.argv[-1] in ["dxy", "margin", "breadth", "ratio", "foreign", "all"]:
+        if sys.argv[-1] in ["dxy", "margin", "breadth", "ratio", "foreign", "vix", "us10y", "all"]:
             section = sys.argv[-1]
         elif "--section" in sys.argv:
             idx = sys.argv.index("--section")
@@ -536,6 +662,10 @@ if __name__ == "__main__":
         test_ratio()
     if section in ["all", "foreign"]:
         test_foreign()
+    if section in ["all", "vix"]:
+        test_vix()
+    if section in ["all", "us10y"]:
+        test_us10y()
 
     print(f"\n{'='*60}")
     print(f"📊 結果: ✅ {passed} 通過, ❌ {failed} 失敗")

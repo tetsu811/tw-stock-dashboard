@@ -1,5 +1,5 @@
 """
-台灣股市戰略儀表板 - 資料抓取模組 v10
+台灣股市戰略儀表板 - 資料抓取模組 v10.2
 資料來源：
   - FinMind API (免費無需 token, 每小時 300 次)
   - 台灣證券交易所 (TWSE) 開放資料 API + OpenAPI v1
@@ -540,7 +540,203 @@ def _fetch_foreign_top10_from_t86(date_str):
 
 
 # ============================================================
-# 4. 融資融券
+# 4. KGI 凱基證券大盤動態 (共用工具，融資融券 + 融資維持率)
+# ============================================================
+_kgi_cache = {}  # 快取，避免重複抓取
+
+def _fetch_kgi_market_overview():
+    """
+    從 KGI 凱基證券「大盤動態」頁面抓取融資融券 + 融資維持率等資訊
+    URL: https://www.kgi.com.tw/zh-tw/product-market/stock-market-overview/tw-stock-market/tw-stock-market-detail
+    回傳: {margin_balance, margin_change, short_balance, short_change, margin_balance_amount, margin_ratio}
+    """
+    if _kgi_cache:
+        return _kgi_cache
+
+    result = {
+        "margin_balance": None, "margin_change": None,
+        "short_balance": None, "short_change": None,
+        "margin_balance_amount": None,
+        "margin_ratio": None,
+    }
+
+    # KGI 大盤動態有多個子頁面，用不同的 a/b 參數
+    # 融資融券頁面
+    kgi_pages = [
+        {
+            "a": "B658010E71E243C4A1D6B5F7BE914BDC",
+            "b": "5D48401A7CE148CD8ABAC965F9B5AFBF",
+            "desc": "融資融券/維持率",
+        },
+        {
+            "a": "B7931C45AC7948ACB7E589261FFC5EDC",
+            "b": "D992537A418945A890401DD84B3620B2",
+            "desc": "大盤動態(備用)",
+        },
+    ]
+
+    kgi_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.kgi.com.tw/zh-tw/product-market/stock-market-overview/tw-stock-market",
+        "Connection": "keep-alive",
+        "Cache-Control": "no-cache",
+    }
+
+    for page_info in kgi_pages:
+        try:
+            kgi_url = "https://www.kgi.com.tw/zh-tw/product-market/stock-market-overview/tw-stock-market/tw-stock-market-detail"
+            kgi_params = {"a": page_info["a"], "b": page_info["b"]}
+            print(f"  [KGI] 嘗試 {page_info['desc']}...")
+            resp = requests.get(kgi_url, params=kgi_params, headers=kgi_headers, timeout=15)
+
+            if resp.status_code != 200:
+                print(f"    [KGI] HTTP {resp.status_code}")
+                continue
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            page_text = soup.get_text()
+
+            # Debug: 看看頁面有什麼關鍵字
+            has_margin = "融資" in page_text
+            has_ratio = "維持率" in page_text
+            print(f"    [KGI] 頁面長度={len(page_text)}, 含融資={has_margin}, 含維持率={has_ratio}")
+
+            if not has_margin and not has_ratio:
+                continue
+
+            # ===== 方法A: 搜尋表格 =====
+            tables = soup.find_all("table")
+            print(f"    [KGI] 找到 {len(tables)} 個表格")
+
+            for table in tables:
+                rows = table.find_all("tr")
+                for row in rows:
+                    cells = row.find_all(["td", "th"])
+                    cell_texts = [c.get_text(strip=True) for c in cells]
+                    row_text = " ".join(cell_texts)
+
+                    # 融資餘額 (張數，通常在 100000~800000 之間)
+                    if "融資" in row_text and "餘額" in row_text and result["margin_balance"] is None:
+                        for ct in cell_texts:
+                            val = _parse_number(ct)
+                            if val and 50000 < val < 2000000:
+                                result["margin_balance"] = val
+                                print(f"    [KGI table] 融資餘額={val}")
+                                break
+
+                    # 融資增減 (變動)
+                    if "融資" in row_text and ("增減" in row_text or "變動" in row_text) and result["margin_change"] is None:
+                        for ct in cell_texts:
+                            val = _parse_number(ct)
+                            if val is not None and abs(val) < 100000:
+                                result["margin_change"] = int(val)
+                                print(f"    [KGI table] 融資增減={val}")
+                                break
+
+                    # 融券餘額
+                    if "融券" in row_text and "餘額" in row_text and result["short_balance"] is None:
+                        for ct in cell_texts:
+                            val = _parse_number(ct)
+                            if val and 1000 < val < 2000000:
+                                result["short_balance"] = val
+                                print(f"    [KGI table] 融券餘額={val}")
+                                break
+
+                    # 融資維持率
+                    if "維持率" in row_text and result["margin_ratio"] is None:
+                        for ct in cell_texts:
+                            val = _parse_number(ct.replace("%", ""))
+                            if val and 100 < val < 300:
+                                result["margin_ratio"] = round(val, 1)
+                                print(f"    [KGI table] 融資維持率={val}%")
+                                break
+
+                    # 融資金額
+                    if "融資" in row_text and "金額" in row_text and result["margin_balance_amount"] is None:
+                        for ct in cell_texts:
+                            val = _parse_number(ct)
+                            if val and val > 1000:
+                                result["margin_balance_amount"] = val
+                                print(f"    [KGI table] 融資金額={val}")
+                                break
+
+            # ===== 方法B: 正則搜尋頁面文字 =====
+            if result["margin_balance"] is None:
+                # 融資餘額（張）
+                patterns = [
+                    r'融資[^\d]*?餘額[^\d]*?([\d,]+)',
+                    r'融資餘額[^\d]*?([\d,]+)',
+                ]
+                for pat in patterns:
+                    m = re.search(pat, page_text)
+                    if m:
+                        val = _parse_number(m.group(1))
+                        if val and 50000 < val < 2000000:
+                            result["margin_balance"] = val
+                            print(f"    [KGI regex] 融資餘額={val}")
+                            break
+
+            if result["margin_ratio"] is None:
+                patterns = [
+                    r'(?:整體)?融資維持率[^\d]*?(\d{2,3}\.?\d*)\s*%?',
+                    r'維持率[^\d]*?(\d{2,3}\.?\d*)\s*%?',
+                ]
+                for pat in patterns:
+                    m = re.search(pat, page_text)
+                    if m:
+                        val = float(m.group(1))
+                        if 100 < val < 300:
+                            result["margin_ratio"] = round(val, 1)
+                            print(f"    [KGI regex] 融資維持率={val}%")
+                            break
+
+            # ===== 方法C: 搜尋 script 標籤中的 JSON/數據 =====
+            scripts = soup.find_all("script")
+            for s in scripts:
+                if s.string and ("融資" in s.string or "margin" in s.string.lower()):
+                    print(f"    [KGI script] 找到含融資的 script ({len(s.string)} 字元)")
+                    # 嘗試找 JSON 數據
+                    json_matches = re.findall(r'\{[^{}]*"[^"]*"[^{}]*\}', s.string)
+                    for jm in json_matches[:5]:
+                        try:
+                            obj = json.loads(jm)
+                            for k, v in obj.items():
+                                if "融資" in str(k) and "餘額" in str(k):
+                                    val = _parse_number(str(v))
+                                    if val and val > 50000:
+                                        result["margin_balance"] = val
+                                        print(f"    [KGI json] 融資餘額={val}")
+                        except:
+                            pass
+                    # 找數值
+                    if result["margin_ratio"] is None:
+                        nums = re.findall(r'(\d{2,3}\.\d{1,2})', s.string)
+                        for n in nums:
+                            val = float(n)
+                            if 100 < val < 300 and result["margin_ratio"] is None:
+                                result["margin_ratio"] = round(val, 1)
+                                print(f"    [KGI script num] 融資維持率={val}%")
+                                break
+
+            # 如果找到任何數據就跳出
+            if result["margin_balance"] or result["margin_ratio"]:
+                break
+
+        except Exception as e:
+            print(f"    [KGI] ❌ {page_info['desc']}: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # 更新快取
+    _kgi_cache.update(result)
+    return result
+
+
+# ============================================================
+# 4b. 融資融券
 # ============================================================
 def fetch_margin_trading(date_str=None):
     """
@@ -736,6 +932,61 @@ def fetch_margin_trading(date_str=None):
                             print(f"    [鉅亨 c] ✅ {key}={closes[-1]}")
         except Exception as e:
             print(f"    [鉅亨] ❌ {e}")
+
+    # ===== 方法6 (備用): KGI 凱基證券 大盤動態 =====
+    if result["margin_balance"] is None:
+        print("  [備用6] 嘗試 KGI 凱基證券...")
+        kgi_margin = _fetch_kgi_market_overview()
+        if kgi_margin:
+            if kgi_margin.get("margin_balance") is not None:
+                result["margin_balance"] = kgi_margin["margin_balance"]
+            if kgi_margin.get("margin_change") is not None:
+                result["margin_change"] = kgi_margin["margin_change"]
+            if kgi_margin.get("short_balance") is not None:
+                result["short_balance"] = kgi_margin["short_balance"]
+            if kgi_margin.get("short_change") is not None:
+                result["short_change"] = kgi_margin["short_change"]
+            if kgi_margin.get("margin_balance_amount") is not None:
+                result["margin_balance_amount"] = kgi_margin["margin_balance_amount"]
+            if result["margin_balance"] is not None:
+                print(f"    [KGI] ✅ 融資={result['margin_balance']}, 融券={result['short_balance']}")
+
+    # ===== 方法7 (備用): Goodinfo 台灣股市資訊網 =====
+    if result["margin_balance"] is None:
+        print("  [備用7] 嘗試 Goodinfo...")
+        try:
+            gi_url = "https://goodinfo.tw/tw/ShowStkMarginAll.asp"
+            gi_headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml",
+                "Accept-Language": "zh-TW,zh;q=0.9",
+                "Referer": "https://goodinfo.tw/tw/",
+            }
+            resp_gi = requests.get(gi_url, headers=gi_headers, timeout=12)
+            if resp_gi.status_code == 200:
+                soup = BeautifulSoup(resp_gi.text, "html.parser")
+                tables = soup.find_all("table", {"id": re.compile("tblDetail|tblStockList")})
+                if not tables:
+                    tables = soup.find_all("table")
+                for table in tables:
+                    rows = table.find_all("tr")
+                    for row in rows:
+                        cells = row.find_all(["td", "th"])
+                        cell_texts = [c.get_text(strip=True) for c in cells]
+                        row_text = " ".join(cell_texts)
+                        if "融資餘額" in row_text or "融資" in row_text:
+                            for ct in cell_texts:
+                                val = _parse_number(ct)
+                                if val and val > 100000:
+                                    result["margin_balance"] = val
+                                    print(f"    [Goodinfo] ✅ 融資餘額={val}")
+                                    break
+                            if result["margin_balance"]:
+                                break
+                    if result["margin_balance"]:
+                        break
+        except Exception as e:
+            print(f"    [Goodinfo] ❌ {e}")
 
     if result["margin_balance"] is None:
         print("  ⚠️ 融資融券: 所有方法均失敗")
@@ -1049,6 +1300,118 @@ def _fetch_cnyes_chart(cnyes_symbol, days=30):
     return []
 
 
+def _fetch_stooq_data(symbol, days=10):
+    """
+    從 stooq.com 取得歷史資料 (免費 CSV，無需認證)
+    symbol: stooq 代號, 如 "^vix", "10usy.b", "^spx"
+    """
+    print(f"  [Stooq] 取得 {symbol}...")
+    url = f"https://stooq.com/q/d/l/?s={symbol}&i=d"
+    try:
+        resp = requests.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }, timeout=15)
+        if resp.status_code == 200 and resp.text.strip():
+            lines = resp.text.strip().split("\n")
+            if len(lines) > 1 and "Date" in lines[0]:
+                points = []
+                # CSV 格式: Date,Open,High,Low,Close,Volume
+                for line in lines[1:]:
+                    fields = line.strip().split(",")
+                    if len(fields) >= 5:
+                        try:
+                            date_str = fields[0].strip()
+                            close_val = float(fields[4].strip())
+                            points.append({"date": date_str, "close": round(close_val, 4)})
+                        except (ValueError, IndexError):
+                            continue
+                if points:
+                    # 取最近 N 天
+                    points = points[-days:] if len(points) > days else points
+                    print(f"  [Stooq] ✅ {symbol} 共 {len(points)} 筆 (最新: {points[-1]['close']})")
+                    return points
+            else:
+                print(f"  [Stooq] ⚠️ {symbol} 回應格式不對: {lines[0][:80]}")
+    except Exception as e:
+        print(f"  [Stooq] ❌ {symbol}: {e}")
+    return []
+
+
+def _fetch_fred_data(series_id, days=10):
+    """
+    從 FRED (Federal Reserve Economic Data) 取得經濟數據
+    series_id: FRED 序列 ID, 如 "DGS10" (10年公債殖利率), "VIXCLS" (VIX)
+    無需 API key 即可使用 CSV 下載
+    """
+    print(f"  [FRED] 取得 {series_id}...")
+    end_date = datetime.now().strftime("%Y-%m-%d")
+    start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}&cosd={start_date}&coed={end_date}"
+    try:
+        resp = requests.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }, timeout=15)
+        if resp.status_code == 200 and resp.text.strip():
+            lines = resp.text.strip().split("\n")
+            if len(lines) > 1 and "DATE" in lines[0].upper():
+                points = []
+                for line in lines[1:]:
+                    fields = line.strip().split(",")
+                    if len(fields) >= 2:
+                        try:
+                            date_str = fields[0].strip()
+                            val_str = fields[1].strip()
+                            if val_str and val_str != "." and val_str != "":
+                                close_val = float(val_str)
+                                points.append({"date": date_str, "close": round(close_val, 4)})
+                        except (ValueError, IndexError):
+                            continue
+                if points:
+                    points = points[-days:] if len(points) > days else points
+                    print(f"  [FRED] ✅ {series_id} 共 {len(points)} 筆 (最新: {points[-1]['close']})")
+                    return points
+            else:
+                print(f"  [FRED] ⚠️ {series_id} 回應格式不對: {lines[0][:80]}")
+    except Exception as e:
+        print(f"  [FRED] ❌ {series_id}: {e}")
+    return []
+
+
+def _fetch_wsj_quote(symbol_type):
+    """
+    從 WSJ Market Data 取得最新報價 (輕量級備用)
+    symbol_type: "vix" 或 "us10y"
+    """
+    print(f"  [WSJ] 取得 {symbol_type}...")
+    try:
+        if symbol_type == "vix":
+            url = "https://www.wsj.com/market-data/quotes/index/VIX"
+        elif symbol_type == "us10y":
+            url = "https://www.wsj.com/market-data/bonds/treasuries"
+        else:
+            return []
+        resp = requests.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml",
+        }, timeout=10)
+        if resp.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(resp.text, "html.parser")
+            # 嘗試多種可能的 CSS 選擇器
+            for selector in ["span.WSJTheme--lastPrice", "span[data-id='last']",
+                             "td.WSJTheme--lastPrice", ".cr_valueWrapper .value"]:
+                el = soup.select_one(selector)
+                if el:
+                    val = _parse_number(el.get_text(strip=True))
+                    if val and val > 0:
+                        today_str = datetime.now().strftime("%Y-%m-%d")
+                        print(f"  [WSJ] ✅ {symbol_type} = {val}")
+                        return [{"date": today_str, "close": round(float(val), 4)}]
+    except Exception as e:
+        print(f"  [WSJ] ❌ {symbol_type}: {e}")
+    return []
+
+
 def _fetch_investing_data(pair_id, days=30):
     """
     從 investing.com API 取得歷史資料
@@ -1143,18 +1506,37 @@ def fetch_jpy_rate():
 def fetch_vix():
     """
     抓取 VIX 指數 (近7天含圖表資料)
-    鉅亨網代號: GI:VIX
+    多來源備援: 鉅亨網 → Stooq → FRED → investing.com
     """
     print("😱 抓取 VIX 指數 (近7天)...")
+    data = None
+
     # 方法1: 鉅亨網
     data = _fetch_cnyes_chart("GI:VIX", 10)
-    # 方法2: investing.com (VIX pair_id=44336)
+
+    # 方法2: Stooq (免費 CSV，非常穩定)
+    if not data:
+        data = _fetch_stooq_data("^vix", 10)
+
+    # 方法3: FRED VIXCLS (芝加哥選擇權交易所 VIX)
+    if not data:
+        data = _fetch_fred_data("VIXCLS", 10)
+
+    # 方法4: investing.com (VIX pair_id=44336)
     if not data:
         data = _fetch_investing_data(44336, 10)
+
+    # 方法5: 鉅亨網其他代號
+    if not data:
+        for sym in ["GI:CBVIX", "GI:VIX00", "TWG:VIX00"]:
+            data = _fetch_cnyes_chart(sym, 10)
+            if data:
+                break
+
     if not data:
         print("  ⚠️ VIX: 所有來源失敗")
 
-    data = data[-7:] if len(data) > 7 else data
+    data = data[-7:] if data and len(data) > 7 else (data or [])
     if data:
         return {
             "value": data[-1]["close"],
@@ -1244,7 +1626,7 @@ def fetch_taiex_futures(date_str=None):
 
 
 def _fetch_futures_backup(date_str):
-    """備用方案：從期交所 JSON API 取得期貨資料"""
+    """備用方案：從期交所 CSV 下載取得期貨資料 (含 header 動態解析)"""
     formatted_date = f"{date_str[:4]}/{date_str[4:6]}/{date_str[6:8]}"
     url = "https://www.taifex.com.tw/cht/3/futDataDown"
     params = {
@@ -1266,59 +1648,91 @@ def _fetch_futures_backup(date_str):
 
     try:
         lines = resp.text.strip().split("\n")
-        if len(lines) > 1:
-            # CSV 格式，找第一筆 TX 近月資料 (非 week/月合約)
-            found = False
-            for line in lines[1:]:
-                fields = [f.strip().strip('"') for f in line.split(",")]
-                if len(fields) < 8:
-                    continue
-                # 契約代碼在前幾個欄位
-                line_text = ",".join(fields[:3])
-                if "TX" not in line_text:
-                    continue
-                # 跳過小台(MTX)、微台(MXF)、電子期(TE)、金融期(TF)
-                if any(x in line_text for x in ["MTX", "MXF", "TE", "TF"]):
-                    continue
+        if len(lines) < 2:
+            return result
 
-                # 找到數值欄位 (收盤價在10000-50000之間)
-                for i in range(2, min(len(fields), 10)):
-                    val = _parse_number(fields[i])
-                    if val and 10000 < val < 50000:
-                        # 這可能是開盤價，往後找
-                        result["open"] = val
-                        result["high"] = _parse_number(fields[i+1]) if i+1 < len(fields) else None
-                        result["low"] = _parse_number(fields[i+2]) if i+2 < len(fields) else None
-                        result["close"] = _parse_number(fields[i+3]) if i+3 < len(fields) else None
-                        # 如果 close 不在合理範圍，嘗試其他排列
-                        if result["close"] is None or result["close"] < 10000:
-                            result["open"] = _parse_number(fields[3]) if len(fields) > 3 else None
-                            result["high"] = _parse_number(fields[4]) if len(fields) > 4 else None
-                            result["low"] = _parse_number(fields[5]) if len(fields) > 5 else None
-                            result["close"] = _parse_number(fields[6]) if len(fields) > 6 else None
-                        found = True
-                        break
+        # 解析 header 動態偵測欄位位置
+        header_fields = [f.strip().strip('"') for f in lines[0].split(",")]
+        print(f"    [期貨CSV] header ({len(header_fields)} 欄): {header_fields[:15]}")
 
-                if not found:
-                    # 嘗試固定欄位位置
-                    result["open"] = _parse_number(fields[3]) if len(fields) > 3 else None
-                    result["high"] = _parse_number(fields[4]) if len(fields) > 4 else None
-                    result["low"] = _parse_number(fields[5]) if len(fields) > 5 else None
-                    result["close"] = _parse_number(fields[6]) if len(fields) > 6 else None
-                    found = True
+        # 動態找欄位索引
+        col_map = {}
+        for i, h in enumerate(header_fields):
+            hl = h.lower().replace(" ", "")
+            if "開盤" in h or "open" in hl:
+                col_map["open"] = i
+            elif "最高" in h or "high" in hl:
+                col_map["high"] = i
+            elif "最低" in h or "low" in hl:
+                col_map["low"] = i
+            elif ("收盤" in h or "close" in hl) and "結算" not in h:
+                col_map["close"] = i
+            elif "漲跌價" in h or ("change" in hl and "%" not in h and "pct" not in hl):
+                col_map["change"] = i
+            elif "成交量" in h or ("volume" in hl and "金額" not in h):
+                col_map["volume"] = i
+            elif "結算" in h or "settlement" in hl:
+                col_map["settlement"] = i
+            elif "到期" in h or "月份" in h or "week" in hl:
+                col_map["month"] = i
 
-                if found and result["close"]:
-                    result["contract_month"] = fields[2] if len(fields) > 2 else None
-                    result["change"] = _parse_number(fields[7]) if len(fields) > 7 else None
-                    result["volume"] = _parse_number(fields[8]) if len(fields) > 8 else None
-                    result["settlement"] = _parse_number(fields[9]) if len(fields) > 9 else None
-                    if result["close"] and result["change"]:
-                        prev = result["close"] - result["change"]
-                        if prev != 0:
-                            result["change_pct"] = round(result["change"] / prev * 100, 2)
-                    break
+        print(f"    [期貨CSV] 欄位映射: {col_map}")
+
+        # 若 header 解析失敗，使用 TAIFEX 標準預設位置
+        # 標準格式: 日期(0), 契約(1), 到期月份(2), 開盤價(3), 最高價(4), 最低價(5), 收盤價(6), 漲跌價(7), 漲跌%(8), 成交量(9), 結算價(10), 未平倉量(11), 交易時段(12)
+        if "close" not in col_map:
+            col_map = {"open": 3, "high": 4, "low": 5, "close": 6, "change": 7, "volume": 9, "settlement": 10, "month": 2}
+            print(f"    [期貨CSV] 使用預設欄位映射: {col_map}")
+
+        for line in lines[1:]:
+            fields = [f.strip().strip('"') for f in line.split(",")]
+            if len(fields) < 8:
+                continue
+            # 契約代碼在前幾個欄位
+            line_text = ",".join(fields[:3])
+            if "TX" not in line_text:
+                continue
+            # 跳過小台(MTX)、微台(MXF)、電子期(TE)、金融期(TF)
+            if any(x in line_text for x in ["MTX", "MXF", "TE", "TF"]):
+                continue
+
+            # 使用動態欄位映射
+            close_idx = col_map.get("close", 6)
+            close_val = _parse_number(fields[close_idx]) if close_idx < len(fields) else None
+
+            if close_val and 10000 < close_val < 50000:
+                result["open"] = _parse_number(fields[col_map.get("open", 3)]) if col_map.get("open", 3) < len(fields) else None
+                result["high"] = _parse_number(fields[col_map.get("high", 4)]) if col_map.get("high", 4) < len(fields) else None
+                result["low"] = _parse_number(fields[col_map.get("low", 5)]) if col_map.get("low", 5) < len(fields) else None
+                result["close"] = close_val
+                result["change"] = _parse_number(fields[col_map.get("change", 7)]) if col_map.get("change", 7) < len(fields) else None
+                result["volume"] = _parse_number(fields[col_map.get("volume", 9)]) if col_map.get("volume", 9) < len(fields) else None
+                result["settlement"] = _parse_number(fields[col_map.get("settlement", 10)]) if col_map.get("settlement", 10) < len(fields) else None
+                result["contract_month"] = fields[col_map.get("month", 2)] if col_map.get("month", 2) < len(fields) else None
+
+                if result["close"] and result["change"]:
+                    prev = result["close"] - result["change"]
+                    if prev != 0:
+                        result["change_pct"] = round(result["change"] / prev * 100, 2)
+
+                # volume 可能被誤讀為漲跌%，檢查合理性
+                if result["volume"] is not None and result["volume"] < 100:
+                    # 可能讀到漲跌%而非成交量，嘗試下一個欄位
+                    alt_vol_idx = col_map.get("volume", 9) + 1
+                    if alt_vol_idx < len(fields):
+                        alt_vol = _parse_number(fields[alt_vol_idx])
+                        if alt_vol and alt_vol > 100:
+                            print(f"    [期貨CSV] volume 修正: {result['volume']} → {alt_vol} (idx {alt_vol_idx})")
+                            result["volume"] = alt_vol
+
+                print(f"    [期貨CSV] ✅ 收盤={result['close']}, 漲跌={result['change']}, 成交量={result['volume']}")
+                print(f"    [期貨CSV] 原始欄位: {fields[:13]}")
+                break
+
     except Exception as e:
         print(f"  [錯誤] 備用期貨解析失敗: {e}")
+        import traceback
+        traceback.print_exc()
 
     return result
 
@@ -1970,51 +2384,13 @@ def fetch_margin_maintenance_ratio(date_str=None):
         except Exception as e:
             print(f"    [Goodinfo] ❌ {e}")
 
-    # ===== 方法4: KGI 凱基證券頁面爬蟲 =====
+    # ===== 方法4: KGI 凱基證券 (共用快取) =====
     if result["ratio"] is None:
         print("  [方法4] 嘗試 KGI 凱基證券...")
-        try:
-            kgi_url = "https://www.kgi.com.tw/zh-tw/product-market/stock-market-overview/tw-stock-market/tw-stock-market-detail"
-            kgi_params = {
-                "a": "B658010E71E243C4A1D6B5F7BE914BDC",
-                "b": "5D48401A7CE148CD8ABAC965F9B5AFBF",
-            }
-            resp_kgi = requests.get(kgi_url, params=kgi_params, headers=HEADERS, timeout=12)
-            if resp_kgi.status_code == 200:
-                soup = BeautifulSoup(resp_kgi.text, "html.parser")
-                page_text = soup.get_text()
-                # 找維持率數字 (通常在 130-200 之間)
-                patterns = [
-                    r'(?:整體)?融資維持率[^\d]*?(\d{2,3}\.?\d*)\s*%?',
-                    r'維持率[^\d]*?(\d{2,3}\.?\d*)\s*%?',
-                    r'(\d{2,3}\.\d{1,2})\s*%',  # 找任何百分比
-                ]
-                for pattern in patterns:
-                    matches = re.findall(pattern, page_text)
-                    for m in matches:
-                        val = float(m)
-                        if 100 < val < 300:
-                            result["ratio"] = round(val, 1)
-                            print(f"    [KGI] ✅ 融資維持率: {result['ratio']}%")
-                            break
-                    if result["ratio"]:
-                        break
-                # 也嘗試找 JSON-LD 或 script 中的數據
-                if result["ratio"] is None:
-                    scripts = soup.find_all("script")
-                    for s in scripts:
-                        if s.string and ("維持率" in s.string or "maintenance" in s.string.lower()):
-                            nums = re.findall(r'(\d{2,3}\.\d{1,2})', s.string)
-                            for n in nums:
-                                val = float(n)
-                                if 100 < val < 300:
-                                    result["ratio"] = round(val, 1)
-                                    print(f"    [KGI script] ✅ 融資維持率: {result['ratio']}%")
-                                    break
-                            if result["ratio"]:
-                                break
-        except Exception as e:
-            print(f"    [KGI] ❌ {e}")
+        kgi_data = _fetch_kgi_market_overview()
+        if kgi_data and kgi_data.get("margin_ratio") is not None:
+            result["ratio"] = kgi_data["margin_ratio"]
+            print(f"    [KGI] ✅ 融資維持率: {result['ratio']}%")
 
     # ===== 方法5: 鉅亨網 API =====
     if result["ratio"] is None:
@@ -2277,18 +2653,67 @@ def fetch_put_call_ratio(date_str=None):
 def fetch_us10y():
     """
     抓取美國 10 年期公債殖利率
-    鉅亨網代號: GI:US10Y
+    多來源備援: 鉅亨網 → FRED → Stooq → investing.com
     """
     print("🏛️ 抓取美國10年期公債殖利率...")
+    data = None
+
     # 方法1: 鉅亨網
     data = _fetch_cnyes_chart("GI:US10Y", 10)
-    # 方法2: investing.com (US10Y pair_id=23705)
+
+    # 方法2: FRED DGS10 (美國財政部10年公債殖利率，最權威來源)
+    if not data:
+        data = _fetch_fred_data("DGS10", 10)
+
+    # 方法3: Stooq (免費 CSV)
+    if not data:
+        data = _fetch_stooq_data("10usy.b", 10)
+
+    # 方法4: investing.com (US10Y pair_id=23705)
     if not data:
         data = _fetch_investing_data(23705, 10)
+
+    # 方法5: 鉅亨網其他代號
+    if not data:
+        for sym in ["GI:US10YR", "GI:TNX", "TWG:US10Y"]:
+            data = _fetch_cnyes_chart(sym, 10)
+            if data:
+                break
+
+    # 方法6: US Treasury API (美國財政部官方)
+    if not data:
+        print("  [Treasury] 嘗試美國財政部 API...")
+        try:
+            end = datetime.now().strftime("%Y-%m-%d")
+            start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+            treas_url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates"
+            params = {
+                "filter": f"record_date:gte:{start},security_desc:eq:Treasury Bonds",
+                "sort": "-record_date",
+                "page[size]": "10",
+            }
+            resp = _safe_get(treas_url, params, timeout=10)
+            if resp:
+                tdata = resp.json()
+                items = tdata.get("data", [])
+                if items:
+                    points = []
+                    for item in items:
+                        rate = _parse_number(item.get("avg_interest_rate_amt", ""))
+                        d = item.get("record_date", "")
+                        if rate and d:
+                            points.append({"date": d, "close": round(rate, 4)})
+                    if points:
+                        points.sort(key=lambda x: x["date"])
+                        data = points[-10:]
+                        print(f"  [Treasury] ✅ 共 {len(data)} 筆")
+        except Exception as e:
+            print(f"  [Treasury] ❌ {e}")
+
     if not data:
         print("  ⚠️ US10Y: 所有來源失敗")
 
-    data = data[-7:] if len(data) > 7 else data
+    data = data[-7:] if data and len(data) > 7 else (data or [])
 
     if data:
         return {
