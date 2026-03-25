@@ -1,99 +1,99 @@
 {
-  "date": "20260324",
-  "generated_at": "2026-03-24 13:18:07",
+  "date": "20260325",
+  "generated_at": "2026-03-25 09:37:06",
   "taiex": {
-    "index": 32612.24,
-    "change": -110.26,
-    "change_pct": -0.34,
-    "volume": 690091065536.0,
-    "prev_volume": 712578117331.0,
-    "volume_change": -3.16,
-    "date": "20260324"
+    "index": null,
+    "change": null,
+    "change_pct": null,
+    "volume": null,
+    "prev_volume": null,
+    "volume_change": null,
+    "date": "20260325"
   },
   "institutional": {
-    "foreign_buy": 244972307741.0,
-    "foreign_sell": 257278047154.0,
-    "foreign_net": -12305739413.0,
-    "foreign_prev_net": -83922601792.0,
-    "trust_buy": 12126477693.0,
-    "trust_sell": 9746868124.0,
-    "trust_net": 2379609569.0,
-    "trust_prev_net": 10534823636.0,
-    "dealer_net": -1698808314.0,
-    "dealer_buy": 8188487740.0,
-    "dealer_sell": 9887296054.0
+    "foreign_buy": 263229240423.0,
+    "foreign_sell": 226901714135.0,
+    "foreign_net": 36327526288.0,
+    "foreign_prev_net": -12305739413.0,
+    "trust_buy": 9170753187.0,
+    "trust_sell": 7881959040.0,
+    "trust_net": 1288794147.0,
+    "trust_prev_net": 2379609569.0,
+    "dealer_net": 3579929011.0,
+    "dealer_buy": 9400680727.0,
+    "dealer_sell": 5820751716.0
   },
   "foreign_top10": {
     "top_buy": [
       {
         "stock_id": "*",
-        "stock_name": "6770",
-        "buy": null,
-        "sell": 76913,
-        "net": 157719
-      },
-      {
-        "stock_id": "*",
-        "stock_name": "3481",
-        "buy": null,
-        "sell": 97231,
-        "net": 139720
-      },
-      {
-        "stock_id": "*",
         "stock_name": "2344",
         "buy": null,
-        "sell": 58968,
-        "net": 73611
+        "sell": 43005,
+        "net": 99516
       },
       {
         "stock_id": "",
-        "stock_name": "00981A",
+        "stock_name": "3481",
         "buy": null,
-        "sell": 46485,
-        "net": 52096
+        "sell": 83813,
+        "net": 87745
+      },
+      {
+        "stock_id": "",
+        "stock_name": "6770",
+        "buy": null,
+        "sell": 64106,
+        "net": 86202
+      },
+      {
+        "stock_id": "*",
+        "stock_name": "2330",
+        "buy": null,
+        "sell": 32980,
+        "net": 32001
+      },
+      {
+        "stock_id": "",
+        "stock_name": "1802",
+        "buy": null,
+        "sell": 22624,
+        "net": 31565
+      },
+      {
+        "stock_id": "",
+        "stock_name": "2489",
+        "buy": null,
+        "sell": 14178,
+        "net": 30051
+      },
+      {
+        "stock_id": "",
+        "stock_name": "2408",
+        "buy": null,
+        "sell": 31643,
+        "net": 27921
+      },
+      {
+        "stock_id": "",
+        "stock_name": "2303",
+        "buy": null,
+        "sell": 30410,
+        "net": 27009
       },
       {
         "stock_id": "",
         "stock_name": "2887",
         "buy": null,
-        "sell": 38428,
-        "net": 43733
+        "sell": 28164,
+        "net": 25881
       },
       {
-        "stock_id": "*",
-        "stock_name": "2408",
-        "buy": null,
-        "sell": 54664,
-        "net": 41597
-      },
-      {
-        "stock_id": "*",
+        "stock_id": "",
         "stock_name": "2409",
         "buy": null,
-        "sell": 10599,
-        "net": 35783
-      },
-      {
-        "stock_id": "*",
-        "stock_name": "2303",
-        "buy": null,
-        "sell": 29291,
-        "net": 33498
-      },
-      {
-        "stock_id": "",
-        "stock_name": "2367",
-        "buy": null,
-        "sell": 30514,
-        "net": 32450
-      },
-      {
-        "stock_id": "",
-        "stock_name": "0050",
-        "buy": null,
-        "sell": 4413,
-        "net": 26308
+        "sell": 12757,
+        "net": 25279
       }
     ],
     "top_sell": []
@@ -106,23 +106,23 @@
     "short_change": null
   },
   "breadth": {
-    "tse_up": 173,
-    "tse_down": 1109,
-    "tse_flat": 62,
+    "tse_up": 590,
+    "tse_down": 626,
+    "tse_flat": 128,
     "otc_up": null,
     "otc_down": null,
     "otc_flat": null
   },
   "usd_index": [
     {
-      "date": "2026-03-24",
-      "close": 99.42
+      "date": "2026-03-25",
+      "close": 99.33
     }
   ],
   "jpy_rate": [
     {
-      "date": "2026-03-24",
-      "close": 158.88
+      "date": "2026-03-25",
+      "close": 158.89
     }
   ],
   "vix": {
@@ -132,37 +132,37 @@
     "chart": []
   },
   "futures": {
-    "close": 32771.0,
-    "change": 212.0,
-    "change_pct": 0.65,
+    "close": 33638.0,
+    "change": 857.0,
+    "change_pct": 2.61,
     "volume": null,
-    "settlement": 92474.0,
-    "open": 33280.0,
-    "high": 33393.0,
-    "low": 32342.0,
+    "settlement": 65796.0,
+    "open": 33786.0,
+    "high": 33880.0,
+    "low": 33444.0,
     "contract_month": "202604"
   },
   "margin_ratio": {
     "ratio": null,
-    "date": "20260324"
+    "date": "20260325"
   },
   "cnn_fg": {
-    "value": 15.7,
+    "value": 17.7,
     "label": "extreme fear",
-    "prev_value": 16.1,
+    "prev_value": 16.9,
     "prev_label": null,
-    "week_ago_value": 21.7
+    "week_ago_value": 15.4
   },
   "crypto_fg": {
-    "value": 11,
+    "value": 14,
     "label": "Extreme Fear",
-    "prev_value": 8,
+    "prev_value": 11,
     "prev_label": "Extreme Fear"
   },
   "pcr": {
-    "ratio": 111.3,
-    "put_oi": 305139.0,
-    "call_oi": 285620.0
+    "ratio": 141.19,
+    "put_oi": 510253.0,
+    "call_oi": 460879.0
   },
   "us10y": {
     "value": null,
@@ -172,28 +172,28 @@
   },
   "futures_oi": {
     "foreign": {
-      "change": 3445,
-      "oi": -34108
+      "change": -1882,
+      "oi": -35947
     },
     "trust": {
-      "change": 320,
-      "oi": 37781
+      "change": 1248,
+      "oi": 39029
     },
     "dealer": {
-      "change": -739,
-      "oi": -788
+      "change": -1767,
+      "oi": -2479
     },
     "total": {
-      "change": 3026,
-      "oi": 2885
+      "change": -2401,
+      "oi": 603
     }
   },
   "sentiment": {
-    "micro_sentiment": 13.7,
-    "micro_sentiment_prev": -24.34,
-    "mini_sentiment": 13.7,
-    "mini_sentiment_prev": -5.93,
-    "pcr_today": 106.83,
-    "pcr_prev": 94.63
+    "micro_sentiment": 16.07,
+    "micro_sentiment_prev": 13.7,
+    "mini_sentiment": 16.07,
+    "mini_sentiment_prev": 14.76,
+    "pcr_today": 110.71,
+    "pcr_prev": 106.83
   }
 }
