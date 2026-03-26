@@ -1,5 +1,5 @@
 """
-台灣股市戰略儀表板 - 資料抓取模組 v10.2
+台灣股市戰略儀表板 - 資料抓取模組 v10.3
 資料來源：
   - FinMind API (免費無需 token, 每小時 300 次)
   - 台灣證券交易所 (TWSE) 開放資料 API + OpenAPI v1
@@ -558,6 +558,7 @@ def _fetch_kgi_market_overview():
         "short_balance": None, "short_change": None,
         "margin_balance_amount": None,
         "margin_ratio": None,
+        "tse_up": None, "tse_down": None, "tse_flat": None,
     }
 
     # KGI 大盤動態有多個子頁面，用不同的 a/b 參數
@@ -662,6 +663,38 @@ def _fetch_kgi_market_overview():
                                 result["margin_balance_amount"] = val
                                 print(f"    [KGI table] 融資金額={val}")
                                 break
+
+            # ===== 搜尋漲跌家數 =====
+            if result["tse_up"] is None:
+                for table in tables:
+                    rows = table.find_all("tr")
+                    for row in rows:
+                        cells = row.find_all(["td", "th"])
+                        cell_texts = [c.get_text(strip=True) for c in cells]
+                        row_text = " ".join(cell_texts)
+                        if ("上漲" in row_text or "漲" in row_text) and ("下跌" in row_text or "跌" in row_text):
+                            # 可能是漲跌家數的行
+                            nums = [_parse_number(ct) for ct in cell_texts if _parse_number(ct) is not None]
+                            reasonable = [n for n in nums if 0 < n < 2000]
+                            if len(reasonable) >= 2:
+                                result["tse_up"] = int(reasonable[0])
+                                result["tse_down"] = int(reasonable[1])
+                                result["tse_flat"] = int(reasonable[2]) if len(reasonable) > 2 else 0
+                                print(f"    [KGI table] 漲跌家數: 漲{result['tse_up']} 跌{result['tse_down']} 平{result['tse_flat']}")
+                                break
+                    if result["tse_up"]:
+                        break
+
+                # 正則搜尋
+                if result["tse_up"] is None:
+                    up_m = re.search(r'上漲[^\d]*?(\d+)\s*家', page_text)
+                    down_m = re.search(r'下跌[^\d]*?(\d+)\s*家', page_text)
+                    if up_m and down_m:
+                        result["tse_up"] = int(up_m.group(1))
+                        result["tse_down"] = int(down_m.group(1))
+                        flat_m = re.search(r'(?:持平|平盤)[^\d]*?(\d+)\s*家', page_text)
+                        result["tse_flat"] = int(flat_m.group(1)) if flat_m else 0
+                        print(f"    [KGI regex] 漲跌家數: 漲{result['tse_up']} 跌{result['tse_down']} 平{result['tse_flat']}")
 
             # ===== 方法B: 正則搜尋頁面文字 =====
             if result["margin_balance"] is None:
@@ -1216,6 +1249,94 @@ def fetch_market_breadth(date_str=None):
             print(f"    [STOCK_DAY_ALL] ❌ {e}")
             import traceback
             traceback.print_exc()
+
+    # ==== 方法4 (備用): TWSE FMTQIK 每日市場成交資訊 ====
+    if result["tse_up"] is None:
+        print("  [方法4] 嘗試 TWSE FMTQIK...")
+        try:
+            fmtqik_url = "https://www.twse.com.tw/exchangeReport/FMTQIK"
+            fmtqik_params = {"response": "json", "date": date_str}
+            resp_fm = _safe_get(fmtqik_url, fmtqik_params, timeout=10)
+            if resp_fm:
+                fm_data = resp_fm.json()
+                if fm_data.get("stat") == "OK" and "data" in fm_data:
+                    rows = fm_data["data"]
+                    fields_list = fm_data.get("fields", [])
+                    print(f"    [FMTQIK] {len(rows)} 行, fields={fields_list}")
+                    # 找漲跌相關欄位
+                    up_idx = down_idx = flat_idx = None
+                    for i, f in enumerate(fields_list):
+                        if "漲" in f and "跌" not in f:
+                            up_idx = i
+                        elif "跌" in f and "漲" not in f:
+                            down_idx = i
+                        elif "持平" in f or "不變" in f:
+                            flat_idx = i
+                    if up_idx is not None and rows:
+                        latest = rows[-1]
+                        result["tse_up"] = int(_parse_number(latest[up_idx]) or 0)
+                        result["tse_down"] = int(_parse_number(latest[down_idx]) or 0) if down_idx else 0
+                        result["tse_flat"] = int(_parse_number(latest[flat_idx]) or 0) if flat_idx else 0
+                        if result["tse_up"] > 0:
+                            print(f"    [FMTQIK] ✅ 漲{result['tse_up']} 跌{result['tse_down']} 平{result['tse_flat']}")
+        except Exception as e:
+            print(f"    [FMTQIK] ❌ {e}")
+
+    # ==== 方法5 (備用): TWSE 每日收盤行情 (HTML 爬蟲) ====
+    if result["tse_up"] is None:
+        print("  [方法5] 嘗試 TWSE 每日收盤行情 HTML...")
+        try:
+            html_url = "https://www.twse.com.tw/exchangeReport/MI_INDEX"
+            html_params = {"response": "html", "date": date_str, "type": "ALLBUT0999"}
+            resp_html = _safe_get(html_url, html_params, timeout=15)
+            if resp_html and resp_html.status_code == 200:
+                soup = BeautifulSoup(resp_html.text, "html.parser")
+                tables = soup.find_all("table")
+                for table in tables:
+                    rows = table.find_all("tr")
+                    if len(rows) > 100:  # 個股表格
+                        up = down = flat = 0
+                        for row in rows[1:]:
+                            cells = row.find_all("td")
+                            if len(cells) >= 10:
+                                for ci in range(len(cells)):
+                                    ct = cells[ci].get_text(strip=True)
+                                    if ct in ["+", "-", "X", " "]:
+                                        if ct == "+":
+                                            up += 1
+                                        elif ct == "-":
+                                            down += 1
+                                        else:
+                                            flat += 1
+                                        break
+                        if up > 0:
+                            result["tse_up"] = up
+                            result["tse_down"] = down
+                            result["tse_flat"] = flat
+                            print(f"    [MI_INDEX HTML] ✅ 漲{up} 跌{down} 平{flat}")
+                            break
+        except Exception as e:
+            print(f"    [MI_INDEX HTML] ❌ {e}")
+
+    # ==== 方法6 (備用): FinMind TaiwanStockStatisticsOfOrderBookAndTrade ====
+    if result["tse_up"] is None:
+        print("  [方法6] 嘗試 FinMind 統計...")
+        try:
+            fm_data = _finmind_fetch("TaiwanDailyShortSaleBalances", "", date_str, date_str)
+            # FinMind 可能沒有直接的漲跌家數，改用 KGI
+        except:
+            pass
+
+    # ==== 方法7 (備用): KGI 凱基證券 ====
+    if result["tse_up"] is None:
+        print("  [方法7] 嘗試 KGI 凱基證券大盤動態...")
+        kgi_data = _fetch_kgi_market_overview()
+        if kgi_data:
+            if kgi_data.get("tse_up") is not None:
+                result["tse_up"] = kgi_data["tse_up"]
+                result["tse_down"] = kgi_data.get("tse_down", 0)
+                result["tse_flat"] = kgi_data.get("tse_flat", 0)
+                print(f"    [KGI] ✅ 漲{result['tse_up']} 跌{result['tse_down']} 平{result['tse_flat']}")
 
     return result
 
@@ -2680,33 +2801,54 @@ def fetch_us10y():
             if data:
                 break
 
-    # 方法6: US Treasury API (美國財政部官方)
+    # 方法6: US Treasury 官方殖利率曲線 (home.treasury.gov)
     if not data:
-        print("  [Treasury] 嘗試美國財政部 API...")
+        print("  [Treasury] 嘗試美國財政部殖利率曲線 XML...")
         try:
-            end = datetime.now().strftime("%Y-%m-%d")
-            start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-            treas_url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates"
-            params = {
-                "filter": f"record_date:gte:{start},security_desc:eq:Treasury Bonds",
-                "sort": "-record_date",
-                "page[size]": "10",
-            }
-            resp = _safe_get(treas_url, params, timeout=10)
-            if resp:
-                tdata = resp.json()
-                items = tdata.get("data", [])
-                if items:
-                    points = []
-                    for item in items:
-                        rate = _parse_number(item.get("avg_interest_rate_amt", ""))
-                        d = item.get("record_date", "")
-                        if rate and d:
-                            points.append({"date": d, "close": round(rate, 4)})
-                    if points:
-                        points.sort(key=lambda x: x["date"])
-                        data = points[-10:]
-                        print(f"  [Treasury] ✅ 共 {len(data)} 筆")
+            # Treasury 的每日殖利率曲線 XML feed
+            import xml.etree.ElementTree as ET
+            year = datetime.now().strftime("%Y")
+            treas_url = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/{year}?type=daily_treasury_yield_curve&field_tdr_date_value={year}&page&_format=csv"
+            resp = requests.get(treas_url, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }, timeout=15)
+            if resp.status_code == 200 and resp.text.strip():
+                lines = resp.text.strip().split("\n")
+                if len(lines) > 1:
+                    header = lines[0].split(",")
+                    # 找 "10 Yr" 欄位
+                    yr10_idx = None
+                    for i, h in enumerate(header):
+                        if "10" in h and ("yr" in h.lower() or "year" in h.lower()):
+                            yr10_idx = i
+                            break
+                    print(f"    [Treasury CSV] header={header[:8]}, 10Yr idx={yr10_idx}")
+                    if yr10_idx is not None:
+                        points = []
+                        for line in lines[1:]:
+                            fields = line.split(",")
+                            if len(fields) > yr10_idx:
+                                date_str_raw = fields[0].strip()
+                                val_str = fields[yr10_idx].strip()
+                                if val_str and val_str != "N/A":
+                                    try:
+                                        val = float(val_str)
+                                        # 日期格式可能是 MM/DD/YYYY
+                                        if "/" in date_str_raw:
+                                            parts = date_str_raw.split("/")
+                                            if len(parts) == 3:
+                                                date_fmt = f"{parts[2]}-{parts[0].zfill(2)}-{parts[1].zfill(2)}"
+                                            else:
+                                                date_fmt = date_str_raw
+                                        else:
+                                            date_fmt = date_str_raw
+                                        points.append({"date": date_fmt, "close": round(val, 4)})
+                                    except ValueError:
+                                        pass
+                        if points:
+                            points.sort(key=lambda x: x["date"])
+                            data = points[-10:]
+                            print(f"    [Treasury CSV] ✅ 10Yr yield 共 {len(data)} 筆, 最新={data[-1]['close']}%")
         except Exception as e:
             print(f"  [Treasury] ❌ {e}")
 

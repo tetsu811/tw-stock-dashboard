@@ -554,12 +554,7 @@
                 <div class="metric-sub">{{ dealer_net_yi }}</div>
             </div>
 
-            <!-- 融資 -->
-            <div class="card">
-                <div class="card-title"><span class="icon">💰</span> 融資餘額</div>
-                <div class="metric-value text-yellow">{{ margin_display }}</div>
-                <div class="metric-sub">{{ margin_sub }}</div>
-            </div>
+            <!-- 融資餘額: 已移除 -->
         </div>
 
         <!-- ====== 三大法人台指期未平倉 ====== -->
@@ -729,19 +724,7 @@
                 <div class="metric-sub" style="text-align:center; margin-top:6px; font-size:11px; line-height:1.4;">0=極度恐慌 → 100=極度貪婪</div>
             </div>
 
-            <!-- 融資維持率 -->
-            <div class="card">
-                <div class="card-title"><span class="icon">🏦</span> 融資維持率</div>
-                <div style="text-align:center; padding: 6px 0;">
-                    <div class="metric-value {{ margin_ratio_color }}" style="font-size:36px;">{{ margin_ratio_value }}%</div>
-                    {% if margin_ratio_label %}
-                    <span class="vix-badge" style="{{ margin_ratio_style }}; margin-top:6px; display:inline-block;">{{ margin_ratio_label }}</span>
-                    {% endif %}
-                </div>
-                <div class="metric-sub" style="text-align:center; margin-top:8px; font-size:11px; line-height:1.4;">
-                    &lt;130% 追繳 · &lt;120% 斷頭
-                </div>
-            </div>
+            <!-- 融資維持率: 已移除 -->
 
         </div>
 
