@@ -4,6 +4,7 @@
 用法: python quick_test.py
 """
 import requests
+import re
 import time
 from datetime import datetime, timedelta
 
@@ -26,18 +27,10 @@ def test(name, func):
         print(f"  ❌ {name}: {e}")
         failed += 1
 
+
 # ========== VIX ==========
 print("\n😱 VIX 指數")
 print("=" * 50)
-
-def t_stooq_vix():
-    r = requests.get("https://stooq.com/q/d/l/?s=^vix&i=d", headers={"User-Agent": UA}, timeout=15)
-    lines = r.text.strip().split("\n")
-    if len(lines) > 1 and "Date" in lines[0]:
-        last = lines[-1].split(",")
-        return f"Date={last[0]} Close={last[4]} ({len(lines)-1} rows)"
-    return None
-test("Stooq ^vix", t_stooq_vix)
 
 def t_fred_vix():
     end = datetime.now().strftime("%Y-%m-%d")
@@ -52,33 +45,24 @@ def t_fred_vix():
     return None
 test("FRED VIXCLS", t_fred_vix)
 
-def t_cnyes_vix():
-    end_ts = int(time.time())
-    start_ts = end_ts - 10 * 86400
-    r = requests.get("https://ws.api.cnyes.com/ws/api/v1/charting/history",
-                     params={"resolution": "D", "symbol": "GI:VIX", "from": str(start_ts), "to": str(end_ts)},
-                     headers={"User-Agent": UA}, timeout=10)
-    data = r.json()
-    chart = data.get("data")
-    if chart is None:
-        return f"data=null (此符號不可用)"
-    closes = chart.get("c", []) if isinstance(chart, dict) else []
-    if closes:
-        return f"最新={closes[-1]} ({len(closes)} points)"
+def t_stooq_vix():
+    r = requests.get("https://stooq.com/q/d/l/?s=^vix&i=d", headers={"User-Agent": UA}, timeout=15)
+    lines = r.text.strip().split("\n")
+    if len(lines) > 1 and "Date" in lines[0]:
+        last = lines[-1].split(",")
+        return f"Date={last[0]} Close={last[4]} ({len(lines)-1} rows)"
     return None
-test("鉅亨網 GI:VIX", t_cnyes_vix)
+test("Stooq ^vix", t_stooq_vix)
 
-def t_investing_vix():
-    r = requests.get("https://api.investing.com/api/financialdata/44336/historical/chart/",
-                     params={"period": "P1M", "interval": "P1D", "pointscount": 10},
-                     headers={"User-Agent": UA, "domain-id": "www.investing.com", "Referer": "https://www.investing.com/"},
-                     timeout=10)
-    data = r.json()
-    items = data.get("data", [])
-    if items:
-        return f"{len(items)} items"
+def t_google_finance_vix():
+    r = requests.get("https://www.google.com/finance/quote/VIX:INDEXCBOE",
+                     headers={"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"}, timeout=12)
+    if r.status_code == 200:
+        m = re.search(r'data-last-price="([\d.]+)"', r.text)
+        if m:
+            return f"VIX={m.group(1)}"
     return None
-test("investing.com VIX", t_investing_vix)
+test("Google Finance VIX:INDEXCBOE", t_google_finance_vix)
 
 
 # ========== US10Y ==========
@@ -124,21 +108,80 @@ def t_treasury_csv():
     return f"header={header[:5]}, 10Yr_idx={yr10_idx}"
 test("US Treasury CSV", t_treasury_csv)
 
-def t_cnyes_10y():
-    end_ts = int(time.time())
-    start_ts = end_ts - 10 * 86400
-    r = requests.get("https://ws.api.cnyes.com/ws/api/v1/charting/history",
-                     params={"resolution": "D", "symbol": "GI:US10Y", "from": str(start_ts), "to": str(end_ts)},
-                     headers={"User-Agent": UA}, timeout=10)
-    data = r.json()
-    chart = data.get("data")
-    if chart is None:
-        return f"data=null (此符號不可用)"
-    closes = chart.get("c", []) if isinstance(chart, dict) else []
-    if closes:
-        return f"最新={closes[-1]} ({len(closes)} points)"
+def t_google_finance_tnx():
+    r = requests.get("https://www.google.com/finance/quote/TNX:INDEXCBOE",
+                     headers={"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"}, timeout=12)
+    if r.status_code == 200:
+        m = re.search(r'data-last-price="([\d.]+)"', r.text)
+        if m:
+            val = float(m.group(1))
+            return f"TNX={val} → Yield={val/10}%"
     return None
-test("鉅亨網 GI:US10Y", t_cnyes_10y)
+test("Google Finance TNX:INDEXCBOE", t_google_finance_tnx)
+
+
+# ========== 美元指數 (DXY) ==========
+print("\n💵 美元指數 (DXY)")
+print("=" * 50)
+
+def t_stooq_dxy():
+    r = requests.get("https://stooq.com/q/d/l/?s=dxy.f&i=d", headers={"User-Agent": UA}, timeout=15)
+    lines = r.text.strip().split("\n")
+    if len(lines) > 1 and "Date" in lines[0]:
+        last = lines[-1].split(",")
+        return f"Date={last[0]} Close={last[4]} ({len(lines)-1} rows)"
+    return None
+test("Stooq dxy.f", t_stooq_dxy)
+
+def t_fred_dtwexbgs():
+    end = datetime.now().strftime("%Y-%m-%d")
+    start = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")
+    r = requests.get(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTWEXBGS&cosd={start}&coed={end}",
+                     headers={"User-Agent": UA}, timeout=15)
+    lines = r.text.strip().split("\n")
+    valid = [l for l in lines[1:] if len(l.split(",")) >= 2 and l.split(",")[1].strip() not in ["", "."]]
+    if valid:
+        last = valid[-1].split(",")
+        return f"Date={last[0]} Value={last[1]} ({len(valid)} valid rows)"
+    return None
+test("FRED DTWEXBGS (美元貿易加權)", t_fred_dtwexbgs)
+
+
+# ========== 日圓匯率 (USD/JPY) ==========
+print("\n💴 日圓匯率 (USD/JPY)")
+print("=" * 50)
+
+def t_fred_usdjpy():
+    end = datetime.now().strftime("%Y-%m-%d")
+    start = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")
+    r = requests.get(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id=DEXJPUS&cosd={start}&coed={end}",
+                     headers={"User-Agent": UA}, timeout=15)
+    lines = r.text.strip().split("\n")
+    valid = [l for l in lines[1:] if len(l.split(",")) >= 2 and l.split(",")[1].strip() not in ["", "."]]
+    if valid:
+        last = valid[-1].split(",")
+        return f"Date={last[0]} Rate={last[1]} ({len(valid)} valid rows)"
+    return None
+test("FRED DEXJPUS", t_fred_usdjpy)
+
+def t_stooq_usdjpy():
+    r = requests.get("https://stooq.com/q/d/l/?s=usdjpy&i=d", headers={"User-Agent": UA}, timeout=15)
+    lines = r.text.strip().split("\n")
+    if len(lines) > 1 and "Date" in lines[0]:
+        last = lines[-1].split(",")
+        return f"Date={last[0]} Close={last[4]} ({len(lines)-1} rows)"
+    return None
+test("Stooq usdjpy", t_stooq_usdjpy)
+
+def t_google_finance_usdjpy():
+    r = requests.get("https://www.google.com/finance/quote/USD-JPY",
+                     headers={"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"}, timeout=12)
+    if r.status_code == 200:
+        m = re.search(r'data-last-price="([\d.]+)"', r.text)
+        if m:
+            return f"USD/JPY={m.group(1)}"
+    return None
+test("Google Finance USD-JPY", t_google_finance_usdjpy)
 
 
 # ========== 漲跌家數 ==========
@@ -155,7 +198,6 @@ def t_mi_index():
     if stat == "OK" and data_keys:
         biggest = max(data_keys, key=lambda k: len(data[k]) if isinstance(data[k], list) else 0)
         rows = data[biggest]
-        # count +/- signs
         up = down = flat = 0
         for row in rows:
             if isinstance(row, list):
@@ -198,18 +240,36 @@ def t_stock_day_all():
     return None
 test("TWSE STOCK_DAY_ALL", t_stock_day_all)
 
-def t_fmtqik():
-    r = requests.get("https://www.twse.com.tw/exchangeReport/FMTQIK",
+
+# ========== 外資買賣超 ==========
+print("\n🌍 外資買賣超排行")
+print("=" * 50)
+
+def t_twt38u():
+    r = requests.get("https://www.twse.com.tw/fund/TWT38U",
                      params={"response": "json", "date": today},
-                     headers={"User-Agent": UA}, timeout=10)
+                     headers={"User-Agent": UA, "Accept-Language": "zh-TW"}, timeout=15)
     data = r.json()
     stat = data.get("stat")
-    fields = data.get("fields", [])
-    rows = data.get("data", [])
-    if rows:
-        return f"stat={stat}, fields={fields}, last={rows[-1]}"
-    return f"stat={stat}, fields={fields}, no data"
-test("TWSE FMTQIK", t_fmtqik)
+    if stat == "OK" and "data" in data:
+        rows = data["data"]
+        if rows and len(rows) > 0:
+            sample = rows[0]
+            # 確認欄位位置
+            return f"stat=OK, {len(rows)} rows, sample={sample[:4]}"
+    return f"stat={stat}"
+test("TWSE TWT38U (外資排行)", t_twt38u)
+
+def t_t86():
+    r = requests.get("https://www.twse.com.tw/fund/T86",
+                     params={"response": "json", "date": today, "selectType": "ALLBUT0999"},
+                     headers={"User-Agent": UA, "Accept-Language": "zh-TW"}, timeout=15)
+    data = r.json()
+    stat = data.get("stat")
+    if stat == "OK" and "data" in data:
+        return f"stat=OK, {len(data['data'])} rows"
+    return f"stat={stat}"
+test("TWSE T86 (外資備用)", t_t86)
 
 
 # ========== KGI ==========

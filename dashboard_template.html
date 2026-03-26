@@ -750,24 +750,7 @@
                 {% endif %}
             </div>
 
-            <div class="card">
-                <div class="card-title"><span class="icon">🏬</span> 上櫃 (TPEx)</div>
-                {% if otc_up is not none and otc_down is not none %}
-                {% set otc_total = otc_up + otc_down + (otc_flat or 0) %}
-                <div class="breadth-bar">
-                    <div class="up" style="width: {{ (otc_up / otc_total * 100) if otc_total > 0 else 50 }}%">{{ otc_up }}</div>
-                    {% if otc_flat %}<div class="flat" style="width: {{ (otc_flat / otc_total * 100) if otc_total > 0 else 0 }}%">{{ otc_flat }}</div>{% endif %}
-                    <div class="down" style="width: {{ (otc_down / otc_total * 100) if otc_total > 0 else 50 }}%">{{ otc_down }}</div>
-                </div>
-                <div class="breadth-legend">
-                    <span><span class="dot dot-green"></span> 上漲 {{ otc_up }}</span>
-                    {% if otc_flat %}<span><span class="dot dot-gray"></span> 持平 {{ otc_flat }}</span>{% endif %}
-                    <span><span class="dot dot-red"></span> 下跌 {{ otc_down }}</span>
-                </div>
-                {% else %}
-                <div class="metric-sub">資料尚未更新</div>
-                {% endif %}
-            </div>
+            <!-- 上櫃漲跌家數: 已移除 -->
         </div>
 
         <!-- ====== 外資排行 ====== -->

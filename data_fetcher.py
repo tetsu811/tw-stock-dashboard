@@ -1,12 +1,15 @@
 """
-台灣股市戰略儀表板 - 資料抓取模組 v10.3
+台灣股市戰略儀表板 - 資料抓取模組 v10.4
 資料來源：
   - FinMind API (免費無需 token, 每小時 300 次)
   - 台灣證券交易所 (TWSE) 開放資料 API + OpenAPI v1
   - 證券櫃檯買賣中心 (TPEx) API
-  - 鉅亨網 (cnyes) API (美元指數、日圓、VIX、US10Y)
+  - Google Finance (VIX, US10Y, USD/JPY)
+  - FRED (VIX歷史, US10Y歷史)
+  - Stooq (VIX歷史, US10Y歷史 備援)
+  - 鉅亨網 (cnyes) API (美元指數)
   - 台灣期貨交易所 (TAIFEX) CSV/HTML
-  - KGI 凱基證券 (融資維持率)
+  - KGI 凱基證券
 """
 
 import requests
@@ -45,6 +48,36 @@ def _parse_number(s):
         return float(str(s).replace(",", "").replace(" ", ""))
     except (ValueError, TypeError):
         return None
+
+
+def _fetch_google_finance(symbol):
+    """
+    從 Google Finance 頁面抓取即時報價 (已驗證可用)
+    symbol: 如 "VIX:INDEXCBOE", "TNX:INDEXCBOE", "USD-JPY"
+    回傳: {"price": float, "change_pct": float} 或 None
+    """
+    print(f"  [Google Finance] 取得 {symbol}...")
+    url = f"https://www.google.com/finance/quote/{symbol}"
+    try:
+        resp = requests.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        }, timeout=12)
+        if resp.status_code == 200:
+            # 找 data-last-price
+            m = re.search(r'data-last-price="([\d.]+)"', resp.text)
+            if m:
+                price = float(m.group(1))
+                # 找變動百分比
+                m2 = re.search(r'data-last-normal-market-change-percent="([+-]?[\d.]+)"', resp.text)
+                change_pct = float(m2.group(1)) if m2 else None
+                print(f"  [Google Finance] ✅ {symbol} = {price}")
+                return {"price": price, "change_pct": change_pct}
+            else:
+                print(f"  [Google Finance] ⚠️ {symbol} data-last-price not found")
+    except Exception as e:
+        print(f"  [Google Finance] ❌ {symbol}: {e}")
+    return None
 
 
 def _finmind_fetch(dataset, data_id, start_date, end_date):
@@ -443,15 +476,27 @@ def fetch_foreign_top10(date_str=None):
 
         if all_rows:
             for row in all_rows:
-                if not isinstance(row, list) or len(row) < 5:
+                if not isinstance(row, list) or len(row) < 6:
                     continue
-                stock_id = str(row[0]).strip()
-                stock_name = str(row[1]).strip().replace("*", "").strip()
+                # TWT38U 格式: [空白, 證券代號, 證券名稱, 買進股數, 賣出股數, 買賣超股數, ...]
+                # 第一欄是空白，所以 index 從 1 開始
+                first_col = str(row[0]).strip()
+                if first_col == "" or not any(c.isdigit() for c in first_col):
+                    # 第一欄是空白 → 偏移 1
+                    stock_id = str(row[1]).strip()
+                    stock_name = str(row[2]).strip().replace("*", "").strip()
+                    raw_buy = _parse_number(row[3])
+                    raw_sell = _parse_number(row[4])
+                    raw_net = _parse_number(row[5])
+                else:
+                    # 第一欄就是代號 (舊格式相容)
+                    stock_id = first_col
+                    stock_name = str(row[1]).strip().replace("*", "").strip()
+                    raw_buy = _parse_number(row[2])
+                    raw_sell = _parse_number(row[3])
+                    raw_net = _parse_number(row[4])
                 if not stock_name or len(stock_name) < 1:
                     stock_name = stock_id
-                raw_buy = _parse_number(row[2])
-                raw_sell = _parse_number(row[3])
-                raw_net = _parse_number(row[4])
                 # TWT38U 的數字是「股數」，轉為「張」(1張=1000股)
                 item = {
                     "stock_id": stock_id,
@@ -1466,7 +1511,7 @@ def _fetch_fred_data(series_id, days=10):
     """
     print(f"  [FRED] 取得 {series_id}...")
     end_date = datetime.now().strftime("%Y-%m-%d")
-    start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    start_date = (datetime.now() - timedelta(days=max(days + 10, 45))).strftime("%Y-%m-%d")
     url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}&cosd={start_date}&coed={end_date}"
     try:
         resp = requests.get(url, headers={
@@ -1573,86 +1618,133 @@ def _fetch_investing_data(pair_id, days=30):
 def fetch_usd_index():
     """
     抓取美元指數近30天
-    嘗試多個鉅亨網代號 + investing.com
+    優先順序: Stooq DXY (最接近 ICE DXY) → FRED DTWEXBGS (美元貿易加權指數) → cnyes quote
     """
     print("💵 抓取美元指數...")
-    # 方法1: 鉅亨網 - 嘗試多個可能的 symbol
-    for sym in ["GI:DXY", "GI:DXY00", "TWG:DXY00", "FX:DXY", "FX:USDX"]:
-        data = _fetch_cnyes_chart(sym, 35)
-        if data:
-            return data
-    # 方法2: investing.com (DXY pair_id=8827)
-    data = _fetch_investing_data(8827, 35)
-    if data:
-        return data
-    # 方法3: 從 cnyes 搜尋正確的 DXY symbol
-    print("  [備用] 嘗試 cnyes search API 找 DXY symbol...")
-    try:
-        search_url = "https://ws.api.cnyes.com/ws/api/v1/universal/search"
-        resp = _safe_get(search_url, {"q": "DXY"}, timeout=8)
-        if resp:
-            sdata = resp.json()
-            items = sdata.get("data", {}).get("items", [])
-            for item in items:
-                sym = item.get("symbol", "")
-                if sym and ("DXY" in sym.upper() or "美元" in item.get("name", "")):
-                    print(f"  [cnyes search] 找到 symbol: {sym} ({item.get('name','')})")
-                    data = _fetch_cnyes_chart(sym, 35)
-                    if data:
-                        return data
-    except Exception as e:
-        print(f"  [cnyes search] ❌ {e}")
-    print("  ⚠️ 美元指數: 所有來源失敗")
-    return []
+
+    # 方法1: Stooq DXY (最接近實際 ICE DXY)
+    data = _fetch_stooq_data("dxy.f", 35)
+
+    # 方法2: FRED DTWEXBGS (美元貿易加權指數，非 DXY 但趨勢相似)
+    if not data:
+        data = _fetch_fred_data("DTWEXBGS", 35)
+
+    # 方法3: cnyes quote=1 (只有即時價)
+    if not data:
+        print("  [cnyes quote] 嘗試取得 DXY 即時價...")
+        for sym in ["FX:DXY", "GI:DXY", "GI:DXY00"]:
+            try:
+                resp = _safe_get("https://ws.api.cnyes.com/ws/api/v1/charting/history",
+                                {"resolution": "D", "symbol": sym, "quote": 1},
+                                timeout=8)
+                if resp:
+                    qdata = resp.json()
+                    status_code = qdata.get("statusCode")
+                    quote = qdata.get("data", {})
+                    if isinstance(quote, dict):
+                        price = quote.get("6", None) or quote.get("c", [None])
+                        if isinstance(price, list) and price:
+                            price = price[-1]
+                        if price and float(price) > 0:
+                            today_str = datetime.now().strftime("%Y-%m-%d")
+                            data = [{"date": today_str, "close": round(float(price), 2)}]
+                            print(f"  [cnyes quote] ✅ DXY = {data[0]['close']}")
+                            break
+            except Exception as e:
+                print(f"  [cnyes quote] ❌ {sym}: {e}")
+
+    if not data:
+        print("  ⚠️ 美元指數: 所有來源失敗")
+
+    return data[-30:] if data else []
 
 
 def fetch_jpy_rate():
     """
     抓取日圓匯率近30天 (USD/JPY)
-    鉅亨網代號: FX:USDJPY
+    優先順序: FRED DEXJPUS (官方匯率資料) → Stooq → Google Finance (即時)
     """
     print("💴 抓取日圓匯率...")
-    # 方法1: 鉅亨網
-    data = _fetch_cnyes_chart("FX:USDJPY", 35)
-    if data:
-        return data
-    # 方法2: investing.com (USDJPY pair_id=3)
-    data = _fetch_investing_data(3, 35)
-    if data:
-        return data
-    print("  ⚠️ 日圓匯率: 所有來源失敗")
-    return []
+    data = []
+    current_value = None
+
+    # 方法1 (主力): FRED DEXJPUS — 官方匯率，有 30 天歷史
+    data = _fetch_fred_data("DEXJPUS", 35)
+
+    # 方法2: Stooq
+    if not data:
+        data = _fetch_stooq_data("usdjpy", 35)
+
+    # 方法3: Google Finance (只有即時價)
+    gf = _fetch_google_finance("USD-JPY")
+    if gf:
+        current_value = gf["price"]
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        if data:
+            if data[-1]["date"] != today_str:
+                data.append({"date": today_str, "close": current_value})
+            else:
+                data[-1]["close"] = current_value
+        else:
+            data = [{"date": today_str, "close": current_value}]
+
+    # 方法4: cnyes quote=1
+    if not data:
+        print("  [cnyes quote] 嘗試取得 USDJPY 即時價...")
+        try:
+            resp = _safe_get("https://ws.api.cnyes.com/ws/api/v1/charting/history",
+                            {"resolution": "D", "symbol": "FX:USDJPY", "quote": 1},
+                            timeout=8)
+            if resp:
+                qdata = resp.json()
+                quote = qdata.get("data", {})
+                if isinstance(quote, dict):
+                    price = quote.get("6", None) or quote.get("c", [None])
+                    if isinstance(price, list) and price:
+                        price = price[-1]
+                    if price and float(price) > 0:
+                        today_str = datetime.now().strftime("%Y-%m-%d")
+                        data = [{"date": today_str, "close": round(float(price), 2)}]
+                        print(f"  [cnyes quote] ✅ USDJPY = {data[0]['close']}")
+        except Exception as e:
+            print(f"  [cnyes quote] ❌ USDJPY: {e}")
+
+    if not data:
+        print("  ⚠️ 日圓匯率: 所有來源失敗")
+
+    return data[-30:] if data else []
 
 
 def fetch_vix():
     """
     抓取 VIX 指數 (近7天含圖表資料)
-    多來源備援: 鉅亨網 → Stooq → FRED → investing.com
+    優先順序: Google Finance (即時) → FRED CSV (歷史) → Stooq CSV (歷史)
     """
     print("😱 抓取 VIX 指數 (近7天)...")
-    data = None
+    data = []
+    current_value = None
 
-    # 方法1: 鉅亨網
-    data = _fetch_cnyes_chart("GI:VIX", 10)
+    # 方法1 (主力): FRED VIXCLS — 免費 CSV，有歷史資料
+    data = _fetch_fred_data("VIXCLS", 10)
 
-    # 方法2: Stooq (免費 CSV，非常穩定)
+    # 方法2: Stooq CSV
     if not data:
         data = _fetch_stooq_data("^vix", 10)
 
-    # 方法3: FRED VIXCLS (芝加哥選擇權交易所 VIX)
-    if not data:
-        data = _fetch_fred_data("VIXCLS", 10)
-
-    # 方法4: investing.com (VIX pair_id=44336)
-    if not data:
-        data = _fetch_investing_data(44336, 10)
-
-    # 方法5: 鉅亨網其他代號
-    if not data:
-        for sym in ["GI:CBVIX", "GI:VIX00", "TWG:VIX00"]:
-            data = _fetch_cnyes_chart(sym, 10)
-            if data:
-                break
+    # 方法3: Google Finance (只有即時價，沒歷史)
+    gf = _fetch_google_finance("VIX:INDEXCBOE")
+    if gf:
+        current_value = gf["price"]
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        # 如果 data 已有歷史，用 Google Finance 更新最新價
+        if data:
+            if data[-1]["date"] != today_str:
+                data.append({"date": today_str, "close": current_value})
+            else:
+                data[-1]["close"] = current_value
+        else:
+            # 只有即時價，沒歷史
+            data = [{"date": today_str, "close": current_value}]
 
     if not data:
         print("  ⚠️ VIX: 所有來源失敗")
@@ -2774,39 +2866,19 @@ def fetch_put_call_ratio(date_str=None):
 def fetch_us10y():
     """
     抓取美國 10 年期公債殖利率
-    多來源備援: 鉅亨網 → FRED → Stooq → investing.com
+    優先順序: FRED DGS10 (歷史) → Treasury CSV → Google Finance (即時) → Stooq
     """
     print("🏛️ 抓取美國10年期公債殖利率...")
-    data = None
+    data = []
+    current_value = None
 
-    # 方法1: 鉅亨網
-    data = _fetch_cnyes_chart("GI:US10Y", 10)
+    # 方法1 (主力): FRED DGS10 — 最權威的10年公債殖利率
+    data = _fetch_fred_data("DGS10", 10)
 
-    # 方法2: FRED DGS10 (美國財政部10年公債殖利率，最權威來源)
+    # 方法2: US Treasury 官方殖利率曲線 CSV
     if not data:
-        data = _fetch_fred_data("DGS10", 10)
-
-    # 方法3: Stooq (免費 CSV)
-    if not data:
-        data = _fetch_stooq_data("10usy.b", 10)
-
-    # 方法4: investing.com (US10Y pair_id=23705)
-    if not data:
-        data = _fetch_investing_data(23705, 10)
-
-    # 方法5: 鉅亨網其他代號
-    if not data:
-        for sym in ["GI:US10YR", "GI:TNX", "TWG:US10Y"]:
-            data = _fetch_cnyes_chart(sym, 10)
-            if data:
-                break
-
-    # 方法6: US Treasury 官方殖利率曲線 (home.treasury.gov)
-    if not data:
-        print("  [Treasury] 嘗試美國財政部殖利率曲線 XML...")
+        print("  [Treasury] 嘗試美國財政部殖利率曲線 CSV...")
         try:
-            # Treasury 的每日殖利率曲線 XML feed
-            import xml.etree.ElementTree as ET
             year = datetime.now().strftime("%Y")
             treas_url = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/{year}?type=daily_treasury_yield_curve&field_tdr_date_value={year}&page&_format=csv"
             resp = requests.get(treas_url, headers={
@@ -2816,13 +2888,12 @@ def fetch_us10y():
                 lines = resp.text.strip().split("\n")
                 if len(lines) > 1:
                     header = lines[0].split(",")
-                    # 找 "10 Yr" 欄位
                     yr10_idx = None
                     for i, h in enumerate(header):
                         if "10" in h and ("yr" in h.lower() or "year" in h.lower()):
                             yr10_idx = i
                             break
-                    print(f"    [Treasury CSV] header={header[:8]}, 10Yr idx={yr10_idx}")
+                    print(f"    [Treasury CSV] 10Yr col idx={yr10_idx}")
                     if yr10_idx is not None:
                         points = []
                         for line in lines[1:]:
@@ -2833,7 +2904,6 @@ def fetch_us10y():
                                 if val_str and val_str != "N/A":
                                     try:
                                         val = float(val_str)
-                                        # 日期格式可能是 MM/DD/YYYY
                                         if "/" in date_str_raw:
                                             parts = date_str_raw.split("/")
                                             if len(parts) == 3:
@@ -2848,9 +2918,26 @@ def fetch_us10y():
                         if points:
                             points.sort(key=lambda x: x["date"])
                             data = points[-10:]
-                            print(f"    [Treasury CSV] ✅ 10Yr yield 共 {len(data)} 筆, 最新={data[-1]['close']}%")
+                            print(f"    [Treasury CSV] ✅ {len(data)} 筆, 最新={data[-1]['close']}%")
         except Exception as e:
             print(f"  [Treasury] ❌ {e}")
+
+    # 方法3: Stooq CSV
+    if not data:
+        data = _fetch_stooq_data("10usy.b", 10)
+
+    # 方法4: Google Finance TNX (即時價, TNX/10 = 殖利率%)
+    gf = _fetch_google_finance("TNX:INDEXCBOE")
+    if gf:
+        current_value = round(gf["price"] / 10, 3)  # TNX 要除以 10
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        if data:
+            if data[-1]["date"] != today_str:
+                data.append({"date": today_str, "close": current_value})
+            else:
+                data[-1]["close"] = current_value
+        else:
+            data = [{"date": today_str, "close": current_value}]
 
     if not data:
         print("  ⚠️ US10Y: 所有來源失敗")
