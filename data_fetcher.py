@@ -1720,16 +1720,16 @@ def fetch_vix():
     抓取 VIX 指數 (近7天含圖表資料)
     優先順序: Google Finance (即時) → FRED CSV (歷史) → Stooq CSV (歷史)
     """
-    print("😱 抓取 VIX 指數 (近7天)...")
+    print("😱 抓取 VIX 指數 (近30天)...")
     data = []
     current_value = None
 
     # 方法1 (主力): FRED VIXCLS — 免費 CSV，有歷史資料
-    data = _fetch_fred_data("VIXCLS", 10)
+    data = _fetch_fred_data("VIXCLS", 35)
 
     # 方法2: Stooq CSV
     if not data:
-        data = _fetch_stooq_data("^vix", 10)
+        data = _fetch_stooq_data("^vix", 35)
 
     # 方法3: Google Finance (只有即時價，沒歷史)
     gf = _fetch_google_finance("VIX:INDEXCBOE")
@@ -1749,7 +1749,7 @@ def fetch_vix():
     if not data:
         print("  ⚠️ VIX: 所有來源失敗")
 
-    data = data[-7:] if data and len(data) > 7 else (data or [])
+    data = data[-30:] if data and len(data) > 30 else (data or [])
     if data:
         return {
             "value": data[-1]["close"],
@@ -2873,7 +2873,7 @@ def fetch_us10y():
     current_value = None
 
     # 方法1 (主力): FRED DGS10 — 最權威的10年公債殖利率
-    data = _fetch_fred_data("DGS10", 10)
+    data = _fetch_fred_data("DGS10", 35)
 
     # 方法2: US Treasury 官方殖利率曲線 CSV
     if not data:
@@ -2917,14 +2917,14 @@ def fetch_us10y():
                                         pass
                         if points:
                             points.sort(key=lambda x: x["date"])
-                            data = points[-10:]
+                            data = points[-35:]
                             print(f"    [Treasury CSV] ✅ {len(data)} 筆, 最新={data[-1]['close']}%")
         except Exception as e:
             print(f"  [Treasury] ❌ {e}")
 
     # 方法3: Stooq CSV
     if not data:
-        data = _fetch_stooq_data("10usy.b", 10)
+        data = _fetch_stooq_data("10usy.b", 35)
 
     # 方法4: Google Finance TNX (即時價, TNX/10 = 殖利率%)
     gf = _fetch_google_finance("TNX:INDEXCBOE")
@@ -2942,7 +2942,7 @@ def fetch_us10y():
     if not data:
         print("  ⚠️ US10Y: 所有來源失敗")
 
-    data = data[-7:] if data and len(data) > 7 else (data or [])
+    data = data[-30:] if data and len(data) > 30 else (data or [])
 
     if data:
         return {

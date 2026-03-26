@@ -206,7 +206,7 @@ def prepare_template_data(data):
         ctx["vix_change"] = None
         ctx["vix_change_display"] = None
 
-    # VIX 7天圖表資料
+    # VIX 30天圖表資料
     vix_chart = vix.get("chart", [])
     ctx["vix_chart_data"] = json.dumps({
         "labels": [p["date"][-5:] for p in vix_chart],

@@ -663,9 +663,9 @@
                 </div>
             </div>
 
-            <!-- 右: VIX 近7天折線圖 -->
+            <!-- 右: VIX 近30天折線圖 -->
             <div class="card">
-                <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近7天)</div>
+                <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近30天)</div>
                 <div class="vix-header">
                     <div>
                         <span class="vix-current {{ vix_color_class }}">{{ vix_value }}</span>
@@ -823,7 +823,7 @@
             </div>
 
             <div class="card">
-                <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近7天</div>
+                <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近30天</div>
                 <div style="display:flex; align-items:baseline; gap:8px;">
                     <div class="metric-value text-cyan">{{ us10y_value }}%</div>
                     {% if us10y_change is not none %}
