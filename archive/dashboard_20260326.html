@@ -428,7 +428,7 @@
         <div class="header">
             <h1>台灣股市每日戰略儀表板</h1>
             <div class="date">2026/03/26 (星期四)</div>
-            <div class="update-time">資料更新時間: 2026-03-26 17:09:47</div>
+            <div class="update-time">資料更新時間: 2026-03-26 17:35:35</div>
         </div>
 
         <!-- ====== 加權指數 + 台指期 Hero ====== -->
@@ -663,12 +663,12 @@
                 </div>
             </div>
 
-            <!-- 右: VIX 近7天折線圖 -->
+            <!-- 右: VIX 近30天折線圖 -->
             <div class="card">
-                <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近7天)</div>
+                <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近30天)</div>
                 <div class="vix-header">
                     <div>
-                        <span class="vix-current text-red">27.38</span>
+                        <span class="vix-current text-red">27.66</span>
                         
                     </div>
                     <span class="vix-badge" style="background: rgba(239,68,68,0.15); color: #ef4444;">恐慌</span>
@@ -913,7 +913,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💴</span> 美元兌日圓 (USD/JPY) · 近30天</div>
                 
-                <div class="metric-value text-purple">159.65</div>
+                <div class="metric-value text-purple">159.67</div>
                 
                 <div class="chart-container">
                     <canvas id="jpyChart"></canvas>
@@ -921,9 +921,9 @@
             </div>
 
             <div class="card">
-                <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近7天</div>
+                <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近30天</div>
                 <div style="display:flex; align-items:baseline; gap:8px;">
-                    <div class="metric-value text-cyan">4.406%</div>
+                    <div class="metric-value text-cyan">4.412%</div>
                     
                 </div>
                 <div class="chart-container">
@@ -1016,10 +1016,10 @@
         }
 
         // Chart data
-        const vixData = {"labels": ["03-26"], "values": [27.38]};
+        const vixData = {"labels": ["03-26"], "values": [27.66]};
         const usdData = {"labels": ["03-26"], "values": [99.88]};
-        const jpyData = {"labels": ["02-13", "02-16", "02-17", "02-18", "02-19", "02-20", "02-23", "02-24", "02-25", "02-26", "02-27", "03-02", "03-03", "03-04", "03-05", "03-06", "03-09", "03-10", "03-11", "03-12", "03-13", "03-16", "03-17", "03-18", "03-19", "03-20", "03-23", "03-24", "03-25", "03-26"], "values": [152.7595, 153.5255, 153.2745, 154.766, 154.982, 155.0665, 154.6275, 155.834, 156.3215, 156.1045, 156.1785, 157.3945, 157.58, 157.0205, 157.5265, 157.9105, 157.8205, 158.1675, 158.9885, 159.2725, 159.7285, 159.1215, 158.9675, 159.7745, 157.8775, 159.2265, 158.3345, 158.6885, 159.4165, 159.6465]};
-        const us10yData = {"labels": ["03-26"], "values": [4.406]};
+        const jpyData = {"labels": ["02-13", "02-16", "02-17", "02-18", "02-19", "02-20", "02-23", "02-24", "02-25", "02-26", "02-27", "03-02", "03-03", "03-04", "03-05", "03-06", "03-09", "03-10", "03-11", "03-12", "03-13", "03-16", "03-17", "03-18", "03-19", "03-20", "03-23", "03-24", "03-25", "03-26"], "values": [152.7595, 153.5255, 153.2745, 154.766, 154.982, 155.0665, 154.6275, 155.834, 156.3215, 156.1045, 156.1785, 157.3945, 157.58, 157.0205, 157.5265, 157.9105, 157.8205, 158.1675, 158.9885, 159.2725, 159.7285, 159.1215, 158.9675, 159.7745, 157.8775, 159.2265, 158.3345, 158.6885, 159.4165, 159.669]};
+        const us10yData = {"labels": ["03-26"], "values": [4.412]};
 
         function buildAllCharts() {
             chartDefaults = getChartDefaults();
