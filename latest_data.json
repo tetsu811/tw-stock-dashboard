@@ -1,6 +1,6 @@
 {
   "date": "20260326",
-  "generated_at": "2026-03-26 10:06:48",
+  "generated_at": "2026-03-26 16:29:09",
   "taiex": {
     "index": 33337.62,
     "change": -101.49,
@@ -11,13 +11,13 @@
     "date": "20260326"
   },
   "institutional": {
-    "foreign_buy": 257977823926.0,
-    "foreign_sell": 265898176629.0,
+    "foreign_buy": 265454667052.0,
+    "foreign_sell": 273375019755.0,
     "foreign_net": -7920352703.0,
     "foreign_prev_net": 37474763788.0,
-    "trust_buy": 12029474987.0,
-    "trust_sell": 7697494956.0,
-    "trust_net": 4331980031.0,
+    "trust_buy": 12853159987.0,
+    "trust_sell": 8109966980.0,
+    "trust_net": 4743193007.0,
     "trust_prev_net": 1158480690.0,
     "dealer_net": 4503248879.0,
     "dealer_buy": 11071046661.0,
@@ -187,13 +187,13 @@
   "usd_index": [
     {
       "date": "2026-03-26",
-      "close": 99.68
+      "close": 99.86
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-03-26",
-      "close": 159.51
+      "close": 159.66
     }
   ],
   "vix": {
@@ -218,7 +218,7 @@
     "date": "20260326"
   },
   "cnn_fg": {
-    "value": 18.1,
+    "value": 19.5,
     "label": "extreme fear",
     "prev_value": 19.3,
     "prev_label": null,
