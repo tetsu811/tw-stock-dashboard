@@ -1615,43 +1615,130 @@ def _fetch_investing_data(pair_id, days=30):
     return []
 
 
+def _compute_dxy_from_fred():
+    """
+    從 FRED 6 個匯率計算精確的 ICE US Dollar Index (DXY)
+    DXY = 50.14348112 × EURUSD^(-0.576) × USDJPY^(0.136) × GBPUSD^(-0.119)
+          × USDCAD^(0.091) × USDSEK^(0.042) × USDCHF^(0.036)
+    FRED 序列:
+      DEXUSEU = USD per 1 EUR (= EURUSD)
+      DEXJPUS = JPY per 1 USD (= USDJPY)
+      DEXUSUK = USD per 1 GBP (= GBPUSD)
+      DEXCAUS = CAD per 1 USD (= USDCAD)
+      DEXSDUS = SEK per 1 USD (= USDSEK)
+      DEXSZUS = CHF per 1 USD (= USDCHF)
+    """
+    import math
+    print("  [FRED DXY] 從 6 個匯率計算 ICE DXY...")
+    series_ids = ["DEXUSEU", "DEXJPUS", "DEXUSUK", "DEXCAUS", "DEXSDUS", "DEXSZUS"]
+    all_data = {}
+
+    end_date = datetime.now().strftime("%Y-%m-%d")
+    start_date = (datetime.now() - timedelta(days=50)).strftime("%Y-%m-%d")
+
+    for sid in series_ids:
+        try:
+            url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}&cosd={start_date}&coed={end_date}"
+            resp = requests.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }, timeout=15)
+            if resp.status_code == 200 and resp.text.strip():
+                lines = resp.text.strip().split("\n")
+                data_map = {}
+                for line in lines[1:]:
+                    fields = line.strip().split(",")
+                    if len(fields) >= 2:
+                        date_str = fields[0].strip()
+                        val_str = fields[1].strip()
+                        if val_str and val_str != "." and val_str != "":
+                            try:
+                                data_map[date_str] = float(val_str)
+                            except ValueError:
+                                pass
+                all_data[sid] = data_map
+                print(f"    [FRED] {sid}: {len(data_map)} 筆")
+            else:
+                print(f"    [FRED] {sid}: HTTP {resp.status_code}")
+                return []
+        except Exception as e:
+            print(f"    [FRED] {sid}: ❌ {e}")
+            return []
+
+    # 找共同日期
+    if not all(sid in all_data and all_data[sid] for sid in series_ids):
+        print("  [FRED DXY] ❌ 缺少部分匯率資料")
+        return []
+
+    common_dates = sorted(set(all_data["DEXUSEU"].keys()))
+    results = []
+    for date in common_dates:
+        eurusd = all_data["DEXUSEU"].get(date)
+        usdjpy = all_data["DEXJPUS"].get(date)
+        gbpusd = all_data["DEXUSUK"].get(date)
+        usdcad = all_data["DEXCAUS"].get(date)
+        usdsek = all_data["DEXSDUS"].get(date)
+        usdchf = all_data["DEXSZUS"].get(date)
+
+        if all(v is not None and v > 0 for v in [eurusd, usdjpy, gbpusd, usdcad, usdsek, usdchf]):
+            dxy = 50.14348112 * (
+                math.pow(eurusd, -0.576) *
+                math.pow(usdjpy, 0.136) *
+                math.pow(gbpusd, -0.119) *
+                math.pow(usdcad, 0.091) *
+                math.pow(usdsek, 0.042) *
+                math.pow(usdchf, 0.036)
+            )
+            results.append({"date": date, "close": round(dxy, 2)})
+
+    if results:
+        print(f"  [FRED DXY] ✅ 計算完成: {len(results)} 筆 (最新 {results[-1]['date']} = {results[-1]['close']})")
+    else:
+        print("  [FRED DXY] ❌ 無法計算")
+    return results
+
+
 def fetch_usd_index():
     """
-    抓取美元指數近30天
-    優先順序: Stooq DXY (最接近 ICE DXY) → FRED DTWEXBGS (美元貿易加權指數) → cnyes quote
+    抓取美元指數 (ICE DXY) 近30天
+    主力: 從 FRED 6 個匯率精確計算 DXY
+    備用: cnyes quote (即時單點)
     """
     print("💵 抓取美元指數...")
 
-    # 方法1: Stooq DXY (最接近實際 ICE DXY)
-    data = _fetch_stooq_data("dxy.f", 35)
+    # 方法1 (主力): 從 FRED 匯率計算精確 DXY
+    data = _compute_dxy_from_fred()
 
-    # 方法2: FRED DTWEXBGS (美元貿易加權指數，非 DXY 但趨勢相似)
-    if not data:
-        data = _fetch_fred_data("DTWEXBGS", 35)
+    # 方法2: cnyes quote=1 疊加即時價
+    current_price = None
+    for sym in ["FX:DXY", "GI:DXY", "GI:DXY00"]:
+        try:
+            resp = _safe_get("https://ws.api.cnyes.com/ws/api/v1/charting/history",
+                            {"resolution": "D", "symbol": sym, "quote": 1},
+                            timeout=8)
+            if resp:
+                qdata = resp.json()
+                quote = qdata.get("data", {})
+                if isinstance(quote, dict):
+                    price = quote.get("6", None) or quote.get("c", [None])
+                    if isinstance(price, list) and price:
+                        price = price[-1]
+                    if price and float(price) > 0:
+                        current_price = round(float(price), 2)
+                        print(f"  [cnyes quote] ✅ DXY 即時 = {current_price}")
+                        break
+        except Exception as e:
+            print(f"  [cnyes quote] ❌ {sym}: {e}")
 
-    # 方法3: cnyes quote=1 (只有即時價)
-    if not data:
-        print("  [cnyes quote] 嘗試取得 DXY 即時價...")
-        for sym in ["FX:DXY", "GI:DXY", "GI:DXY00"]:
-            try:
-                resp = _safe_get("https://ws.api.cnyes.com/ws/api/v1/charting/history",
-                                {"resolution": "D", "symbol": sym, "quote": 1},
-                                timeout=8)
-                if resp:
-                    qdata = resp.json()
-                    status_code = qdata.get("statusCode")
-                    quote = qdata.get("data", {})
-                    if isinstance(quote, dict):
-                        price = quote.get("6", None) or quote.get("c", [None])
-                        if isinstance(price, list) and price:
-                            price = price[-1]
-                        if price and float(price) > 0:
-                            today_str = datetime.now().strftime("%Y-%m-%d")
-                            data = [{"date": today_str, "close": round(float(price), 2)}]
-                            print(f"  [cnyes quote] ✅ DXY = {data[0]['close']}")
-                            break
-            except Exception as e:
-                print(f"  [cnyes quote] ❌ {sym}: {e}")
+    # 用即時價疊加到歷史資料
+    if current_price:
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        if data:
+            if data[-1]["date"] != today_str:
+                data.append({"date": today_str, "close": current_price})
+            else:
+                data[-1]["close"] = current_price
+        else:
+            data = [{"date": today_str, "close": current_price}]
 
     if not data:
         print("  ⚠️ 美元指數: 所有來源失敗")
@@ -1662,20 +1749,20 @@ def fetch_usd_index():
 def fetch_jpy_rate():
     """
     抓取日圓匯率近30天 (USD/JPY)
-    優先順序: FRED DEXJPUS (官方匯率資料) → Stooq → Google Finance (即時)
+    優先順序: Stooq usdjpy (即時完整歷史) → FRED DEXJPUS (有延遲) → Google Finance (即時)
     """
     print("💴 抓取日圓匯率...")
     data = []
     current_value = None
 
-    # 方法1 (主力): FRED DEXJPUS — 官方匯率，有 30 天歷史
-    data = _fetch_fred_data("DEXJPUS", 35)
+    # 方法1 (主力): Stooq usdjpy — 完整歷史，即時更新
+    data = _fetch_stooq_data("usdjpy", 35)
 
-    # 方法2: Stooq
+    # 方法2: FRED DEXJPUS (有幾天延遲，作為備用)
     if not data:
-        data = _fetch_stooq_data("usdjpy", 35)
+        data = _fetch_fred_data("DEXJPUS", 35)
 
-    # 方法3: Google Finance (只有即時價)
+    # 方法3: Google Finance (即時價疊加)
     gf = _fetch_google_finance("USD-JPY")
     if gf:
         current_value = gf["price"]
