@@ -1,13 +1,13 @@
 {
   "date": "20260327",
-  "generated_at": "2026-03-27 08:50:42",
+  "generated_at": "2026-03-27 09:59:38",
   "taiex": {
     "index": 33112.59,
     "change": -225.03,
     "change_pct": -0.68,
-    "volume": 652110045615.0,
+    "volume": 658273529008.0,
     "prev_volume": 766599119592.0,
-    "volume_change": -14.93,
+    "volume_change": -14.13,
     "date": "20260327"
   },
   "institutional": {
@@ -26,10 +26,17 @@
   "foreign_top10": {
     "top_buy": [
       {
+        "stock_id": "00711B",
+        "stock_name": "復華彭博新興債",
+        "buy": 133865,
+        "sell": 40,
+        "net": 133825
+      },
+      {
         "stock_id": "2344",
         "stock_name": "華邦電",
-        "buy": 61791,
-        "sell": 37672,
+        "buy": 62291,
+        "sell": 38172,
         "net": 24119
       },
       {
@@ -87,13 +94,6 @@
         "buy": 7292,
         "sell": 1622,
         "net": 5670
-      },
-      {
-        "stock_id": "2897",
-        "stock_name": "王道銀行",
-        "buy": 6182,
-        "sell": 664,
-        "net": 5518
       }
     ],
     "top_sell": [
@@ -187,7 +187,7 @@
   "usd_index": [
     {
       "date": "2026-03-27",
-      "close": 99.99
+      "close": 100.01
     }
   ],
   "jpy_rate": [
@@ -309,37 +309,37 @@
     },
     {
       "date": "2026-03-27",
-      "close": 159.8295
+      "close": 159.8715
     }
   ],
   "vix": {
-    "value": 28.3,
+    "value": 28.48,
     "date": "2026-03-27",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-03-27",
-        "close": 28.3
+        "close": 28.48
       }
     ]
   },
   "futures": {
-    "close": 33120.0,
-    "change": -321.0,
-    "change_pct": -0.96,
+    "close": null,
+    "change": null,
+    "change_pct": null,
     "volume": null,
-    "settlement": 33126.0,
-    "open": 32793.0,
-    "high": 35968.0,
-    "low": 31227.0,
-    "contract_month": "202604"
+    "settlement": null,
+    "open": null,
+    "high": null,
+    "low": null,
+    "contract_month": null
   },
   "margin_ratio": {
     "ratio": null,
     "date": "20260327"
   },
   "cnn_fg": {
-    "value": 17.5,
+    "value": 17.3,
     "label": "extreme fear",
     "prev_value": 18.2,
     "prev_label": null,
