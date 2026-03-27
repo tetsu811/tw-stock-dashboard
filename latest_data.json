@@ -1,31 +1,173 @@
 {
   "date": "20260327",
-  "generated_at": "2026-03-27 03:14:58",
+  "generated_at": "2026-03-27 08:50:42",
   "taiex": {
-    "index": 33337.62,
-    "change": -101.49,
-    "change_pct": -0.3,
-    "volume": 766599119592.0,
-    "prev_volume": 652340765184.0,
-    "volume_change": 17.52,
+    "index": 33112.59,
+    "change": -225.03,
+    "change_pct": -0.68,
+    "volume": 652110045615.0,
+    "prev_volume": 766599119592.0,
+    "volume_change": -14.93,
     "date": "20260327"
   },
   "institutional": {
-    "foreign_buy": 265454667052.0,
-    "foreign_sell": 273375019755.0,
-    "foreign_net": -7920352703.0,
+    "foreign_buy": 215046777009.0,
+    "foreign_sell": 253517392409.0,
+    "foreign_net": -38470615400.0,
     "foreign_prev_net": -7920352703.0,
-    "trust_buy": 12853159987.0,
-    "trust_sell": 8109966980.0,
-    "trust_net": 4743193007.0,
+    "trust_buy": 10240630947.0,
+    "trust_sell": 10160812410.0,
+    "trust_net": 79818537.0,
     "trust_prev_net": 4743193007.0,
-    "dealer_net": 4503248879.0,
-    "dealer_buy": 11071046661.0,
-    "dealer_sell": 6567797782.0
+    "dealer_net": 3659857689.0,
+    "dealer_buy": 9100860858.0,
+    "dealer_sell": 5441003169.0
   },
   "foreign_top10": {
-    "top_buy": [],
-    "top_sell": []
+    "top_buy": [
+      {
+        "stock_id": "2344",
+        "stock_name": "華邦電",
+        "buy": 61791,
+        "sell": 37672,
+        "net": 24119
+      },
+      {
+        "stock_id": "2324",
+        "stock_name": "仁寶",
+        "buy": 32942,
+        "sell": 10481,
+        "net": 22461
+      },
+      {
+        "stock_id": "6285",
+        "stock_name": "啟碁",
+        "buy": 18437,
+        "sell": 7729,
+        "net": 10708
+      },
+      {
+        "stock_id": "5871",
+        "stock_name": "中租-KY",
+        "buy": 14121,
+        "sell": 3615,
+        "net": 10506
+      },
+      {
+        "stock_id": "2313",
+        "stock_name": "華通",
+        "buy": 46462,
+        "sell": 36139,
+        "net": 10322
+      },
+      {
+        "stock_id": "2337",
+        "stock_name": "旺宏",
+        "buy": 15372,
+        "sell": 5408,
+        "net": 9963
+      },
+      {
+        "stock_id": "2367",
+        "stock_name": "燿華",
+        "buy": 80847,
+        "sell": 73462,
+        "net": 7385
+      },
+      {
+        "stock_id": "2618",
+        "stock_name": "長榮航",
+        "buy": 17071,
+        "sell": 9833,
+        "net": 7239
+      },
+      {
+        "stock_id": "3062",
+        "stock_name": "建漢",
+        "buy": 7292,
+        "sell": 1622,
+        "net": 5670
+      },
+      {
+        "stock_id": "2897",
+        "stock_name": "王道銀行",
+        "buy": 6182,
+        "sell": 664,
+        "net": 5518
+      }
+    ],
+    "top_sell": [
+      {
+        "stock_id": "0050",
+        "stock_name": "元大台灣50",
+        "buy": 1194,
+        "sell": 61307,
+        "net": -60114
+      },
+      {
+        "stock_id": "2409",
+        "stock_name": "友達",
+        "buy": 10238,
+        "sell": 42257,
+        "net": -32020
+      },
+      {
+        "stock_id": "00981A",
+        "stock_name": "主動統一台股增長",
+        "buy": 12522,
+        "sell": 39126,
+        "net": -26604
+      },
+      {
+        "stock_id": "3576",
+        "stock_name": "聯合再生",
+        "buy": 4223,
+        "sell": 23713,
+        "net": -19490
+      },
+      {
+        "stock_id": "00990A",
+        "stock_name": "主動元大AI新經濟",
+        "buy": 2848,
+        "sell": 19707,
+        "net": -16858
+      },
+      {
+        "stock_id": "6770",
+        "stock_name": "力積電",
+        "buy": 63302,
+        "sell": 79763,
+        "net": -16461
+      },
+      {
+        "stock_id": "1314",
+        "stock_name": "中石化",
+        "buy": 7657,
+        "sell": 23580,
+        "net": -15923
+      },
+      {
+        "stock_id": "2887",
+        "stock_name": "台新新光金",
+        "buy": 24117,
+        "sell": 39531,
+        "net": -15414
+      },
+      {
+        "stock_id": "00991A",
+        "stock_name": "主動復華未來50",
+        "buy": 8873,
+        "sell": 23467,
+        "net": -14594
+      },
+      {
+        "stock_id": "00988A",
+        "stock_name": "主動統一全球創新",
+        "buy": 2675,
+        "sell": 17033,
+        "net": -14358
+      }
+    ]
   },
   "margin": {
     "margin_balance": null,
@@ -45,7 +187,7 @@
   "usd_index": [
     {
       "date": "2026-03-27",
-      "close": 99.86
+      "close": 99.99
     }
   ],
   "jpy_rate": [
@@ -167,27 +309,27 @@
     },
     {
       "date": "2026-03-27",
-      "close": 159.552
+      "close": 159.8295
     }
   ],
   "vix": {
-    "value": 27.44,
+    "value": 28.3,
     "date": "2026-03-27",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-03-27",
-        "close": 27.44
+        "close": 28.3
       }
     ]
   },
   "futures": {
-    "close": 32807.0,
-    "change": -634.0,
-    "change_pct": -1.9,
+    "close": 33120.0,
+    "change": -321.0,
+    "change_pct": -0.96,
     "volume": null,
-    "settlement": null,
-    "open": 33474.0,
+    "settlement": 33126.0,
+    "open": 32793.0,
     "high": 35968.0,
     "low": 31227.0,
     "contract_month": "202604"
@@ -197,11 +339,11 @@
     "date": "20260327"
   },
   "cnn_fg": {
-    "value": 18.2,
+    "value": 17.5,
     "label": "extreme fear",
-    "prev_value": 19.3,
+    "prev_value": 18.2,
     "prev_label": null,
-    "week_ago_value": 17.3
+    "week_ago_value": 16.5
   },
   "crypto_fg": {
     "value": 13,
@@ -210,9 +352,9 @@
     "prev_label": "Extreme Fear"
   },
   "pcr": {
-    "ratio": null,
-    "put_oi": null,
-    "call_oi": null
+    "ratio": 131.17,
+    "put_oi": 400296.0,
+    "call_oi": 408457.0
   },
   "us10y": {
     "value": 4.416,
@@ -227,28 +369,28 @@
   },
   "futures_oi": {
     "foreign": {
-      "change": null,
-      "oi": null
+      "change": -2828,
+      "oi": -39919
     },
     "trust": {
-      "change": null,
-      "oi": null
+      "change": -315,
+      "oi": 38169
     },
     "dealer": {
-      "change": null,
-      "oi": null
+      "change": 851,
+      "oi": -944
     },
     "total": {
-      "change": null,
-      "oi": null
+      "change": -2292,
+      "oi": -2694
     }
   },
   "sentiment": {
-    "micro_sentiment": null,
+    "micro_sentiment": -8.55,
     "micro_sentiment_prev": 14.64,
-    "mini_sentiment": null,
-    "mini_sentiment_prev": 14.64,
-    "pcr_today": null,
+    "mini_sentiment": -8.55,
+    "mini_sentiment_prev": 3.01,
+    "pcr_today": 98.0,
     "pcr_prev": 109.23
   }
 }
