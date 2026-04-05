@@ -1,12 +1,11 @@
 name: Daily Dashboard Update
 
 on:
-  # æ¯å¤©å°ç£æé 19:00 (UTC 11:00) èªåå·è¡
-  # èè³èå¸æ¸æç´ 18:00 å¾ç¼å¸ï¼19:00 è·ç¢ºä¿è³æé½å¨
+  # Run at UTC 11:00 = Taiwan 19:00, weekdays only
   schedule:
-    - cron: '0 11 * * 1-5'  # UTC 11:00 = å°ç£ 19:00ï¼é±ä¸å°é±äº
+    - cron: '0 11 * * 1-5'
 
-  # ä¹å¯ä»¥æåè§¸ç¼
+  # Manual trigger
   workflow_dispatch:
 
 permissions:
@@ -32,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Seed history cache (é¦æ¬¡æå¿«åä¸è¶³æ)
+      - name: Seed history cache
         run: |
           NEED_SEED=0
           if [ ! -f history_cache.json ]; then
@@ -42,12 +41,12 @@ jobs:
             python3 -c "
           import json, sys
           try:
-              c = json.load(open('history_cache.json'))
-              v = len(c.get('vix', []))
-              print(f'Cache has {v} VIX points')
-              sys.exit(0 if v >= 7 else 1)
+            c = json.load(open('history_cache.json'))
+            v = len(c.get('vix', []))
+            print(f'Cache has {v} VIX points')
+            sys.exit(0 if v >= 7 else 1)
           except:
-              sys.exit(1)
+            sys.exit(1)
           " || NEED_SEED=1
           fi
           if [ "$NEED_SEED" = "1" ]; then
@@ -58,7 +57,7 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Test API sources (é©è­è³æä¾æº)
+      - name: Test API sources
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python test_sources.py || true
