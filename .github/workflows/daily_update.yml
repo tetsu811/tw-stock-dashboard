@@ -1,12 +1,12 @@
 name: Daily Dashboard Update
 
 on:
-  # 每天台灣時間 19:00 (UTC 11:00) 自動執行
-  # 融資融券數據約 18:00 後發布，19:00 跑確保資料齊全
+  # æ¯å¤©å°ç£æé 19:00 (UTC 11:00) èªåå·è¡
+  # èè³èå¸æ¸æç´ 18:00 å¾ç¼å¸ï¼19:00 è·ç¢ºä¿è³æé½å¨
   schedule:
-    - cron: '0 11 * * 1-5'  # UTC 11:00 = 台灣 19:00，週一到週五
+    - cron: '0 11 * * 1-5'  # UTC 11:00 = å°ç£ 19:00ï¼é±ä¸å°é±äº
 
-  # 也可以手動觸發
+  # ä¹å¯ä»¥æåè§¸ç¼
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,8 @@ permissions:
 jobs:
   update-dashboard:
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Taipei
 
     steps:
       - name: Checkout
@@ -30,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Seed history cache (首次或快取不足時)
+      - name: Seed history cache (é¦æ¬¡æå¿«åä¸è¶³æ)
         run: |
           NEED_SEED=0
           if [ ! -f history_cache.json ]; then
@@ -56,7 +58,7 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Test API sources (驗證資料來源)
+      - name: Test API sources (é©è­è³æä¾æº)
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python test_sources.py || true
