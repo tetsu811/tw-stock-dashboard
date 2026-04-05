@@ -1,6 +1,6 @@
 {
-  "date": "20260403",
-  "generated_at": "2026-04-03 09:57:26",
+  "date": "20260405",
+  "generated_at": "2026-04-05 13:17:33",
   "taiex": {
     "index": 32572.43,
     "change": -602.39,
@@ -8,17 +8,17 @@
     "volume": 702608705100.0,
     "prev_volume": 652608970719.0,
     "volume_change": 7.66,
-    "date": "20260403"
+    "date": "20260405"
   },
   "institutional": {
     "foreign_buy": 238418480591.0,
     "foreign_sell": 277114042431.0,
     "foreign_net": -38695561840.0,
-    "foreign_prev_net": -38695561840.0,
+    "foreign_prev_net": null,
     "trust_buy": 15535128465.0,
     "trust_sell": 7110746536.0,
     "trust_net": 8424381929.0,
-    "trust_prev_net": 8424381929.0,
+    "trust_prev_net": null,
     "dealer_net": 208209184.0,
     "dealer_buy": 7134407766.0,
     "dealer_sell": 6926198582.0
@@ -44,23 +44,23 @@
   },
   "usd_index": [
     {
-      "date": "2026-04-03",
-      "close": 99.99
+      "date": "2026-04-05",
+      "close": 100.19
     }
   ],
   "jpy_rate": [
     {
-      "date": "2026-04-03",
-      "close": 159.595012
+      "date": "2026-04-05",
+      "close": 159.654
     }
   ],
   "vix": {
     "value": 23.87,
-    "date": "2026-04-03",
+    "date": "2026-04-05",
     "prev_value": null,
     "chart": [
       {
-        "date": "2026-04-03",
+        "date": "2026-04-05",
         "close": 23.87
       }
     ]
@@ -78,7 +78,7 @@
   },
   "margin_ratio": {
     "ratio": null,
-    "date": "20260403"
+    "date": "20260405"
   },
   "cnn_fg": {
     "value": 19.3,
@@ -88,9 +88,9 @@
     "week_ago_value": 14.5
   },
   "crypto_fg": {
-    "value": 9,
+    "value": 12,
     "label": "Extreme Fear",
-    "prev_value": 12,
+    "prev_value": 11,
     "prev_label": "Extreme Fear"
   },
   "pcr": {
@@ -100,11 +100,11 @@
   },
   "us10y": {
     "value": 4.313,
-    "date": "2026-04-03",
+    "date": "2026-04-05",
     "prev_value": null,
     "chart": [
       {
-        "date": "2026-04-03",
+        "date": "2026-04-05",
         "close": 4.313
       }
     ]
@@ -129,10 +129,10 @@
   },
   "sentiment": {
     "micro_sentiment": null,
-    "micro_sentiment_prev": -12.2,
+    "micro_sentiment_prev": null,
     "mini_sentiment": null,
-    "mini_sentiment_prev": -12.2,
+    "mini_sentiment_prev": null,
     "pcr_today": null,
-    "pcr_prev": 107.88
+    "pcr_prev": null
   }
 }
