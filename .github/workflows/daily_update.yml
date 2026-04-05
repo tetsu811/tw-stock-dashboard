@@ -1,27 +1,76 @@
 name: Daily Dashboard Update
 
 on:
+  # 每天台灣時間 19:00 (UTC 11:00) 自動執行
+  # 融資融券數據約 18:00 後發布，19:00 跑確保資料齊全
   schedule:
-    - cron: '0 9 * * 1-5'
+    - cron: '0 11 * * 1-5'  # UTC 11:00 = 台灣 19:00，週一到週五
+
+  # 也可以手動觸發
   workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   update-dashboard:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install -r requirements.txt
-      - run: python generate.py
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Seed history cache (首次或快取不足時)
+        run: |
+          NEED_SEED=0
+          if [ ! -f history_cache.json ]; then
+            echo "No cache file found"
+            NEED_SEED=1
+          else
+            python3 -c "
+          import json, sys
+          try:
+              c = json.load(open('history_cache.json'))
+              v = len(c.get('vix', []))
+              print(f'Cache has {v} VIX points')
+              sys.exit(0 if v >= 7 else 1)
+          except:
+              sys.exit(1)
+          " || NEED_SEED=1
+          fi
+          if [ "$NEED_SEED" = "1" ]; then
+            echo "Running seed_history.py..."
+            python seed_history.py || true
+          else
+            echo "Cache OK, skipping seed"
+          fi
+        continue-on-error: true
+
+      - name: Test API sources (驗證資料來源)
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python test_sources.py || true
+        continue-on-error: true
+
+      - name: Generate dashboard
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python generate.py
+
       - name: Commit and push
         run: |
           git config user.name "Dashboard Bot"
           git config user.email "bot@example.com"
-          git add index.html archive/ latest_data.json
+          git add index.html archive/ latest_data.json history_cache.json
           git diff --cached --quiet || git commit -m "Update dashboard $(date '+%Y-%m-%d')"
           git push
