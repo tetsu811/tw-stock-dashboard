@@ -1,6 +1,6 @@
 {
   "date": "20260406",
-  "generated_at": "2026-04-06 01:27:00",
+  "generated_at": "2026-04-06 19:49:43",
   "taiex": {
     "index": 32572.43,
     "change": -602.39,
@@ -45,23 +45,23 @@
   "usd_index": [
     {
       "date": "2026-04-06",
-      "close": 100.19
+      "close": 99.97
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-04-06",
-      "close": 159.574994
+      "close": 159.53299
     }
   ],
   "vix": {
-    "value": 23.87,
+    "value": 24.98,
     "date": "2026-04-06",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-04-06",
-        "close": 23.87
+        "close": 24.98
       }
     ]
   },
@@ -83,14 +83,14 @@
   "cnn_fg": {
     "value": 19.3,
     "label": "extreme fear",
-    "prev_value": 15.3,
+    "prev_value": 19.3,
     "prev_label": null,
-    "week_ago_value": 14.5
+    "week_ago_value": 13.7
   },
   "crypto_fg": {
-    "value": 12,
+    "value": 13,
     "label": "Extreme Fear",
-    "prev_value": 11,
+    "prev_value": 12,
     "prev_label": "Extreme Fear"
   },
   "pcr": {
