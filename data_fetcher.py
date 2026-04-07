@@ -1965,7 +1965,7 @@ def fetch_taiex_futures(date_str=None):
     return empty_result
 
 def _fetch_futures_backup(date_str):
-    """備用方案：從期交所 CSV 下載取得期貨資料 (含 header 動態解析)"""
+    """從期交所 CSV 下載取得 TX 期貨資料 (近月, 一般時段優先, 含合理性檢查)"""
     formatted_date = f"{date_str[:4]}/{date_str[4:6]}/{date_str[6:8]}"
     url = "https://www.taifex.com.tw/cht/3/futDataDown"
     params = {
@@ -1975,110 +1975,143 @@ def _fetch_futures_backup(date_str):
         "queryEndDate": formatted_date,
     }
     resp = _safe_get(url, params)
-    result = {
+    empty = {
         "close": None, "change": None, "change_pct": None,
         "volume": None, "settlement": None,
         "open": None, "high": None, "low": None,
         "contract_month": None,
     }
-
     if resp is None:
-        return result
+        return empty
 
     try:
-        lines = resp.text.strip().split("\n")
+        text = resp.text
+        if text.startswith('\ufeff'):
+            text = text[1:]
+        lines = text.strip().split("\n")
         if len(lines) < 2:
-            return result
+            return empty
 
-        # 解析 header 動態偵測欄位位置
-        header_fields = [f.strip().strip('"') for f in lines[0].split(",")]
-        print(f"    [期貨CSV] header ({len(header_fields)} 欄): {header_fields[:15]}")
+        header = [f.strip().strip('"') for f in lines[0].split(",")]
+        print(f"    [期貨CSV] header({len(header)}欄): {header[:15]}")
 
-        # 動態找欄位索引
+        # 動態欄位映射 — 取「第一個」出現的欄位 (避免被夜盤欄位覆蓋)
         col_map = {}
-        for i, h in enumerate(header_fields):
+        for i, h in enumerate(header):
             hl = h.lower().replace(" ", "")
-            if "開盤" in h or "open" in hl:
+            if "open" not in col_map and ("開盤" in h or "open" in hl):
                 col_map["open"] = i
-            elif "最高" in h or "high" in hl:
+            elif "high" not in col_map and ("最高" in h or "high" in hl):
                 col_map["high"] = i
-            elif "最低" in h or "low" in hl:
+            elif "low" not in col_map and ("最低" in h or "low" in hl):
                 col_map["low"] = i
-            elif ("收盤" in h or "close" in hl) and "結算" not in h:
+            elif "close" not in col_map and ("收盤" in h or "close" in hl) and "結算" not in h:
                 col_map["close"] = i
-            elif "漲跌價" in h or ("change" in hl and "%" not in h and "pct" not in hl):
+            elif "change" not in col_map and ("漲跌價" in h or ("change" in hl and "%" not in h)):
                 col_map["change"] = i
-            elif "成交量" in h or ("volume" in hl and "金額" not in h):
+            elif "volume" not in col_map and ("成交量" in h or ("volume" in hl and "金額" not in h)):
                 col_map["volume"] = i
-            elif "結算" in h or "settlement" in hl:
+            elif "settlement" not in col_map and ("結算" in h or "settlement" in hl):
                 col_map["settlement"] = i
-            elif "到期" in h or "月份" in h or "week" in hl:
+            elif "month" not in col_map and ("到期" in h or "月份" in h):
                 col_map["month"] = i
+            elif "session" not in col_map and ("時段" in h or "session" in hl):
+                col_map["session"] = i
+
+        if "close" not in col_map:
+            col_map = {"open": 3, "high": 4, "low": 5, "close": 6, "change": 7,
+                       "volume": 9, "settlement": 10, "month": 2, "session": 12}
+            print(f"    [期貨CSV] header 解析失敗, 使用預設欄位映射")
 
         print(f"    [期貨CSV] 欄位映射: {col_map}")
 
-        # 若 header 解析失敗，使用 TAIFEX 標準預設位置
-        # 標準格式: 日期(0), 契約(1), 到期月份(2), 開盤價(3), 最高價(4), 最低價(5), 收盤價(6), 漲跌價(7), 漲跌%(8), 成交量(9), 結算價(10), 未平倉量(11), 交易時段(12)
-        if "close" not in col_map:
-            col_map = {"open": 3, "high": 4, "low": 5, "close": 6, "change": 7, "volume": 9, "settlement": 10, "month": 2}
-            print(f"    [期貨CSV] 使用預設欄位映射: {col_map}")
+        def gv(fields, key, default_idx=None):
+            idx = col_map.get(key, default_idx)
+            if idx is None or idx >= len(fields):
+                return None
+            return fields[idx]
 
+        # 收集所有合理的 TX row (排除 MTX/MXF/TE/TF/週選/價差等)
+        candidates = []
         for line in lines[1:]:
             fields = [f.strip().strip('"') for f in line.split(",")]
             if len(fields) < 8:
                 continue
-            # 契約代碼在前幾個欄位
-            line_text = ",".join(fields[:3])
-            if "TX" not in line_text:
-                continue
-            # 跳過小台(MTX)、微台(MXF)、電子期(TE)、金融期(TF)
-            if any(x in line_text for x in ["MTX", "MXF", "TE", "TF"]):
+            contract = fields[1].strip() if len(fields) > 1 else ""
+            if contract != "TX":
                 continue
 
-            # 使用動態欄位映射
-            close_idx = col_map.get("close", 6)
-            close_val = _parse_number(fields[close_idx]) if close_idx < len(fields) else None
+            close_val = _parse_number(gv(fields, "close", 6))
+            if close_val is None or not (10000 < close_val < 50000):
+                continue
+            high_val = _parse_number(gv(fields, "high", 4))
+            low_val = _parse_number(gv(fields, "low", 5))
 
-            if close_val and 10000 < close_val < 50000:
-                result["open"] = _parse_number(fields[col_map.get("open", 3)]) if col_map.get("open", 3) < len(fields) else None
-                result["high"] = _parse_number(fields[col_map.get("high", 4)]) if col_map.get("high", 4) < len(fields) else None
-                result["low"] = _parse_number(fields[col_map.get("low", 5)]) if col_map.get("low", 5) < len(fields) else None
-                result["close"] = close_val
-                result["change"] = _parse_number(fields[col_map.get("change", 7)]) if col_map.get("change", 7) < len(fields) else None
-                result["volume"] = _parse_number(fields[col_map.get("volume", 9)]) if col_map.get("volume", 9) < len(fields) else None
-                result["settlement"] = _parse_number(fields[col_map.get("settlement", 10)]) if col_map.get("settlement", 10) < len(fields) else None
-                result["contract_month"] = fields[col_map.get("month", 2)] if col_map.get("month", 2) < len(fields) else None
+            # 合理性檢查: TX 單日範圍幾乎不會超過 2000 點
+            if high_val is not None and low_val is not None and (high_val - low_val) > 2000:
+                continue
+            # 高低必須包圍收盤
+            if high_val is not None and low_val is not None and not (low_val <= close_val <= high_val):
+                continue
 
-                if result["close"] and result["change"]:
-                    prev = result["close"] - result["change"]
-                    if prev != 0:
-                        result["change_pct"] = round(result["change"] / prev * 100, 2)
+            month_val = (gv(fields, "month", 2) or "").strip()
+            session_val = (gv(fields, "session", 12) or "").strip()
+            candidates.append({
+                "close": close_val,
+                "high": high_val,
+                "low": low_val,
+                "open": _parse_number(gv(fields, "open", 3)),
+                "change": _parse_number(gv(fields, "change", 7)),
+                "volume": _parse_number(gv(fields, "volume", 9)),
+                "settlement": _parse_number(gv(fields, "settlement", 10)),
+                "month": month_val,
+                "session": session_val,
+            })
 
-                # volume 可能被誤讀為漲跌%，檢查合理性
-                if result["volume"] is not None and result["volume"] < 100:
-                    # 可能讀到漲跌%而非成交量，嘗試下一個欄位
-                    alt_vol_idx = col_map.get("volume", 9) + 1
-                    if alt_vol_idx < len(fields):
-                        alt_vol = _parse_number(fields[alt_vol_idx])
-                        if alt_vol and alt_vol > 100:
-                            print(f"    [期貨CSV] volume 修正: {result['volume']} → {alt_vol} (idx {alt_vol_idx})")
-                            result["volume"] = alt_vol
+        if not candidates:
+            print(f"    [期貨CSV] ⚠️ 找不到合理的 TX row")
+            return empty
 
-                print(f"    [期貨CSV] ✅ 收盤={result['close']}, 漲跌={result['change']}, 成交量={result['volume']}")
-                print(f"    [期貨CSV] 原始欄位: {fields[:13]}")
-                break
+        # 排序: 一般時段優先, 再依到期月份升冪 (近月優先)
+        def sort_key(c):
+            session_pri = 0 if ("一般" in c["session"] or c["session"] == "") else 1
+            return (session_pri, c["month"] or "999999")
+        candidates.sort(key=sort_key)
+        chosen = candidates[0]
+        print(f"    [期貨CSV] 候選 {len(candidates)} 筆, 選擇 month={chosen['month']} session={chosen['session']}")
+
+        result = {
+            "close": chosen["close"],
+            "change": chosen["change"],
+            "change_pct": None,
+            "volume": chosen["volume"],
+            "settlement": chosen["settlement"],
+            "open": chosen["open"],
+            "high": chosen["high"],
+            "low": chosen["low"],
+            "contract_month": chosen["month"],
+        }
+        if result["close"] and result["change"] is not None:
+            prev = result["close"] - result["change"]
+            if prev != 0:
+                result["change_pct"] = round(result["change"] / prev * 100, 2)
+
+        # volume 過小通常是讀錯欄位 → 設為 None
+        if result["volume"] is not None and result["volume"] < 100:
+            result["volume"] = None
+
+        print(f"    [期貨CSV] ✅ close={result['close']} open={result['open']} "
+              f"high={result['high']} low={result['low']} vol={result['volume']}")
+        return result
 
     except Exception as e:
         print(f"  [錯誤] 備用期貨解析失敗: {e}")
         import traceback
         traceback.print_exc()
+        return empty
 
-    return result
 
 
-# ============================================================
-# 7b. 三大法人台指期未平倉 & 期權觀測指標
-# ============================================================
 def fetch_futures_oi(date_str=None):
     """
     抓取三大法人台指期貨未平倉口數
