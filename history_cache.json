@@ -2,25 +2,25 @@
   "vix": [
     {
       "date": "2026-04-07",
-      "close": 26.54
+      "close": 27.1
     }
   ],
   "us10y": [
     {
       "date": "2026-04-07",
-      "close": 4.364
+      "close": 4.374
     }
   ],
   "usd_index": [
     {
       "date": "2026-04-07",
-      "close": 99.92
+      "close": 99.9
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-04-07",
-      "close": 159.9835
+      "close": 159.9335
     }
   ],
   "micro_sentiment": [
@@ -41,5 +41,5 @@
       "close": 139.18
     }
   ],
-  "last_updated": "2026-04-07 23:14:17"
+  "last_updated": "2026-04-07 23:31:50"
 }

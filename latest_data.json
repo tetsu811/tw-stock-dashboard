@@ -1,23 +1,23 @@
 {
   "date": "20260407",
-  "generated_at": "2026-04-07 23:13:25",
+  "generated_at": "2026-04-07 23:30:41",
   "taiex": {
-    "index": null,
-    "change": null,
-    "change_pct": null,
-    "volume": null,
-    "prev_volume": null,
-    "volume_change": null,
+    "index": 32572.43,
+    "change": -602.39,
+    "change_pct": -1.82,
+    "volume": 702608705100.0,
+    "prev_volume": 652608970719.0,
+    "volume_change": 7.66,
     "date": "20260407"
   },
   "institutional": {
-    "foreign_buy": 208620216290.0,
-    "foreign_sell": 198544767666.0,
-    "foreign_net": 10075448624.0,
+    "foreign_buy": 212131932105.0,
+    "foreign_sell": 202035325361.0,
+    "foreign_net": 10096606744.0,
     "foreign_prev_net": null,
-    "trust_buy": 12109494820.0,
-    "trust_sell": 9657732326.0,
-    "trust_net": 2451762494.0,
+    "trust_buy": 14097066767.0,
+    "trust_sell": 9740422946.0,
+    "trust_net": 4356643821.0,
     "trust_prev_net": null,
     "dealer_net": 2355393465.0,
     "dealer_buy": 6635116890.0,
@@ -188,23 +188,23 @@
   "usd_index": [
     {
       "date": "2026-04-07",
-      "close": 99.92
+      "close": 99.9
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-04-07",
-      "close": 159.9835
+      "close": 159.9335
     }
   ],
   "vix": {
-    "value": 26.54,
+    "value": 27.1,
     "date": "2026-04-07",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-04-07",
-        "close": 26.54
+        "close": 27.1
       }
     ]
   },
@@ -243,13 +243,13 @@
     "call_oi": 249423.0
   },
   "us10y": {
-    "value": 4.364,
+    "value": 4.374,
     "date": "2026-04-07",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-04-07",
-        "close": 4.364
+        "close": 4.374
       }
     ]
   },

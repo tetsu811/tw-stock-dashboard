@@ -428,7 +428,7 @@
         <div class="header">
             <h1>台灣股市每日戰略儀表板</h1>
             <div class="date">2026/04/07 (星期二)</div>
-            <div class="update-time">資料更新時間: 2026-04-07 23:13:25</div>
+            <div class="update-time">資料更新時間: 2026-04-07 23:30:41</div>
         </div>
 
         <!-- ====== 加權指數 + 台指期 Hero ====== -->
@@ -438,16 +438,20 @@
                 <div class="card-title" style="justify-content: center;">
                     <span class="icon">📊</span> 加權股價指數 TAIEX
                 </div>
-                <div class="index-value ">
-                    N/A
+                <div class="index-value text-red">
+                    32,572.43
                 </div>
-                <div class="index-change ">
-                    
-                    N/A 點
-                    
+                <div class="index-change text-red">
+                    ▼
+                    602.39 點
+                    (-1.82%)
                 </div>
                 <div class="volume-info">
-                    成交金額: N/A
+                    成交金額: +7,026.09 億元
+                    
+                        <span class="metric-compare bg-green">
+                            較前日 7.66%
+                        </span>
                     
                 </div>
             </div>
@@ -464,6 +468,10 @@
                     ▲
                     654 點
                     (2.01%)
+                </div>
+                
+                <div class="spread-tag bg-green">
+                    期現貨價差: +587 點
                 </div>
                 
                 <div class="futures-detail">
@@ -493,17 +501,17 @@
             <div class="card">
                 <div class="card-title"><span class="icon">🌍</span> 外資買賣超</div>
                 <div class="metric-value text-green">
-                    +100.75
+                    +100.97
                 </div>
                 <div class="metric-sub">億元</div>
                 <div class="inst-detail">
                     <div class="detail-box">
                         <div class="label">買進</div>
-                        <div class="value text-green">+2,086.20 億元</div>
+                        <div class="value text-green">+2,121.32 億元</div>
                     </div>
                     <div class="detail-box">
                         <div class="label">賣出</div>
-                        <div class="value text-red">+1,985.45 億元</div>
+                        <div class="value text-red">+2,020.35 億元</div>
                     </div>
                 </div>
                 
@@ -513,17 +521,17 @@
             <div class="card">
                 <div class="card-title"><span class="icon">🏛️</span> 投信買賣超</div>
                 <div class="metric-value text-green">
-                    +24.52
+                    +43.57
                 </div>
                 <div class="metric-sub">億元</div>
                 <div class="inst-detail">
                     <div class="detail-box">
                         <div class="label">買進</div>
-                        <div class="value text-green">+121.09 億元</div>
+                        <div class="value text-green">+140.97 億元</div>
                     </div>
                     <div class="detail-box">
                         <div class="label">賣出</div>
-                        <div class="value text-red">+96.58 億元</div>
+                        <div class="value text-red">+97.40 億元</div>
                     </div>
                 </div>
                 
@@ -652,7 +660,7 @@
                 <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近30天)</div>
                 <div class="vix-header">
                     <div>
-                        <span class="vix-current text-red">26.54</span>
+                        <span class="vix-current text-red">27.10</span>
                         
                     </div>
                     <span class="vix-badge" style="background: rgba(239,68,68,0.15); color: #ef4444;">恐慌</span>
@@ -887,7 +895,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💵</span> 美元指數 (DXY) · 近30天</div>
                 
-                <div class="metric-value text-blue">99.92</div>
+                <div class="metric-value text-blue">99.90</div>
                 
                 <div class="chart-container">
                     <canvas id="usdChart"></canvas>
@@ -897,7 +905,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💴</span> 美元兌日圓 (USD/JPY) · 近30天</div>
                 
-                <div class="metric-value text-purple">159.98</div>
+                <div class="metric-value text-purple">159.93</div>
                 
                 <div class="chart-container">
                     <canvas id="jpyChart"></canvas>
@@ -907,7 +915,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近30天</div>
                 <div style="display:flex; align-items:baseline; gap:8px;">
-                    <div class="metric-value text-cyan">4.364%</div>
+                    <div class="metric-value text-cyan">4.374%</div>
                     
                 </div>
                 <div class="chart-container">
@@ -1000,10 +1008,10 @@
         }
 
         // Chart data
-        const vixData = {"labels": ["04-07"], "values": [26.54]};
-        const usdData = {"labels": ["04-07"], "values": [99.92]};
-        const jpyData = {"labels": ["04-07"], "values": [159.9835]};
-        const us10yData = {"labels": ["04-07"], "values": [4.364]};
+        const vixData = {"labels": ["04-07"], "values": [27.1]};
+        const usdData = {"labels": ["04-07"], "values": [99.9]};
+        const jpyData = {"labels": ["04-07"], "values": [159.9335]};
+        const us10yData = {"labels": ["04-07"], "values": [4.374]};
 
         function buildAllCharts() {
             chartDefaults = getChartDefaults();
@@ -1090,7 +1098,7 @@
         if (window === window.parent) return;  // not in iframe, skip
         var lastH = 0;
         function sendHeight() {
-            var h = document.body.scrollHeight;
+            var c = document.querySelector(".container"); var h = c ? Math.ceil(c.getBoundingClientRect().bottom) : document.body.scrollHeight;
             if (Math.abs(h - lastH) < 4) return;
             lastH = h;
             try {
