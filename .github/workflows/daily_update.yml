@@ -44,7 +44,7 @@ jobs:
             c = json.load(open('history_cache.json'))
             v = len(c.get('vix', []))
             print(f'Cache has {v} VIX points')
-            sys.exit(0 if v >= 7 else 1)
+            sys.exit(0 if v >= 1 else 1)
           except:
             sys.exit(1)
           " || NEED_SEED=1
