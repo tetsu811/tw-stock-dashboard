@@ -268,17 +268,12 @@ def _load_stock_names():
 # ============================================================
 def fetch_taiex(date_str=None):
     """
-    抓取加權指數資訊
+    抓取大盤指數
     回傳: {index, change, change_pct, volume, prev_volume, volume_change}
     """
-    print("📊 抓取加權指數...")
+    print("撈取 大盤指數...")
     if date_str is None:
         date_str = datetime.now().strftime("%Y%m%d")
-
-    url = "https://www.twse.com.tw/exchangeReport/FMTQIK"
-    ym = date_str[:6]  # YYYYMM
-    params = {"response": "json", "date": date_str}
-    resp = _safe_get(url, params)
 
     result = {
         "index": None, "change": None, "change_pct": None,
@@ -286,45 +281,75 @@ def fetch_taiex(date_str=None):
         "date": date_str
     }
 
-    if resp is None:
-        return result
-
+    # 主要來源: TWSE OpenAPI FMTQIK (回傳最近數筆交易日資料，不需指定日期)
     try:
-        data = resp.json()
-        if "data" in data and len(data["data"]) >= 1:
-            rows = data["data"]
-            # 最後一筆是最新的
-            latest = rows[-1]
-            # 欄位: 日期, 成交股數, 成交金額, 成交筆數, 發行量加權股價指數, 漲跌點數
-            result["index"] = _parse_number(latest[4])
-            result["change"] = _parse_number(latest[5])
-            vol = _parse_number(latest[2])  # 成交金額
-            result["volume"] = vol
-
-            if len(rows) >= 2:
-                prev = rows[-2]
-                prev_vol = _parse_number(prev[2])
-                result["prev_volume"] = prev_vol
-                prev_idx = _parse_number(prev[4])
-                if prev_idx and result["index"]:
-                    result["change_pct"] = round((result["index"] - prev_idx) / prev_idx * 100, 2)
-                if vol and prev_vol:
-                    result["volume_change"] = round((vol - prev_vol) / prev_vol * 100, 2)
+        oa_url = "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+        resp_oa = _safe_get(oa_url, timeout=12)
+        if resp_oa:
+            oa_data = resp_oa.json()
+            if isinstance(oa_data, list) and len(oa_data) >= 1:
+                latest = oa_data[-1]
+                idx_val = _parse_number(str(latest.get("TAIEX", "")))
+                chg_val = _parse_number(str(latest.get("Change", "")))
+                vol_val = _parse_number(str(latest.get("TradeValue", "")))
+                if idx_val:
+                    result["index"] = idx_val
+                if chg_val is not None:
+                    result["change"] = chg_val
+                if vol_val:
+                    result["volume"] = vol_val
+                if len(oa_data) >= 2:
+                    prev = oa_data[-2]
+                    prev_vol = _parse_number(str(prev.get("TradeValue", "")))
+                    prev_idx = _parse_number(str(prev.get("TAIEX", "")))
+                    if prev_vol:
+                        result["prev_volume"] = prev_vol
+                    if prev_idx and result["index"]:
+                        result["change_pct"] = round((result["index"] - prev_idx) / prev_idx * 100, 2)
+                    if result["volume"] and result["prev_volume"]:
+                        result["volume_change"] = round((result["volume"] - result["prev_volume"]) / result["prev_volume"] * 100, 2)
+                print(f"  [OpenAPI FMTQIK] index={result['index']} change={result['change']} vol={result['volume']}")
     except Exception as e:
-        print(f"  [錯誤] 解析加權指數失敗: {e}")
+        print(f"  [錯誤] OpenAPI FMTQIK: {e}")
 
-    # 也嘗試從每日收盤行情取得更精確的資料
+    # 備援1: 舊版 TWSE FMTQIK (含日期參數)
+    if result["index"] is None:
+        url = "https://www.twse.com.tw/exchangeReport/FMTQIK"
+        params = {"response": "json", "date": date_str}
+        resp = _safe_get(url, params)
+        if resp:
+            try:
+                data = resp.json()
+                if "data" in data and len(data["data"]) >= 1:
+                    rows = data["data"]
+                    latest = rows[-1]
+                    result["index"] = _parse_number(latest[4])
+                    result["change"] = _parse_number(latest[5])
+                    vol = _parse_number(latest[2])
+                    result["volume"] = vol
+                    if len(rows) >= 2:
+                        prev = rows[-2]
+                        prev_vol = _parse_number(prev[2])
+                        result["prev_volume"] = prev_vol
+                        prev_idx = _parse_number(prev[4])
+                        if prev_idx and result["index"]:
+                            result["change_pct"] = round((result["index"] - prev_idx) / prev_idx * 100, 2)
+                        if vol and prev_vol:
+                            result["volume_change"] = round((vol - prev_vol) / prev_vol * 100, 2)
+            except Exception as e:
+                print(f"  [錯誤] 舊版 FMTQIK: {e}")
+
+    # 備援2: 從加權指數頁面抓
     url2 = "https://www.twse.com.tw/exchangeReport/MI_INDEX"
     params2 = {"response": "json", "date": date_str, "type": "IND"}
     resp2 = _safe_get(url2, params2)
     if resp2:
         try:
             data2 = resp2.json()
-            # 嘗試從 data8 或 data7 取得加權指數
             for key in ["data8", "data7", "data6", "data5"]:
                 if key in data2:
                     for row in data2[key]:
-                        if "加權" in str(row[0]) and "不含" not in str(row[0]):
+                        if "發行量加權" in str(row[0]) and "未含" not in str(row[0]):
                             idx_val = _parse_number(row[1])
                             chg_val = _parse_number(row[2])
                             if idx_val:
@@ -338,9 +363,6 @@ def fetch_taiex(date_str=None):
     return result
 
 
-# ============================================================
-# 2. 三大法人買賣超
-# ============================================================
 def fetch_institutional(date_str=None):
     """
     抓取三大法人買賣超
