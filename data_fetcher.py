@@ -492,6 +492,31 @@ def fetch_institutional(date_str=None):
 # ============================================================
 def fetch_foreign_top10(date_str=None):
     """
+    抓取外資買超/賣超前十名 - 含日期 fallback
+    若指定日期無資料 (假日/連假), 自動回溯到最近一個有資料的交易日 (最多 10 天)
+    """
+    if date_str is None:
+        date_str = datetime.now().strftime("%Y%m%d")
+    base_date = datetime.strptime(date_str, "%Y%m%d")
+    for back_days in range(0, 11):
+        try_dt = base_date - timedelta(days=back_days)
+        if try_dt.weekday() >= 5:
+            continue
+        try_date = try_dt.strftime("%Y%m%d")
+        if back_days > 0:
+            print(f"    [外資回溯] 嘗試 {try_date}")
+        result = _fetch_foreign_top10_one_day(try_date)
+        if result and (result.get("top_buy") or result.get("top_sell")):
+            result["data_date"] = try_date
+            if back_days > 0:
+                print(f"    ✅ 取得 {try_date} 外資買賣超 (回溯 {back_days} 天)")
+            return result
+    print("    ⚠️ 連續回溯 10 天皆無外資買賣超資料")
+    return {"top_buy": [], "top_sell": [], "data_date": None}
+
+
+def _fetch_foreign_top10_one_day(date_str=None):
+    """
     抓取外資買超/賣超前十名
     回傳: {top_buy: [{stock_id, stock_name, net_amount}], top_sell: [...]}
     """
