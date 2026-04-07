@@ -1,6 +1,6 @@
 {
   "date": "20260407",
-  "generated_at": "2026-04-07 18:03:47",
+  "generated_at": "2026-04-07 18:17:53",
   "taiex": {
     "index": 33229.82,
     "change": 657.39,
@@ -188,23 +188,23 @@
   "usd_index": [
     {
       "date": "2026-04-07",
-      "close": 99.87
+      "close": 99.89
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-04-07",
-      "close": 159.619
+      "close": 159.6425
     }
   ],
   "vix": {
-    "value": 24.61,
+    "value": 24.46,
     "date": "2026-04-07",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-04-07",
-        "close": 24.61
+        "close": 24.46
       }
     ]
   },
@@ -277,6 +277,24 @@
     "mini_sentiment": 26.37,
     "mini_sentiment_prev": 26.37,
     "pcr_today": 123.99,
-    "pcr_prev": null
+    "pcr_prev": null,
+    "micro_sentiment_chart": [
+      {
+        "date": "2026-04-07",
+        "close": 26.37
+      }
+    ],
+    "mini_sentiment_chart": [
+      {
+        "date": "2026-04-07",
+        "close": 26.37
+      }
+    ],
+    "pcr_chart": [
+      {
+        "date": "2026-04-07",
+        "close": 139.18
+      }
+    ]
   }
 }
