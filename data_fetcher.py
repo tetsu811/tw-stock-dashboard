@@ -1901,78 +1901,43 @@ def fetch_vix():
 # ============================================================
 def fetch_taiex_futures(date_str=None):
     """
-    抓取台指期貨 (近月) 收盤資料
-    資料來源: 台灣期貨交易所 (TAIFEX)
-    回傳: {close, change, change_pct, volume, settlement, open, high, low}
+    抓取台指期貨 (近月) 收盤資料 - 含日期 fallback
+    若指定日期無資料 (假日/連假/夜盤未開), 自動回溯到最近一個有資料的交易日 (最多 10 天)
+    回傳: {close, change, change_pct, volume, settlement, open, high, low, contract_month, data_date}
     """
     print("📈 抓取台指期貨...")
     if date_str is None:
         date_str = datetime.now().strftime("%Y%m%d")
 
-    # 期交所 API 日期格式: YYYY/MM/DD
-    formatted_date = f"{date_str[:4]}/{date_str[4:6]}/{date_str[6:8]}"
+    base_date = datetime.strptime(date_str, "%Y%m%d")
 
-    result = {
+    empty_result = {
         "close": None, "change": None, "change_pct": None,
         "volume": None, "settlement": None,
         "open": None, "high": None, "low": None,
-        "contract_month": None,
+        "contract_month": None, "data_date": None,
     }
 
-    # 優先使用 CSV 下載 (更穩定)
-    result = _fetch_futures_backup(date_str)
-    if result["close"] is not None:
-        return result
+    for back_days in range(0, 11):
+        try_dt = base_date - timedelta(days=back_days)
+        try_date = try_dt.strftime("%Y%m%d")
+        # 跳過週末 (週六=5, 週日=6)
+        if try_dt.weekday() >= 5:
+            continue
+        if back_days > 0:
+            print(f"    [回溯] 嘗試 {try_date} ({try_dt.strftime('%A')})")
 
-    # 備用: HTML 解析
-    url = "https://www.taifex.com.tw/cht/3/futContractsDate"
-    params = {
-        "queryType": "1",
-        "marketCode": "0",
-        "dateaddcnt": "",
-        "commodity_id": "TX",
-        "queryDate": formatted_date,
-    }
-    resp = _safe_get(url, params)
+        result = _fetch_futures_backup(try_date)
+        if result.get("close") is not None:
+            result["data_date"] = try_date
+            if back_days > 0:
+                print(f"    ✅ 取得 {try_date} 的台指期收盤資料 (回溯 {back_days} 天)")
+            else:
+                print(f"    ✅ 取得當日 ({try_date}) 台指期收盤資料")
+            return result
 
-    if resp is None:
-        return result
-
-    try:
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(resp.text, "html.parser")
-        tables = soup.find_all("table")
-        for table in tables:
-            rows = table.find_all("tr")
-            for row in rows:
-                cells = row.find_all("td")
-                if len(cells) >= 8:
-                    cell_text = [c.get_text(strip=True) for c in cells]
-                    row_text = " ".join(cell_text)
-                    # 找近月合約
-                    if ("TX" in row_text or "臺股期貨" in row_text) and result["close"] is None:
-                        for i, t in enumerate(cell_text):
-                            val = _parse_number(t)
-                            if val and 10000 < val < 50000 and result["close"] is None:
-                                # 可能是收盤價 (介於10000-50000)
-                                result["open"] = _parse_number(cell_text[max(0,i-3)]) if i >= 3 else None
-                                result["high"] = _parse_number(cell_text[max(0,i-2)]) if i >= 2 else None
-                                result["low"] = _parse_number(cell_text[max(0,i-1)]) if i >= 1 else None
-                                result["close"] = val
-                                if i+1 < len(cell_text):
-                                    result["change"] = _parse_number(cell_text[i+1])
-                                if result["close"] and result["change"]:
-                                    prev = result["close"] - result["change"]
-                                    if prev != 0:
-                                        result["change_pct"] = round(result["change"] / prev * 100, 2)
-                                break
-                        if result["close"]:
-                            break
-    except Exception as e:
-        print(f"  [錯誤] 解析期貨資料失敗: {e}")
-
-    return result
-
+    print("    ⚠️ 連續回溯 10 天皆無台指期資料")
+    return empty_result
 
 def _fetch_futures_backup(date_str):
     """備用方案：從期交所 CSV 下載取得期貨資料 (含 header 動態解析)"""
