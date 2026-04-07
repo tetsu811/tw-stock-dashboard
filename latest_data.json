@@ -1,6 +1,6 @@
 {
   "date": "20260407",
-  "generated_at": "2026-04-07 18:17:53",
+  "generated_at": "2026-04-07 19:55:07",
   "taiex": {
     "index": 33229.82,
     "change": 657.39,
@@ -188,23 +188,23 @@
   "usd_index": [
     {
       "date": "2026-04-07",
-      "close": 99.89
+      "close": 99.93
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-04-07",
-      "close": 159.6425
+      "close": 159.831
     }
   ],
   "vix": {
-    "value": 24.46,
+    "value": 25.59,
     "date": "2026-04-07",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-04-07",
-        "close": 24.46
+        "close": 25.59
       }
     ]
   },
