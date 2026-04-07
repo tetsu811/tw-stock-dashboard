@@ -1012,12 +1012,7 @@
         if (window === window.parent) return;  // not in iframe, skip
         var lastH = 0;
         function sendHeight() {
-            var h = Math.max(
-                document.body.scrollHeight,
-                document.body.offsetHeight,
-                document.documentElement.scrollHeight,
-                document.documentElement.offsetHeight
-            );
+            var h = document.body.scrollHeight;
             if (Math.abs(h - lastH) < 4) return;
             lastH = h;
             try {
