@@ -1005,5 +1005,39 @@
         // Initial build
         buildAllCharts();
     </script>
+
+    <!-- Auto-resize iframe: send content height to parent (for embedding in WordPress) -->
+    <script>
+    (function() {
+        if (window === window.parent) return;  // not in iframe, skip
+        var lastH = 0;
+        function sendHeight() {
+            var h = Math.max(
+                document.body.scrollHeight,
+                document.body.offsetHeight,
+                document.documentElement.scrollHeight,
+                document.documentElement.offsetHeight
+            );
+            if (Math.abs(h - lastH) < 4) return;
+            lastH = h;
+            try {
+                window.parent.postMessage({type: 'tw-dashboard-height', height: h}, '*');
+            } catch (e) {}
+        }
+        window.addEventListener('load', sendHeight);
+        window.addEventListener('resize', sendHeight);
+        // Periodic resend in case content (charts, fonts) loads asynchronously
+        setTimeout(sendHeight, 200);
+        setTimeout(sendHeight, 600);
+        setTimeout(sendHeight, 1200);
+        setTimeout(sendHeight, 2500);
+        setInterval(sendHeight, 2000);
+        if (window.ResizeObserver) {
+            try {
+                new ResizeObserver(sendHeight).observe(document.body);
+            } catch (e) {}
+        }
+    })();
+    </script>
 </body>
 </html>
