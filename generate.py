@@ -480,6 +480,126 @@ def generate_dashboard(data, output_dir=None):
     return index_path
 
 
+
+HISTORY_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "history_cache.json")
+HISTORY_KEEP_DAYS = 60
+
+
+def _append_history_point(series, today_iso, value):
+    """Append a single data point to a history series, dedupe by date, and trim."""
+    if value is None:
+        return series
+    if not isinstance(series, list):
+        series = []
+    series = [p for p in series if isinstance(p, dict) and p.get("date") != today_iso]
+    try:
+        series.append({"date": today_iso, "close": float(value)})
+    except (TypeError, ValueError):
+        return series
+    series.sort(key=lambda p: p.get("date", ""))
+    return series[-HISTORY_KEEP_DAYS:]
+
+
+def merge_and_persist_history(data):
+    """Load history_cache.json, append today's metrics, save, and inject back into data."""
+    cache_keys = ["vix", "us10y", "usd_index", "jpy_rate",
+                  "micro_sentiment", "mini_sentiment", "pcr"]
+    cache = {k: [] for k in cache_keys}
+
+    if os.path.exists(HISTORY_CACHE_PATH):
+        try:
+            with open(HISTORY_CACHE_PATH, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                for k in cache_keys:
+                    if isinstance(loaded.get(k), list):
+                        cache[k] = loaded[k]
+        except Exception as e:
+            print(f"  [history] load failed: {e}")
+
+    today_iso = datetime.now().strftime("%Y-%m-%d")
+
+    vix_obj = data.get("vix") or {}
+    if isinstance(vix_obj, dict):
+        cache["vix"] = _append_history_point(cache["vix"], today_iso, vix_obj.get("value"))
+
+    us10y_obj = data.get("us10y") or {}
+    if isinstance(us10y_obj, dict):
+        cache["us10y"] = _append_history_point(cache["us10y"], today_iso, us10y_obj.get("value"))
+
+    usd_arr = data.get("usd_index")
+    if isinstance(usd_arr, list) and usd_arr:
+        latest = usd_arr[-1]
+        if isinstance(latest, dict) and latest.get("close") is not None:
+            cache["usd_index"] = _append_history_point(
+                cache["usd_index"], latest.get("date") or today_iso, latest.get("close"))
+
+    jpy_arr = data.get("jpy_rate")
+    if isinstance(jpy_arr, list) and jpy_arr:
+        latest = jpy_arr[-1]
+        if isinstance(latest, dict) and latest.get("close") is not None:
+            cache["jpy_rate"] = _append_history_point(
+                cache["jpy_rate"], latest.get("date") or today_iso, latest.get("close"))
+
+    senti = data.get("sentiment") or {}
+    if isinstance(senti, dict):
+        cache["micro_sentiment"] = _append_history_point(
+            cache["micro_sentiment"], today_iso, senti.get("micro_sentiment"))
+        cache["mini_sentiment"] = _append_history_point(
+            cache["mini_sentiment"], today_iso, senti.get("mini_sentiment"))
+
+    pcr_obj = data.get("pcr") or {}
+    if isinstance(pcr_obj, dict):
+        cache["pcr"] = _append_history_point(cache["pcr"], today_iso, pcr_obj.get("ratio"))
+
+    cache["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    try:
+        with open(HISTORY_CACHE_PATH, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+        print(f"[history] saved vix={len(cache['vix'])} us10y={len(cache['us10y'])} "
+              f"dxy={len(cache['usd_index'])} jpy={len(cache['jpy_rate'])} "
+              f"micro={len(cache['micro_sentiment'])} mini={len(cache['mini_sentiment'])} "
+              f"pcr={len(cache['pcr'])}")
+    except Exception as e:
+        print(f"[history] save failed: {e}")
+
+    # Inject historical chart and prev values back into data so templates render properly
+    if cache["vix"]:
+        if not isinstance(data.get("vix"), dict):
+            data["vix"] = {}
+        data["vix"]["chart"] = list(cache["vix"])
+        if len(cache["vix"]) >= 2 and data["vix"].get("prev_value") in (None, ""):
+            data["vix"]["prev_value"] = cache["vix"][-2].get("close")
+
+    if cache["us10y"]:
+        if not isinstance(data.get("us10y"), dict):
+            data["us10y"] = {}
+        data["us10y"]["chart"] = list(cache["us10y"])
+        if len(cache["us10y"]) >= 2 and data["us10y"].get("prev_value") in (None, ""):
+            data["us10y"]["prev_value"] = cache["us10y"][-2].get("close")
+
+    if cache["usd_index"]:
+        data["usd_index"] = list(cache["usd_index"])
+    if cache["jpy_rate"]:
+        data["jpy_rate"] = list(cache["jpy_rate"])
+
+    if not isinstance(data.get("sentiment"), dict):
+        data["sentiment"] = {}
+    senti_out = data["sentiment"]
+    if len(cache["micro_sentiment"]) >= 2 and senti_out.get("micro_sentiment_prev") in (None, ""):
+        senti_out["micro_sentiment_prev"] = cache["micro_sentiment"][-2].get("close")
+    if len(cache["mini_sentiment"]) >= 2 and senti_out.get("mini_sentiment_prev") in (None, ""):
+        senti_out["mini_sentiment_prev"] = cache["mini_sentiment"][-2].get("close")
+    if len(cache["pcr"]) >= 2 and senti_out.get("pcr_prev") in (None, ""):
+        senti_out["pcr_prev"] = cache["pcr"][-2].get("close")
+    senti_out["micro_sentiment_chart"] = list(cache["micro_sentiment"])
+    senti_out["mini_sentiment_chart"] = list(cache["mini_sentiment"])
+    senti_out["pcr_chart"] = list(cache["pcr"])
+
+    return data
+
+
+
 def main():
     parser = argparse.ArgumentParser(description="台灣股市每日戰略儀表板生成器")
     parser.add_argument("date", nargs="?", default=None, help="日期 YYYYMMDD (預設今天)")
@@ -490,6 +610,9 @@ def main():
 
     # 抓取資料
     data = fetch_all_data(date_str)
+
+    # Persist history (VIX/DXY/JPY/US10Y/sentiment/PCR) and inject prev values + charts
+    data = merge_and_persist_history(data)
 
     # 生成儀表板
     output_path = generate_dashboard(data, args.output)
