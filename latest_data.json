@@ -1,24 +1,24 @@
 {
-  "date": "20260407",
-  "generated_at": "2026-04-07 23:30:41",
+  "date": "20260408",
+  "generated_at": "2026-04-08 01:03:04",
   "taiex": {
-    "index": 32572.43,
-    "change": -602.39,
-    "change_pct": -1.82,
-    "volume": 702608705100.0,
-    "prev_volume": 652608970719.0,
-    "volume_change": 7.66,
-    "date": "20260407"
+    "index": 33229.82,
+    "change": 657.39,
+    "change_pct": 2.02,
+    "volume": 584692254383.0,
+    "prev_volume": 702608705100.0,
+    "volume_change": -16.78,
+    "date": "20260408"
   },
   "institutional": {
     "foreign_buy": 212131932105.0,
     "foreign_sell": 202035325361.0,
     "foreign_net": 10096606744.0,
-    "foreign_prev_net": null,
+    "foreign_prev_net": 10096606744.0,
     "trust_buy": 14097066767.0,
     "trust_sell": 9740422946.0,
     "trust_net": 4356643821.0,
-    "trust_prev_net": null,
+    "trust_prev_net": 4356643821.0,
     "dealer_net": 2355393465.0,
     "dealer_buy": 6635116890.0,
     "dealer_sell": 4279723425.0
@@ -187,24 +187,24 @@
   },
   "usd_index": [
     {
-      "date": "2026-04-07",
-      "close": 99.9
+      "date": "2026-04-08",
+      "close": 99.87
     }
   ],
   "jpy_rate": [
     {
-      "date": "2026-04-07",
-      "close": 159.9335
+      "date": "2026-04-08",
+      "close": 159.889996
     }
   ],
   "vix": {
-    "value": 27.1,
-    "date": "2026-04-07",
+    "value": 26.26,
+    "date": "2026-04-08",
     "prev_value": null,
     "chart": [
       {
-        "date": "2026-04-07",
-        "close": 27.1
+        "date": "2026-04-08",
+        "close": 26.26
       }
     ]
   },
@@ -222,10 +222,10 @@
   },
   "margin_ratio": {
     "ratio": null,
-    "date": "20260407"
+    "date": "20260408"
   },
   "cnn_fg": {
-    "value": 21.1,
+    "value": 21.7,
     "label": "extreme fear",
     "prev_value": 22.6,
     "prev_label": null,
@@ -238,63 +238,48 @@
     "prev_label": "Extreme Fear"
   },
   "pcr": {
-    "ratio": 139.18,
-    "put_oi": 309254.0,
-    "call_oi": 249423.0
+    "ratio": null,
+    "put_oi": null,
+    "call_oi": null
   },
   "us10y": {
-    "value": 4.374,
-    "date": "2026-04-07",
+    "value": 4.354,
+    "date": "2026-04-08",
     "prev_value": null,
     "chart": [
       {
-        "date": "2026-04-07",
-        "close": 4.374
+        "date": "2026-04-08",
+        "close": 4.354
       }
     ]
   },
   "futures_oi": {
     "foreign": {
-      "change": 3505,
-      "oi": -31350
+      "change": null,
+      "oi": null
     },
     "trust": {
-      "change": 263,
-      "oi": 38276
+      "change": null,
+      "oi": null
     },
     "dealer": {
-      "change": -1486,
-      "oi": -2301
+      "change": null,
+      "oi": null
     },
     "total": {
-      "change": 2282,
-      "oi": 4625
+      "change": null,
+      "oi": null
     }
   },
   "sentiment": {
-    "micro_sentiment": 26.37,
-    "micro_sentiment_prev": null,
-    "mini_sentiment": 26.37,
+    "micro_sentiment": null,
+    "micro_sentiment_prev": 26.37,
+    "mini_sentiment": null,
     "mini_sentiment_prev": 26.37,
-    "pcr_today": 123.99,
-    "pcr_prev": null,
-    "micro_sentiment_chart": [
-      {
-        "date": "2026-04-07",
-        "close": 26.37
-      }
-    ],
-    "mini_sentiment_chart": [
-      {
-        "date": "2026-04-07",
-        "close": 26.37
-      }
-    ],
-    "pcr_chart": [
-      {
-        "date": "2026-04-07",
-        "close": 139.18
-      }
-    ]
+    "pcr_today": null,
+    "pcr_prev": 123.99,
+    "micro_sentiment_chart": [],
+    "mini_sentiment_chart": [],
+    "pcr_chart": []
   }
 }
