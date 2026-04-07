@@ -1,13 +1,13 @@
 {
   "date": "20260407",
-  "generated_at": "2026-04-07 23:06:22",
+  "generated_at": "2026-04-07 23:13:25",
   "taiex": {
-    "index": 33229.82,
-    "change": 657.39,
-    "change_pct": 2.02,
-    "volume": 584692254383.0,
-    "prev_volume": 702608705100.0,
-    "volume_change": -16.78,
+    "index": null,
+    "change": null,
+    "change_pct": null,
+    "volume": null,
+    "prev_volume": null,
+    "volume_change": null,
     "date": "20260407"
   },
   "institutional": {
@@ -188,23 +188,23 @@
   "usd_index": [
     {
       "date": "2026-04-07",
-      "close": 99.88
+      "close": 99.92
     }
   ],
   "jpy_rate": [
     {
       "date": "2026-04-07",
-      "close": 160.0075
+      "close": 159.9835
     }
   ],
   "vix": {
-    "value": 26.39,
+    "value": 26.54,
     "date": "2026-04-07",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-04-07",
-        "close": 26.39
+        "close": 26.54
       }
     ]
   },
@@ -225,7 +225,7 @@
     "date": "20260407"
   },
   "cnn_fg": {
-    "value": 21.0,
+    "value": 21.1,
     "label": "extreme fear",
     "prev_value": 22.6,
     "prev_label": null,
@@ -243,13 +243,13 @@
     "call_oi": 249423.0
   },
   "us10y": {
-    "value": 4.362,
+    "value": 4.364,
     "date": "2026-04-07",
     "prev_value": null,
     "chart": [
       {
         "date": "2026-04-07",
-        "close": 4.362
+        "close": 4.364
       }
     ]
   },

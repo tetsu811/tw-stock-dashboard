@@ -428,7 +428,7 @@
         <div class="header">
             <h1>台灣股市每日戰略儀表板</h1>
             <div class="date">2026/04/07 (星期二)</div>
-            <div class="update-time">資料更新時間: 2026-04-07 23:06:22</div>
+            <div class="update-time">資料更新時間: 2026-04-07 23:13:25</div>
         </div>
 
         <!-- ====== 加權指數 + 台指期 Hero ====== -->
@@ -438,20 +438,16 @@
                 <div class="card-title" style="justify-content: center;">
                     <span class="icon">📊</span> 加權股價指數 TAIEX
                 </div>
-                <div class="index-value text-green">
-                    33,229.82
+                <div class="index-value ">
+                    N/A
                 </div>
-                <div class="index-change text-green">
-                    ▲
-                    657.39 點
-                    (2.02%)
+                <div class="index-change ">
+                    
+                    N/A 點
+                    
                 </div>
                 <div class="volume-info">
-                    成交金額: +5,846.92 億元
-                    
-                        <span class="metric-compare bg-red">
-                            較前日 -16.78%
-                        </span>
+                    成交金額: N/A
                     
                 </div>
             </div>
@@ -468,10 +464,6 @@
                     ▲
                     654 點
                     (2.01%)
-                </div>
-                
-                <div class="spread-tag bg-red">
-                    期現貨價差: 71 點
                 </div>
                 
                 <div class="futures-detail">
@@ -660,7 +652,7 @@
                 <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近30天)</div>
                 <div class="vix-header">
                     <div>
-                        <span class="vix-current text-red">26.39</span>
+                        <span class="vix-current text-red">26.54</span>
                         
                     </div>
                     <span class="vix-badge" style="background: rgba(239,68,68,0.15); color: #ef4444;">恐慌</span>
@@ -690,7 +682,7 @@
                     <span class="vix-badge" style="background: rgba(239,68,68,0.15); color: #ef4444;; margin-top:6px; display:inline-block;">extreme fear</span>
                     
                     <div style="font-size:13px; margin-top:8px;" class="text-red">
-                        ▼ -1.6
+                        ▼ -1.5
                     </div>
                     
                 </div>
@@ -895,7 +887,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💵</span> 美元指數 (DXY) · 近30天</div>
                 
-                <div class="metric-value text-blue">99.88</div>
+                <div class="metric-value text-blue">99.92</div>
                 
                 <div class="chart-container">
                     <canvas id="usdChart"></canvas>
@@ -905,7 +897,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💴</span> 美元兌日圓 (USD/JPY) · 近30天</div>
                 
-                <div class="metric-value text-purple">160.01</div>
+                <div class="metric-value text-purple">159.98</div>
                 
                 <div class="chart-container">
                     <canvas id="jpyChart"></canvas>
@@ -915,7 +907,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近30天</div>
                 <div style="display:flex; align-items:baseline; gap:8px;">
-                    <div class="metric-value text-cyan">4.362%</div>
+                    <div class="metric-value text-cyan">4.364%</div>
                     
                 </div>
                 <div class="chart-container">
@@ -1008,10 +1000,10 @@
         }
 
         // Chart data
-        const vixData = {"labels": ["04-07"], "values": [26.39]};
-        const usdData = {"labels": ["04-07"], "values": [99.88]};
-        const jpyData = {"labels": ["04-07"], "values": [160.0075]};
-        const us10yData = {"labels": ["04-07"], "values": [4.362]};
+        const vixData = {"labels": ["04-07"], "values": [26.54]};
+        const usdData = {"labels": ["04-07"], "values": [99.92]};
+        const jpyData = {"labels": ["04-07"], "values": [159.9835]};
+        const us10yData = {"labels": ["04-07"], "values": [4.364]};
 
         function buildAllCharts() {
             chartDefaults = getChartDefaults();
@@ -1098,12 +1090,7 @@
         if (window === window.parent) return;  // not in iframe, skip
         var lastH = 0;
         function sendHeight() {
-            var h = Math.max(
-                document.body.scrollHeight,
-                document.body.offsetHeight,
-                document.documentElement.scrollHeight,
-                document.documentElement.offsetHeight
-            );
+            var h = document.body.scrollHeight;
             if (Math.abs(h - lastH) < 4) return;
             lastH = h;
             try {
