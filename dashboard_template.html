@@ -1012,7 +1012,7 @@
         if (window === window.parent) return;  // not in iframe, skip
         var lastH = 0;
         function sendHeight() {
-            var h = document.body.scrollHeight;
+            var c = document.querySelector(".container"); var h = c ? Math.ceil(c.getBoundingClientRect().bottom) : document.body.scrollHeight;
             if (Math.abs(h - lastH) < 4) return;
             lastH = h;
             try {
