@@ -428,7 +428,7 @@
         <div class="header">
             <h1>台灣股市每日戰略儀表板</h1>
             <div class="date">2026/04/08 (星期三)</div>
-            <div class="update-time">資料更新時間: 2026-04-08 18:47:25</div>
+            <div class="update-time">資料更新時間: 2026-04-08 19:00:58</div>
         </div>
 
         <!-- ====== 加權指數 + 台指期 Hero ====== -->
@@ -668,11 +668,7 @@
                 <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近30天)</div>
                 <div class="vix-header">
                     <div>
-                        <span class="vix-current text-yellow">20.40</span>
-                        
-                        <span style="font-size:16px; margin-left:8px;" class="text-green">
-                            ▼ 6.70
-                        </span>
+                        <span class="vix-current text-yellow">20.45</span>
                         
                     </div>
                     <span class="vix-badge" style="background: rgba(234,179,8,0.15); color: var(--accent-yellow);">偏高警戒</span>
@@ -907,7 +903,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💵</span> 美元指數 (DXY) · 近30天</div>
                 
-                <div class="metric-value text-blue">98.85</div>
+                <div class="metric-value text-blue">98.84</div>
                 
                 <div class="chart-container">
                     <canvas id="usdChart"></canvas>
@@ -917,7 +913,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">💴</span> 美元兌日圓 (USD/JPY) · 近30天</div>
                 
-                <div class="metric-value text-purple">158.42</div>
+                <div class="metric-value text-purple">158.44</div>
                 
                 <div class="chart-container">
                     <canvas id="jpyChart"></canvas>
@@ -928,10 +924,6 @@
                 <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近30天</div>
                 <div style="display:flex; align-items:baseline; gap:8px;">
                     <div class="metric-value text-cyan">4.343%</div>
-                    
-                    <span style="font-size:14px;" class="text-green">
-                        ▼ 0.031%
-                    </span>
                     
                 </div>
                 <div class="chart-container">
@@ -1024,10 +1016,10 @@
         }
 
         // Chart data
-        const vixData = {"labels": ["04-07", "04-08"], "values": [27.1, 20.4]};
-        const usdData = {"labels": ["04-07", "04-08"], "values": [99.9, 98.85]};
-        const jpyData = {"labels": ["04-07", "04-08"], "values": [159.9335, 158.423]};
-        const us10yData = {"labels": ["04-07", "04-08"], "values": [4.374, 4.343]};
+        const vixData = {"labels": ["04-08"], "values": [20.45]};
+        const usdData = {"labels": ["04-08"], "values": [98.84]};
+        const jpyData = {"labels": ["04-08"], "values": [158.437]};
+        const us10yData = {"labels": ["04-08"], "values": [4.343]};
 
         function buildAllCharts() {
             chartDefaults = getChartDefaults();
