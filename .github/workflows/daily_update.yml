@@ -1,9 +1,9 @@
 name: Daily Dashboard Update
 
 on:
-  # Run at UTC 11:00 = Taiwan 19:00, weekdays only
+  # Run at UTC 10:00 = Taiwan 18:00, weekdays only
   schedule:
-    - cron: '0 11 * * 1-5'
+    - cron: '0 10 * * 1-5'
 
   # Manual trigger
   workflow_dispatch:
