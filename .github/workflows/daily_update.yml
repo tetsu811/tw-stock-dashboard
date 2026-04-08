@@ -31,33 +31,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Seed history cache
+      - name: Seed history cache (only if missing)
         run: |
-          NEED_SEED=0
           if [ ! -f history_cache.json ]; then
-            echo "No cache file found"
-            NEED_SEED=1
-          else
-            python3 -c "
-          import json, sys
-          try:
-            c = json.load(open('history_cache.json'))
-            v = len(c.get('vix', []))
-            print(f'Cache has {v} VIX points')
-            sys.exit(0 if v >= 1 else 1)
-          except:
-            sys.exit(1)
-          " || NEED_SEED=1
-          fi
-          if [ "$NEED_SEED" = "1" ]; then
-            echo "Running seed_history.py..."
+            echo "No cache, seeding"
             python seed_history.py || true
           else
-            echo "Cache OK, skipping seed"
+            echo "Cache exists, skip seed"
           fi
-        continue-on-error: true
 
-      - name: Test API sources
+      - name: Test data sources
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python test_sources.py || true
@@ -72,6 +55,6 @@ jobs:
         run: |
           git config user.name "Dashboard Bot"
           git config user.email "bot@example.com"
-          git add index.html archive/ latest_data.json history_cache.json
+          git add index.html archive latest_data.json history_cache.json
           git diff --cached --quiet || git commit -m "Update dashboard $(date '+%Y-%m-%d')"
           git push
