@@ -1,6 +1,6 @@
 {
   "date": "20260409",
-  "generated_at": "2026-04-09 19:02:12",
+  "generated_at": "2026-04-09 22:47:39",
   "taiex": {
     "index": 34861.16,
     "change": 99.78,
@@ -11,13 +11,13 @@
     "date": "20260409"
   },
   "institutional": {
-    "foreign_buy": 339758295295.0,
-    "foreign_sell": 307978665313.0,
+    "foreign_buy": 344511726941.0,
+    "foreign_sell": 312732096959.0,
     "foreign_net": 31779629982.0,
     "foreign_prev_net": 117772619736.0,
-    "trust_buy": 9734689653.0,
-    "trust_sell": 8273490623.0,
-    "trust_net": 1461199030.0,
+    "trust_buy": 9982742913.0,
+    "trust_sell": 8625755323.0,
+    "trust_net": 1356987590.0,
     "trust_prev_net": 4720132160.0,
     "dealer_net": 2467646419.0,
     "dealer_buy": 11860435717.0,
@@ -264,7 +264,7 @@
     },
     {
       "date": "2026-04-09",
-      "close": 99.02
+      "close": 98.99
     }
   ],
   "jpy_rate": [
@@ -346,11 +346,11 @@
     },
     {
       "date": "2026-04-09",
-      "close": 159.074
+      "close": 159.204994
     }
   ],
   "vix": {
-    "value": 21.45,
+    "value": 20.97,
     "date": "2026-04-09",
     "prev_value": 20.17,
     "chart": [
@@ -432,7 +432,7 @@
       },
       {
         "date": "2026-04-09",
-        "close": 21.45
+        "close": 20.97
       }
     ]
   },
@@ -453,7 +453,7 @@
     "date": "20260409"
   },
   "cnn_fg": {
-    "value": 32.0,
+    "value": 34.3,
     "label": "fear",
     "prev_value": 30.8,
     "prev_label": null,
@@ -471,7 +471,7 @@
     "call_oi": 178177.0
   },
   "us10y": {
-    "value": 4.291,
+    "value": 4.311,
     "date": "2026-04-09",
     "prev_value": 4.343,
     "chart": [
@@ -553,7 +553,7 @@
       },
       {
         "date": "2026-04-09",
-        "close": 4.291
+        "close": 4.311
       }
     ]
   },
