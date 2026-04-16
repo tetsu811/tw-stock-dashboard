@@ -838,6 +838,45 @@
             </div>
         </div>
 
+        <!-- Pentagon Pizza Index (Entertainment) -->
+        <div class="card" style="margin-top: 20px;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+                <span style="font-size:32px;line-height:1;">🍕</span>
+                <h3 style="margin:0;flex:1;min-width:180px;">五角大廈披薩指數</h3>
+                <span style="background:#ffdfa8;color:#7a4d00;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.5px;">娛樂性質 · ENTERTAINMENT ONLY</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0;">
+                <div style="padding:14px 16px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;letter-spacing:0.5px;">綜合指數</div>
+                    <div style="font-size:24px;font-weight:700;"><span id="ppi-overall">--</span><span style="font-size:12px;color:var(--text-muted);font-weight:400;"> / 100</span></div>
+                </div>
+                <div style="padding:14px 16px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;letter-spacing:0.5px;">DEFCON 等級</div>
+                    <div style="font-size:24px;font-weight:700;"><span id="ppi-defcon">--</span><span style="font-size:12px;color:var(--text-muted);font-weight:400;"> / 5</span></div>
+                </div>
+                <div style="padding:14px 16px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;letter-spacing:0.5px;">爆量店家數</div>
+                    <div style="font-size:24px;font-weight:700;"><span id="ppi-spikes">--</span></div>
+                </div>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:8px 0 0;line-height:1.6;">
+                追蹤五角大廈方圓 3 英里內披薩店的 Google Maps 熱門時段，推測美國國防部是否熬夜加班。<strong>純粹好玩，美國國防部已公開否認此理論</strong>，相關性不等於因果性，請勿當真。資料來源：<a href="https://www.pizzint.watch/" target="_blank" rel="noopener" style="color:var(--accent-blue);">pizzint.watch</a>，每小時更新。
+            </p>
+            <p style="font-size:11px;color:var(--text-muted);margin:6px 0 0;">資料時間：<span id="ppi-updated">載入中...</span></p>
+        </div>
+        <script>
+        (function loadPPI(){
+            const bust=Math.floor(Date.now()/60000);
+            fetch('ppi_latest.json?v='+bust).then(r=>r.ok?r.json():Promise.reject(r.status)).then(d=>{
+                const $=id=>document.getElementById(id);
+                if($('ppi-overall'))$('ppi-overall').textContent=(d.overall_index!=null)?d.overall_index:'--';
+                if($('ppi-defcon'))$('ppi-defcon').textContent=(d.defcon_level!=null)?d.defcon_level:'--';
+                if($('ppi-spikes'))$('ppi-spikes').textContent=(d.active_spikes!=null)?d.active_spikes:'--';
+                if($('ppi-updated')){const t=d.source_time?new Date(d.source_time):null;$('ppi-updated').textContent=t?t.toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}):(d.fetched_at||'--');}
+            }).catch(err=>{const e=document.getElementById('ppi-updated');if(e)e.textContent='資料暫時無法載入';console.warn('PPI load failed',err);});
+        })();
+        </script>
+
         <!-- Footer -->
         <div class="footer">
             <p>台灣股市每日戰略儀表板 | 資料來源: 台灣證券交易所、證券櫃檯買賣中心、台灣期貨交易所、Yahoo Finance</p>
