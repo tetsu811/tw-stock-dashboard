@@ -56,5 +56,18 @@ jobs:
           git config user.name "Dashboard Bot"
           git config user.email "bot@example.com"
           git add index.html archive latest_data.json history_cache.json
-          git diff --cached --quiet || git commit -m "Update dashboard $(date '+%Y-%m-%d')"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Update dashboard $(date '+%Y-%m-%d')"
+          for i in 1 2 3; do
+            if git push; then
+              echo "Pushed on attempt $i"
+              exit 0
+            fi
+            echo "Push failed on attempt $i, rebasing..."
+            git pull --rebase origin main || true
+          done
+          echo "All push attempts failed"
+          exit 1
