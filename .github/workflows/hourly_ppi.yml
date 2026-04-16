@@ -33,8 +33,17 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --quiet -- ppi_latest.json; then
             echo "No PPI changes"
-          else
-            git add ppi_latest.json
-            git commit -m "chore(ppi): hourly refresh [skip ci]"
-            git push
+            exit 0
           fi
+          git add ppi_latest.json
+          git commit -m "chore(ppi): hourly refresh [skip ci]"
+          for i in 1 2 3; do
+            if git push; then
+              echo "Pushed on attempt $i"
+              exit 0
+            fi
+            echo "Push failed on attempt $i, rebasing..."
+            git pull --rebase origin main || true
+          done
+          echo "All push attempts failed"
+          exit 1
