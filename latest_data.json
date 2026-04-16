@@ -1,6 +1,6 @@
 {
-  "date": "20260415",
-  "generated_at": "2026-04-15 19:02:52",
+  "date": "20260416",
+  "generated_at": "2026-04-16 12:08:54",
   "taiex": {
     "index": 36722.14,
     "change": 426.02,
@@ -8,17 +8,17 @@
     "volume": 1025905609552.0,
     "prev_volume": 1017277556839.0,
     "volume_change": 0.85,
-    "date": "20260415"
+    "date": "20260416"
   },
   "institutional": {
     "foreign_buy": 401119268293.0,
     "foreign_sell": 345409166483.0,
     "foreign_net": 55710101810.0,
-    "foreign_prev_net": 68907903398.0,
+    "foreign_prev_net": 55350193810.0,
     "trust_buy": 12706763995.0,
     "trust_sell": 21832454814.0,
     "trust_net": -9125690819.0,
-    "trust_prev_net": -5997892900.0,
+    "trust_prev_net": -8893858129.0,
     "dealer_net": -4806540565.0,
     "dealer_buy": 8258218413.0,
     "dealer_sell": 13064758978.0
@@ -178,18 +178,14 @@
     "short_change": null
   },
   "breadth": {
-    "tse_up": 849,
-    "tse_down": 381,
-    "tse_flat": 121,
+    "tse_up": 785,
+    "tse_down": 434,
+    "tse_flat": 131,
     "otc_up": null,
     "otc_down": null,
     "otc_flat": null
   },
   "usd_index": [
-    {
-      "date": "2026-03-18",
-      "close": 98.243
-    },
     {
       "date": "2026-03-19",
       "close": 98.45
@@ -265,13 +261,13 @@
     {
       "date": "2026-04-15",
       "close": 98.24
+    },
+    {
+      "date": "2026-04-16",
+      "close": 97.93
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-03-18",
-      "close": 159.48
-    },
     {
       "date": "2026-03-19",
       "close": 158.19
@@ -347,17 +343,17 @@
     {
       "date": "2026-04-15",
       "close": 158.9765
+    },
+    {
+      "date": "2026-04-16",
+      "close": 158.677996
     }
   ],
   "vix": {
-    "value": 18.34,
-    "date": "2026-04-15",
-    "prev_value": 18.4,
+    "value": 18.17,
+    "date": "2026-04-16",
+    "prev_value": 18.34,
     "chart": [
-      {
-        "date": "2026-03-18",
-        "close": 25.09
-      },
       {
         "date": "2026-03-19",
         "close": 24.06
@@ -433,52 +429,52 @@
       {
         "date": "2026-04-15",
         "close": 18.34
+      },
+      {
+        "date": "2026-04-16",
+        "close": 18.17
       }
     ]
   },
   "futures": {
-    "close": 36643.0,
-    "change": 266.0,
-    "change_pct": 0.73,
-    "volume": 30496.0,
-    "settlement": 0.0,
-    "open": 36725.0,
-    "high": 37073.0,
-    "low": 36618.0,
-    "contract_month": "202604",
-    "data_date": "20260415"
+    "close": 37226.0,
+    "change": 241.0,
+    "change_pct": 0.65,
+    "volume": 35783.0,
+    "settlement": null,
+    "open": 37019.0,
+    "high": 37294.0,
+    "low": 37001.0,
+    "contract_month": "202605",
+    "data_date": "20260416"
   },
   "margin_ratio": {
     "ratio": null,
-    "date": "20260415"
+    "date": "20260416"
   },
   "cnn_fg": {
-    "value": 49.0,
-    "label": "neutral",
-    "prev_value": 47.0,
+    "value": 56.5,
+    "label": "greed",
+    "prev_value": 56.5,
     "prev_label": null,
-    "week_ago_value": 34.4
+    "week_ago_value": 37.8
   },
   "crypto_fg": {
     "value": 23,
     "label": "Extreme Fear",
-    "prev_value": 21,
+    "prev_value": 23,
     "prev_label": "Extreme Fear"
   },
   "pcr": {
-    "ratio": 149.68,
-    "put_oi": 478324.0,
-    "call_oi": 470894.0
+    "ratio": null,
+    "put_oi": null,
+    "call_oi": null
   },
   "us10y": {
-    "value": 4.256,
-    "date": "2026-04-15",
-    "prev_value": 4.297,
+    "value": 4.282,
+    "date": "2026-04-16",
+    "prev_value": 4.256,
     "chart": [
-      {
-        "date": "2026-03-19",
-        "close": 4.25
-      },
       {
         "date": "2026-03-20",
         "close": 4.39
@@ -554,51 +550,40 @@
       {
         "date": "2026-04-15",
         "close": 4.256
+      },
+      {
+        "date": "2026-04-16",
+        "close": 4.282
       }
     ]
   },
   "futures_oi": {
     "foreign": {
-      "change": -1834,
-      "oi": -36783
+      "change": null,
+      "oi": null
     },
     "trust": {
-      "change": 1050,
-      "oi": 42245
+      "change": null,
+      "oi": null
     },
     "dealer": {
-      "change": 645,
-      "oi": -7403
+      "change": null,
+      "oi": null
     },
     "total": {
-      "change": -139,
-      "oi": -1941
+      "change": null,
+      "oi": null
     }
   },
   "sentiment": {
-    "micro_sentiment": -29.64,
-    "micro_sentiment_prev": 10.41,
-    "mini_sentiment": -29.64,
-    "mini_sentiment_prev": -7.93,
-    "pcr_today": 101.58,
-    "pcr_prev": 125.26,
-    "micro_sentiment_chart": [
-      {
-        "date": "2026-04-15",
-        "close": -29.64
-      }
-    ],
-    "mini_sentiment_chart": [
-      {
-        "date": "2026-04-15",
-        "close": -29.64
-      }
-    ],
-    "pcr_chart": [
-      {
-        "date": "2026-04-15",
-        "close": 149.68
-      }
-    ]
+    "micro_sentiment": null,
+    "micro_sentiment_prev": -29.64,
+    "mini_sentiment": null,
+    "mini_sentiment_prev": -29.64,
+    "pcr_today": null,
+    "pcr_prev": 101.58,
+    "micro_sentiment_chart": [],
+    "mini_sentiment_chart": [],
+    "pcr_chart": []
   }
 }
