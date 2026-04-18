@@ -1,15 +1,15 @@
 {
-  "overall_index": 14,
+  "overall_index": 16,
   "defcon_level": 4,
-  "defcon_severity": 0.1444,
-  "active_spikes": 2,
+  "defcon_severity": 0.1556,
+  "active_spikes": 3,
   "has_active_spikes": true,
-  "raw_index": 14.44,
-  "smoothed_index": 14.44,
+  "raw_index": 15.56,
+  "smoothed_index": 15.56,
   "open_places": 16,
   "total_places": 16,
   "intensity_score": 0,
   "breadth_score": 0,
-  "source_time": "2026-04-17T21:00:00+00:00",
-  "fetched_at": "2026-04-18T07:51:39+08:00"
+  "source_time": "2026-04-18T01:00:00+00:00",
+  "fetched_at": "2026-04-18T11:25:11+08:00"
 }
