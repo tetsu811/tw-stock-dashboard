@@ -623,15 +623,22 @@ def main():
 if __name__ == "__main__":
     main()
     # 隔夜逆回購 (ON RRP)
-    on_rrp = data.get("on_rrp", {})
-    ctx["on_rrp_value"] = format_number(on_rrp.get("value"), 2) if on_rrp.get("value") else "N/A"
-    ctx["on_rrp_raw"] = on_rrp.get("value")
-    on_rrp_prev = on_rrp.get("prev_value")
-    if on_rrp.get("value") and on_rrp_prev:
-        ctx["on_rrp_change"] = round(on_rrp["value"] - on_rrp_prev, 2)
-    else:
-        ctx["on_rrp_change"] = None
-    ctx["on_rrp_chart_labels"] = json.dumps([p["date"][-5:] for p in on_rrp.get("chart", [])])
-    ctx["on_rrp_chart_data"] = json.dumps([p["close"] for p in on_rrp.get("chart", [])])
+    ctx["on_rrp_value"] = "N/A"
+    ctx["on_rrp_raw"] = None
+    ctx["on_rrp_change"] = None
+    ctx["on_rrp_chart_labels"] = "[]"
+    ctx["on_rrp_chart_data"] = "[]"
+    try:
+        on_rrp = data.get("on_rrp", {})
+        if on_rrp.get("value") is not None:
+            ctx["on_rrp_value"] = format_number(on_rrp["value"], 2)
+            ctx["on_rrp_raw"] = on_rrp["value"]
+        on_rrp_prev = on_rrp.get("prev_value")
+        if on_rrp.get("value") is not None and on_rrp_prev is not None:
+            ctx["on_rrp_change"] = round(on_rrp["value"] - on_rrp_prev, 2)
+        ctx["on_rrp_chart_labels"] = json.dumps([p["date"][-5:] for p in on_rrp.get("chart", [])])
+        ctx["on_rrp_chart_data"] = json.dumps([p["close"] for p in on_rrp.get("chart", [])])
+    except Exception as e:
+        print(f"  \u26a0\ufe0f ON RRP \u8b8a\u6578\u8655\u7406\u5931\u6557: {e}")
 
 
