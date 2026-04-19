@@ -3169,6 +3169,33 @@ def _get_prev_trading_date(date_str):
     return None
 
 
+
+
+# ============================================================
+# 13. 聯準會隔夜逆回購 (ON RRP)
+# ============================================================
+def fetch_on_rrp():
+    """
+    抓取聯準會隔夜逆回購 (Overnight Reverse Repo)
+    FRED series: RRPONTSYD
+    單位: Billions of Dollars
+    回傳: {value, date, prev_value, chart}
+    """
+    print("🏦 抓取隔夜逆回購 (ON RRP)...")
+    data = _fetch_fred_data("RRPONTSYD", 35)
+
+    if not data:
+        print("  ⚠️ ON RRP: FRED 資料取得失敗")
+        return {"value": None, "date": None, "prev_value": None, "chart": []}
+
+    data = data[-30:] if len(data) > 30 else data
+    return {
+        "value": data[-1]["close"],
+        "date": data[-1]["date"],
+        "prev_value": data[-2]["close"] if len(data) >= 2 else None,
+        "chart": data,
+    }
+
 def fetch_all_data(date_str=None):
     """
     一次抓取所有資料
@@ -3258,6 +3285,7 @@ def fetch_all_data(date_str=None):
         "us10y": us10y_result,
         "futures_oi": fetch_futures_oi(date_str),
         "sentiment": fetch_sentiment_indicators(date_str),
+        "on_rrp": fetch_on_rrp(),
     }
 
     print(f"\n✅ 資料抓取完成！")
