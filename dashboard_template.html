@@ -838,44 +838,23 @@
             </div>
         </div>
 
-        <!-- Pentagon Pizza Index (Entertainment) -->
-        <div class="card" style="margin-top: 20px;">
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
-                <span style="font-size:32px;line-height:1;">🍕</span>
-                <h3 style="margin:0;flex:1;min-width:180px;">五角大廈披薩指數</h3>
-                <span style="background:#ffdfa8;color:#7a4d00;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.5px;">娛樂性質 · ENTERTAINMENT ONLY</span>
+                <!-- 聯準會隔夜逆回購 (ON RRP) 近30天 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🏦 聯準會隔夜逆回購 (ON RRP) · 近30天</h3>
+                {% if on_rrp_change is not none %}
+                <span class="{% if on_rrp_change > 0 %}text-green{% elif on_rrp_change < 0 %}text-red{% else %}text-muted{% endif %}" style="font-size:14px;font-weight:600;">
+                    {% if on_rrp_change > 0 %}▲{% elif on_rrp_change < 0 %}▼{% endif %} {{ on_rrp_change }} B
+                </span>
+                {% endif %}
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0;">
-                <div style="padding:14px 16px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;letter-spacing:0.5px;">綜合指數</div>
-                    <div style="font-size:24px;font-weight:700;"><span id="ppi-overall">--</span><span style="font-size:12px;color:var(--text-muted);font-weight:400;"> / 100</span></div>
-                </div>
-                <div style="padding:14px 16px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;letter-spacing:0.5px;">DEFCON 等級</div>
-                    <div style="font-size:24px;font-weight:700;"><span id="ppi-defcon">--</span><span style="font-size:12px;color:var(--text-muted);font-weight:400;"> / 5</span></div>
-                </div>
-                <div style="padding:14px 16px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;letter-spacing:0.5px;">爆量店家數</div>
-                    <div style="font-size:24px;font-weight:700;"><span id="ppi-spikes">--</span></div>
-                </div>
+            <div class="metric-value" style="font-size:28px; margin-bottom: 8px;">
+                {{ on_rrp_value }} <span style="font-size:14px;color:var(--text-muted);font-weight:400;">十億美元</span>
             </div>
-            <p style="font-size:12px;color:var(--text-muted);margin:8px 0 0;line-height:1.6;">
-                追蹤五角大廈方圓 3 英里內披薩店的 Google Maps 熱門時段，推測美國國防部是否熬夜加班。<strong>純粹好玩，美國國防部已公開否認此理論</strong>，相關性不等於因果性，請勿當真。資料來源：<a href="https://www.pizzint.watch/" target="_blank" rel="noopener" style="color:var(--accent-blue);">pizzint.watch</a>，每小時更新。
-            </p>
-            <p style="font-size:11px;color:var(--text-muted);margin:6px 0 0;">資料時間：<span id="ppi-updated">載入中...</span></p>
+            <div class="chart-container">
+                <canvas id="onRrpChart"></canvas>
+            </div>
         </div>
-        <script>
-        (function loadPPI(){
-            const bust=Math.floor(Date.now()/60000);
-            fetch('ppi_latest.json?v='+bust).then(r=>r.ok?r.json():Promise.reject(r.status)).then(d=>{
-                const $=id=>document.getElementById(id);
-                if($('ppi-overall'))$('ppi-overall').textContent=(d.overall_index!=null)?d.overall_index:'--';
-                if($('ppi-defcon'))$('ppi-defcon').textContent=(d.defcon_level!=null)?d.defcon_level:'--';
-                if($('ppi-spikes'))$('ppi-spikes').textContent=(d.active_spikes!=null)?d.active_spikes:'--';
-                if($('ppi-updated')){const t=d.source_time?new Date(d.source_time):null;$('ppi-updated').textContent=t?t.toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}):(d.fetched_at||'--');}
-            }).catch(err=>{const e=document.getElementById('ppi-updated');if(e)e.textContent='資料暫時無法載入';console.warn('PPI load failed',err);});
-        })();
-        </script>
 
         <!-- Footer -->
         <div class="footer">
@@ -1050,6 +1029,40 @@
     (function() {
         if (window === window.parent) return;  // not in iframe, skip
         var lastH = 0;
+        
+        // ON RRP Chart
+        if (document.getElementById('onRrpChart')) {
+            const onRrpLabels = {{ on_rrp_chart_labels }};
+            const onRrpData = {{ on_rrp_chart_data }};
+            if (onRrpLabels.length > 0) {
+                chartInstances.push(new Chart(document.getElementById('onRrpChart').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: onRrpLabels,
+                        datasets: [{
+                            label: 'ON RRP (B)',
+                            data: onRrpData,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 2,
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#888', maxRotation: 45, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                }));
+            }
+        }
+
         function sendHeight() {
             var c = document.querySelector(".container"); var h = c ? Math.ceil(c.getBoundingClientRect().bottom) : document.body.scrollHeight;
             if (Math.abs(h - lastH) < 4) return;
