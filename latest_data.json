@@ -1,174 +1,174 @@
 {
-  "date": "20260421",
-  "generated_at": "2026-04-21 19:10:08",
+  "date": "20260422",
+  "generated_at": "2026-04-22 19:09:04",
   "taiex": {
-    "index": 37605.11,
-    "change": 646.31,
-    "change_pct": 1.75,
-    "volume": 1021704705351.0,
-    "prev_volume": 960963966853.0,
-    "volume_change": 6.32,
-    "date": "20260421"
+    "index": 37878.47,
+    "change": 273.36,
+    "change_pct": 0.73,
+    "volume": 979876044142.0,
+    "prev_volume": 1021704705351.0,
+    "volume_change": -4.09,
+    "date": "20260422"
   },
   "institutional": {
-    "foreign_buy": 370768953754.0,
-    "foreign_sell": 310615225845.0,
-    "foreign_net": 60153727909.0,
-    "foreign_prev_net": 4346379017.0,
-    "trust_buy": 36372495731.0,
-    "trust_sell": 28155939958.0,
-    "trust_net": 8216555773.0,
-    "trust_prev_net": -2031088234.0,
-    "dealer_net": 591045960.0,
-    "dealer_buy": 8070255862.0,
-    "dealer_sell": 7479209902.0
+    "foreign_buy": 334220762572.0,
+    "foreign_sell": 322611365252.0,
+    "foreign_net": 11609397320.0,
+    "foreign_prev_net": 60153727909.0,
+    "trust_buy": 28344495141.0,
+    "trust_sell": 24687366640.0,
+    "trust_net": 3657128501.0,
+    "trust_prev_net": 8059253703.0,
+    "dealer_net": 1327544416.0,
+    "dealer_buy": 7179482957.0,
+    "dealer_sell": 5851938541.0
   },
   "foreign_top10": {
     "top_buy": [
       {
-        "stock_id": "1802",
-        "stock_name": "台玻",
-        "buy": 76399,
-        "sell": 39781,
-        "net": 36618
+        "stock_id": "2324",
+        "stock_name": "仁寶",
+        "buy": 67549,
+        "sell": 18233,
+        "net": 49317
       },
       {
-        "stock_id": "00997A",
-        "stock_name": "主動群益美國增長",
-        "buy": 36169,
-        "sell": 7634,
-        "net": 28535
+        "stock_id": "00919",
+        "stock_name": "群益台灣精選高息",
+        "buy": 61015,
+        "sell": 12199,
+        "net": 48816
       },
       {
-        "stock_id": "3231",
-        "stock_name": "緯創",
-        "buy": 49706,
-        "sell": 21994,
-        "net": 27712
+        "stock_id": "2303",
+        "stock_name": "聯電",
+        "buy": 107153,
+        "sell": 59330,
+        "net": 47823
+      },
+      {
+        "stock_id": "2317",
+        "stock_name": "鴻海",
+        "buy": 79076,
+        "sell": 39012,
+        "net": 40064
       },
       {
         "stock_id": "00878",
         "stock_name": "國泰永續高股息",
-        "buy": 27528,
-        "sell": 1163,
-        "net": 26365
+        "buy": 28057,
+        "sell": 3702,
+        "net": 24356
       },
       {
-        "stock_id": "2324",
-        "stock_name": "仁寶",
-        "buy": 45114,
-        "sell": 20972,
-        "net": 24142
-      },
-      {
-        "stock_id": "1303",
-        "stock_name": "南亞",
-        "buy": 32469,
-        "sell": 11067,
-        "net": 21401
-      },
-      {
-        "stock_id": "00927",
-        "stock_name": "群益半導體收益",
-        "buy": 21370,
-        "sell": 1897,
-        "net": 19473
-      },
-      {
-        "stock_id": "0050",
-        "stock_name": "元大台灣50",
-        "buy": 25497,
-        "sell": 6106,
-        "net": 19391
-      },
-      {
-        "stock_id": "2301",
-        "stock_name": "光寶科",
-        "buy": 26572,
-        "sell": 8013,
-        "net": 18559
+        "stock_id": "2887",
+        "stock_name": "台新新光金",
+        "buy": 43026,
+        "sell": 20159,
+        "net": 22867
       },
       {
         "stock_id": "2884",
         "stock_name": "玉山金",
-        "buy": 26087,
-        "sell": 8034,
-        "net": 18052
+        "buy": 33965,
+        "sell": 13544,
+        "net": 20420
+      },
+      {
+        "stock_id": "00712",
+        "stock_name": "復華富時不動產",
+        "buy": 18733,
+        "sell": 86,
+        "net": 18648
+      },
+      {
+        "stock_id": "2301",
+        "stock_name": "光寶科",
+        "buy": 23192,
+        "sell": 8123,
+        "net": 15069
+      },
+      {
+        "stock_id": "1303",
+        "stock_name": "南亞",
+        "buy": 29000,
+        "sell": 14800,
+        "net": 14200
       }
     ],
     "top_sell": [
       {
         "stock_id": "00981A",
         "stock_name": "主動統一台股增長",
-        "buy": 39411,
-        "sell": 82418,
-        "net": -43007
+        "buy": 37505,
+        "sell": 87479,
+        "net": -49975
       },
       {
-        "stock_id": "2409",
-        "stock_name": "友達",
-        "buy": 55483,
-        "sell": 87584,
-        "net": -32101
+        "stock_id": "1802",
+        "stock_name": "台玻",
+        "buy": 39888,
+        "sell": 74963,
+        "net": -35076
       },
       {
-        "stock_id": "00992A",
-        "stock_name": "主動群益科技創新",
-        "buy": 26968,
-        "sell": 54620,
-        "net": -27652
+        "stock_id": "0056",
+        "stock_name": "元大高股息",
+        "buy": 8971,
+        "sell": 42363,
+        "net": -33392
       },
       {
-        "stock_id": "3481",
-        "stock_name": "群創",
-        "buy": 48405,
-        "sell": 74988,
-        "net": -26583
+        "stock_id": "1409",
+        "stock_name": "新纖",
+        "buy": 5765,
+        "sell": 24027,
+        "net": -18262
       },
       {
         "stock_id": "9904",
         "stock_name": "寶成",
-        "buy": 4666,
-        "sell": 22336,
-        "net": -17670
+        "buy": 4938,
+        "sell": 21707,
+        "net": -16769
       },
       {
-        "stock_id": "2303",
-        "stock_name": "聯電",
-        "buy": 122536,
-        "sell": 138694,
-        "net": -16158
+        "stock_id": "2105",
+        "stock_name": "正新",
+        "buy": 4217,
+        "sell": 19342,
+        "net": -15125
       },
       {
-        "stock_id": "1605",
-        "stock_name": "華新",
-        "buy": 14538,
-        "sell": 26855,
-        "net": -12317
+        "stock_id": "00992A",
+        "stock_name": "主動群益科技創新",
+        "buy": 16028,
+        "sell": 28002,
+        "net": -11974
       },
       {
-        "stock_id": "1402",
-        "stock_name": "遠東新",
-        "buy": 6215,
-        "sell": 16760,
-        "net": -10545
+        "stock_id": "2367",
+        "stock_name": "燿華",
+        "buy": 12289,
+        "sell": 23355,
+        "net": -11066
       },
       {
-        "stock_id": "6005",
-        "stock_name": "群益證",
-        "buy": 2475,
-        "sell": 12002,
-        "net": -9527
+        "stock_id": "00673R",
+        "stock_name": "期元大S&P原油反1",
+        "buy": 422,
+        "sell": 10146,
+        "net": -9724
       },
       {
-        "stock_id": "4906",
-        "stock_name": "正文",
-        "buy": 12706,
-        "sell": 21157,
-        "net": -8451
+        "stock_id": "2337",
+        "stock_name": "旺宏",
+        "buy": 38698,
+        "sell": 48245,
+        "net": -9546
       }
     ],
-    "data_date": "20260421"
+    "data_date": "20260422"
   },
   "margin": {
     "margin_balance": null,
@@ -178,18 +178,14 @@
     "short_change": null
   },
   "breadth": {
-    "tse_up": 633,
-    "tse_down": 578,
-    "tse_flat": 140,
+    "tse_up": 735,
+    "tse_down": 490,
+    "tse_flat": 126,
     "otc_up": null,
     "otc_down": null,
     "otc_flat": null
   },
   "usd_index": [
-    {
-      "date": "2026-03-25",
-      "close": 98.407
-    },
     {
       "date": "2026-03-26",
       "close": 98.621
@@ -265,13 +261,13 @@
     {
       "date": "2026-04-21",
       "close": 98.25
+    },
+    {
+      "date": "2026-04-22",
+      "close": 98.3
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-03-25",
-      "close": 159.2
-    },
     {
       "date": "2026-03-26",
       "close": 159.65
@@ -347,17 +343,17 @@
     {
       "date": "2026-04-21",
       "close": 159.191511
+    },
+    {
+      "date": "2026-04-22",
+      "close": 159.21
     }
   ],
   "vix": {
-    "value": 18.86,
-    "date": "2026-04-21",
-    "prev_value": 19.51,
+    "value": 19.12,
+    "date": "2026-04-22",
+    "prev_value": 18.86,
     "chart": [
-      {
-        "date": "2026-03-25",
-        "close": 25.33
-      },
       {
         "date": "2026-03-26",
         "close": 27.44
@@ -433,52 +429,52 @@
       {
         "date": "2026-04-21",
         "close": 18.86
+      },
+      {
+        "date": "2026-04-22",
+        "close": 19.12
       }
     ]
   },
   "futures": {
-    "close": 38048.0,
-    "change": 808.0,
-    "change_pct": 2.17,
-    "volume": 63284.0,
-    "settlement": 38048.0,
-    "open": 37707.0,
-    "high": 38159.0,
-    "low": 37647.0,
+    "close": 38206.0,
+    "change": 158.0,
+    "change_pct": 0.42,
+    "volume": 54740.0,
+    "settlement": 38216.0,
+    "open": 38150.0,
+    "high": 38369.0,
+    "low": 37925.0,
     "contract_month": "202605",
-    "data_date": "20260421"
+    "data_date": "20260422"
   },
   "margin_ratio": {
     "ratio": null,
-    "date": "20260421"
+    "date": "20260422"
   },
   "cnn_fg": {
-    "value": 70.9,
+    "value": 67.7,
     "label": "greed",
-    "prev_value": 69.9,
+    "prev_value": 67.6,
     "prev_label": null,
-    "week_ago_value": 49.1
+    "week_ago_value": 57.6
   },
   "crypto_fg": {
-    "value": 33,
+    "value": 32,
     "label": "Fear",
-    "prev_value": 29,
+    "prev_value": 33,
     "prev_label": "Fear"
   },
   "pcr": {
-    "ratio": 119.15,
-    "put_oi": 248841.0,
-    "call_oi": 198940.0
+    "ratio": 139.67,
+    "put_oi": 420119.0,
+    "call_oi": 401719.0
   },
   "us10y": {
-    "value": 4.25,
-    "date": "2026-04-21",
-    "prev_value": 4.246,
+    "value": 4.292,
+    "date": "2026-04-22",
+    "prev_value": 4.25,
     "chart": [
-      {
-        "date": "2026-03-26",
-        "close": 4.42
-      },
       {
         "date": "2026-03-27",
         "close": 4.44
@@ -554,50 +550,54 @@
       {
         "date": "2026-04-21",
         "close": 4.25
+      },
+      {
+        "date": "2026-04-22",
+        "close": 4.292
       }
     ]
   },
   "futures_oi": {
     "foreign": {
-      "change": 1335,
-      "oi": -41295
+      "change": -1260,
+      "oi": -42555
     },
     "trust": {
-      "change": 803,
-      "oi": 42905
+      "change": -1153,
+      "oi": 41752
     },
     "dealer": {
-      "change": -938,
-      "oi": -5203
+      "change": 775,
+      "oi": -4400
     },
     "total": {
-      "change": 1200,
-      "oi": -3593
+      "change": -1638,
+      "oi": -5203
     }
   },
   "sentiment": {
-    "micro_sentiment": -4.64,
-    "micro_sentiment_prev": -19.75,
-    "mini_sentiment": -4.64,
-    "mini_sentiment_prev": -11.98,
-    "pcr_today": 125.08,
-    "pcr_prev": 96.39,
+    "micro_sentiment": -20.32,
+    "micro_sentiment_prev": -4.64,
+    "mini_sentiment": -20.32,
+    "mini_sentiment_prev": -12.53,
+    "pcr_today": 104.58,
+    "pcr_prev": 125.08,
     "micro_sentiment_chart": [
       {
-        "date": "2026-04-21",
-        "close": -4.64
+        "date": "2026-04-22",
+        "close": -20.32
       }
     ],
     "mini_sentiment_chart": [
       {
-        "date": "2026-04-21",
-        "close": -4.64
+        "date": "2026-04-22",
+        "close": -20.32
       }
     ],
     "pcr_chart": [
       {
-        "date": "2026-04-21",
-        "close": 119.15
+        "date": "2026-04-22",
+        "close": 139.67
       }
     ]
   },
