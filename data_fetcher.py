@@ -34,7 +34,7 @@ def _load_history_cache():
         if os.path.exists(HISTORY_CACHE_PATH):
             with open(HISTORY_CACHE_PATH, 'r', encoding='utf-8') as f:
                 cache = json.load(f)
-                print(f"  [快取] ✅ 載入成功，含 {len(cache.get('vix', []))} VIX / {len(cache.get('us10y', []))} US10Y / {len(cache.get('usd_index', []))} DXY / {len(cache.get('jpy_rate', []))} JPY 筆資料")
+                print(f"  [快取] ✅ 載入成功，含 {len(cache.get('vix', []))} VIX / {len(cache.get('us10y', []))} US10Y / {len(cache.get('usd_index', []))} DXY / {len(cache.get('jpy_rate', []))} JPY / {len(cache.get('on_rrp', []))} ONRRP 筆資料")
                 return cache
     except Exception as e:
         print(f"  [快取] ⚠️ 載入失敗: {e}")
@@ -3180,12 +3180,50 @@ def fetch_on_rrp():
     FRED series: RRPONTSYD
     單位: Billions of Dollars
     回傳: {value, date, prev_value, chart}
+    優先順序: FRED CSV → NY Fed API
     """
     print("🏦 抓取隔夜逆回購 (ON RRP)...")
     data = _fetch_fred_data("RRPONTSYD", 35)
 
+    # 備援: NY Fed Repo Operations API (官方資料，不需 API key)
     if not data:
-        print("  ⚠️ ON RRP: FRED 資料取得失敗")
+        print("  [NY Fed] 嘗試 NY Fed 備援...")
+        try:
+            end_date = datetime.now().strftime("%Y-%m-%d")
+            start_date = (datetime.now() - timedelta(days=55)).strftime("%Y-%m-%d")
+            url = (
+                "https://markets.newyorkfed.org/api/rp/reverserepo/propositions/search.json"
+                f"?startDate={start_date}&endDate={end_date}&maxRows=50"
+            )
+            resp = requests.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+                timeout=15,
+            )
+            if resp.status_code == 200:
+                ops = resp.json().get("repo", {}).get("operations", [])
+                pts = []
+                for op in ops:
+                    try:
+                        date_str = op["operationDate"]
+                        amt = op.get("totalAmtAccepted")
+                        if amt is not None and amt != "":
+                            # totalAmtAccepted 為美元（raw），轉換為十億美元 (billions)
+                            close_val = round(float(amt) / 1_000_000_000, 3)
+                            pts.append({"date": date_str, "close": close_val})
+                    except (KeyError, TypeError, ValueError):
+                        continue
+                pts.sort(key=lambda x: x["date"])
+                data = pts[-35:] if len(pts) > 35 else pts
+                if data:
+                    print(f"  [NY Fed] ✅ ON RRP 共 {len(data)} 筆 (最新: {data[-1]['close']} B)")
+                else:
+                    print("  [NY Fed] ⚠️ 回應為空")
+        except Exception as e:
+            print(f"  [NY Fed] ❌ ON RRP: {e}")
+
+    if not data:
+        print("  ⚠️ ON RRP: 所有來源失敗")
         return {"value": None, "date": None, "prev_value": None, "chart": []}
 
     data = data[-30:] if len(data) > 30 else data
@@ -3256,15 +3294,32 @@ def fetch_all_data(date_str=None):
         35
     )
 
-    # ★ 儲存更新後的快取
+    # ON RRP — 抓取後合併至快取，確保 FRED 失敗時仍有歷史資料
+    on_rrp_result = fetch_on_rrp()
+    on_rrp_merged = _merge_and_trim(
+        history_cache.get("on_rrp", []),
+        on_rrp_result.get("chart", []),
+        35
+    )
+    on_rrp_result["chart"] = on_rrp_merged[-30:]
+    if len(on_rrp_merged) >= 2:
+        on_rrp_result["value"] = on_rrp_merged[-1]["close"]
+        on_rrp_result["date"] = on_rrp_merged[-1]["date"]
+        on_rrp_result["prev_value"] = on_rrp_merged[-2]["close"]
+    elif len(on_rrp_merged) == 1:
+        on_rrp_result["value"] = on_rrp_merged[-1]["close"]
+        on_rrp_result["date"] = on_rrp_merged[-1]["date"]
+
+    # ★ 儲存更新後的快取 (含 ON RRP)
     _save_history_cache({
         "vix": vix_chart_merged,
         "us10y": us10y_chart_merged,
         "usd_index": usd_merged,
         "jpy_rate": jpy_merged,
+        "on_rrp": on_rrp_merged,
     })
 
-    print(f"  📊 快取合併結果: VIX={len(vix_chart_merged)}筆 US10Y={len(us10y_chart_merged)}筆 DXY={len(usd_merged)}筆 JPY={len(jpy_merged)}筆")
+    print(f"  📊 快取合併結果: VIX={len(vix_chart_merged)}筆 US10Y={len(us10y_chart_merged)}筆 DXY={len(usd_merged)}筆 JPY={len(jpy_merged)}筆 ONRRP={len(on_rrp_merged)}筆")
 
     data = {
         "date": date_str,
@@ -3285,7 +3340,7 @@ def fetch_all_data(date_str=None):
         "us10y": us10y_result,
         "futures_oi": fetch_futures_oi(date_str),
         "sentiment": fetch_sentiment_indicators(date_str),
-        "on_rrp": fetch_on_rrp(),
+        "on_rrp": on_rrp_result,
     }
 
     print(f"\n✅ 資料抓取完成！")
