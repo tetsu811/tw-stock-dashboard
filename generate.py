@@ -451,6 +451,112 @@ def prepare_template_data(data):
     except Exception as e:
         print(f"  \u26a0\ufe0f ON RRP \u8b8a\u6578\u8655\u7406\u5931\u6557: {e}")
 
+
+    # ========== 戰略溫度計 (Strategy Thermometer) ==========
+    # 綜合七個維度，加權計算 0~100 分
+    strat_scores = []
+    strat_weights = []
+
+    # 1) CNN Fear & Greed (20%) — 直接 0~100
+    _cnn = ctx.get("cnn_fg_raw")
+    if _cnn is not None:
+        try:
+            strat_scores.append(float(_cnn))
+            strat_weights.append(20)
+        except (ValueError, TypeError):
+            pass
+
+    # 2) VIX (15%) — VIX 12→100, 35→0 (反向)
+    try:
+        _vix = vix.get("value") if vix.get("value") else None
+        if _vix is not None:
+            _vix_score = max(0, min(100, (35 - float(_vix)) / (35 - 12) * 100))
+            strat_scores.append(_vix_score)
+            strat_weights.append(15)
+    except (ValueError, TypeError):
+        pass
+
+    # 3) 三大法人買賣超 (20%) — 用 ±300億 為滿分區間
+    _fnet = ctx.get("foreign_net")
+    if _fnet is not None:
+        try:
+            _fnet_score = max(0, min(100, (float(_fnet) / 3e10 + 1) * 50))
+            strat_scores.append(_fnet_score)
+            strat_weights.append(20)
+        except (ValueError, TypeError):
+            pass
+
+    # 4) 小台多空比 (15%) — -100%~+100% → 0~100
+    _mini = ctx.get("mini_sentiment")
+    if _mini is not None:
+        try:
+            _mini_score = max(0, min(100, (float(_mini) + 100) / 2))
+            strat_scores.append(_mini_score)
+            strat_weights.append(15)
+        except (ValueError, TypeError):
+            pass
+
+    # 5) PCR (10%) — PCR 0.6→100(偏多), 1.4→0(偏空)
+    _pcr = ctx.get("pcr_raw")
+    if _pcr is not None:
+        try:
+            _pcr_score = max(0, min(100, (1.4 - float(_pcr)) / (1.4 - 0.6) * 100))
+            strat_scores.append(_pcr_score)
+            strat_weights.append(10)
+        except (ValueError, TypeError):
+            pass
+
+    # 6) 漲跌家數比 (10%)
+    _up = ctx.get("tse_up")
+    _down = ctx.get("tse_down")
+    if _up is not None and _down is not None:
+        try:
+            _total = float(_up) + float(_down)
+            if _total > 0:
+                _ad_score = float(_up) / _total * 100
+                strat_scores.append(_ad_score)
+                strat_weights.append(10)
+        except (ValueError, TypeError):
+            pass
+
+    # 7) ON RRP 變化 (10%) — RRP 下降→資金流入→偏多
+    _rrp_chg = ctx.get("on_rrp_change")
+    if _rrp_chg is not None:
+        try:
+            # 每日變化 ±50B 為滿分區間 (反向: 下降=利多)
+            _rrp_score = max(0, min(100, (-float(_rrp_chg) / 50 + 1) * 50))
+            strat_scores.append(_rrp_score)
+            strat_weights.append(10)
+        except (ValueError, TypeError):
+            pass
+
+    # 加權平均
+    ctx["strat_thermo_score"] = None
+    ctx["strat_thermo_label"] = "N/A"
+    ctx["strat_thermo_color"] = "#888"
+    ctx["strat_thermo_dimensions"] = 0
+    if strat_weights:
+        _total_w = sum(strat_weights)
+        _weighted = sum(s * w for s, w in zip(strat_scores, strat_weights))
+        _final = round(_weighted / _total_w, 1)
+        ctx["strat_thermo_score"] = _final
+        ctx["strat_thermo_dimensions"] = len(strat_scores)
+        if _final >= 80:
+            ctx["strat_thermo_label"] = "極度樂觀"
+            ctx["strat_thermo_color"] = "#ef4444"
+        elif _final >= 60:
+            ctx["strat_thermo_label"] = "偏多樂觀"
+            ctx["strat_thermo_color"] = "#f97316"
+        elif _final >= 40:
+            ctx["strat_thermo_label"] = "中性觀望"
+            ctx["strat_thermo_color"] = "#a3a3a3"
+        elif _final >= 20:
+            ctx["strat_thermo_label"] = "偏空謹慎"
+            ctx["strat_thermo_color"] = "#3b82f6"
+        else:
+            ctx["strat_thermo_label"] = "極度恐懼"
+            ctx["strat_thermo_color"] = "#1e3a5f"
+
     return ctx
 
 
