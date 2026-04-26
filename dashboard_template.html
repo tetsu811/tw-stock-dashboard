@@ -495,6 +495,56 @@
             </div>
         </div>
 
+        <!-- ====== 戰略溫度計 ====== -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+                <h3>🌡️ 戰略溫度計</h3>
+                <span style="font-size:12px;color:var(--text-muted);">綜合 {{ strat_thermo_dimensions }} 項指標</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;padding:10px 0;">
+                <div style="position:relative;width:260px;height:145px;overflow:hidden;">
+                    <svg viewBox="0 0 260 145" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+                        <path d="M 20 135 A 110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="22" stroke-linecap="round"/>
+                        <path d="M 20 135 A 110 110 0 0 1 53 58" fill="none" stroke="#1e3a5f" stroke-width="22" stroke-linecap="round"/>
+                        <path d="M 53 58 A 110 110 0 0 1 108 27" fill="none" stroke="#3b82f6" stroke-width="20"/>
+                        <path d="M 108 27 A 110 110 0 0 1 152 27" fill="none" stroke="#a3a3a3" stroke-width="20"/>
+                        <path d="M 152 27 A 110 110 0 0 1 207 58" fill="none" stroke="#f97316" stroke-width="20"/>
+                        <path d="M 207 58 A 110 110 0 0 1 240 135" fill="none" stroke="#ef4444" stroke-width="22" stroke-linecap="round"/>
+                        {% if strat_thermo_score is not none %}
+                        <line id="gaugeNeedle" x1="130" y1="135" x2="130" y2="40" stroke="{{ strat_thermo_color }}" stroke-width="3" stroke-linecap="round" transform="rotate({{ (strat_thermo_score / 100 * 180) - 90 }}, 130, 135)"/>
+                        <circle cx="130" cy="135" r="8" fill="{{ strat_thermo_color }}"/>
+                        <circle cx="130" cy="135" r="4" fill="#1a1a2e"/>
+                        {% else %}
+                        <circle cx="130" cy="135" r="8" fill="#888"/>
+                        <circle cx="130" cy="135" r="4" fill="#1a1a2e"/>
+                        {% endif %}
+                        <text x="15" y="143" fill="#888" font-size="9" text-anchor="start">0</text>
+                        <text x="245" y="143" fill="#888" font-size="9" text-anchor="end">100</text>
+                        <text x="130" y="18" fill="#888" font-size="9" text-anchor="middle">50</text>
+                    </svg>
+                </div>
+                <div style="text-align:center;margin-top:8px;">
+                    {% if strat_thermo_score is not none %}
+                    <div style="font-size:36px;font-weight:700;color:{{ strat_thermo_color }};">{{ strat_thermo_score }}</div>
+                    <div style="font-size:16px;font-weight:600;color:{{ strat_thermo_color }};margin-top:2px;">{{ strat_thermo_label }}</div>
+                    {% else %}
+                    <div style="font-size:36px;font-weight:700;color:#888;">N/A</div>
+                    <div style="font-size:14px;color:var(--text-muted);">資料不足</div>
+                    {% endif %}
+                </div>
+                <div style="display:flex;justify-content:space-between;width:260px;margin-top:10px;padding:0 5px;">
+                    <span style="font-size:10px;color:#1e3a5f;">極度恐懼</span>
+                    <span style="font-size:10px;color:#3b82f6;">偏空</span>
+                    <span style="font-size:10px;color:#a3a3a3;">中性</span>
+                    <span style="font-size:10px;color:#f97316;">偏多</span>
+                    <span style="font-size:10px;color:#ef4444;">極度樂觀</span>
+                </div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:12px;text-align:center;opacity:0.7;">
+                    ⚠️ 本指標僅為市場數據綜合呈現，不構成任何投資建議
+                </div>
+            </div>
+        </div>
+
         <!-- ====== 三大法人現貨買賣超 ====== -->
         <div class="grid grid-4" style="margin-bottom: 16px;">
             <!-- 外資 -->
