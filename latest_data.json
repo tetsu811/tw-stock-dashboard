@@ -1,6 +1,6 @@
 {
-  "date": "20260425",
-  "generated_at": "2026-04-25 17:28:22",
+  "date": "20260426",
+  "generated_at": "2026-04-26 14:47:42",
   "taiex": {
     "index": 38932.4,
     "change": 1218.25,
@@ -8,7 +8,7 @@
     "volume": 1081153827550.0,
     "prev_volume": 1460103003620.0,
     "volume_change": -25.95,
-    "date": "20260425"
+    "date": "20260426"
   },
   "institutional": {
     "foreign_buy": 393689639274.0,
@@ -187,10 +187,6 @@
   },
   "usd_index": [
     {
-      "date": "2026-04-01",
-      "close": 99.39
-    },
-    {
       "date": "2026-04-02",
       "close": 99.93
     },
@@ -265,13 +261,13 @@
     {
       "date": "2026-04-25",
       "close": 98.51
+    },
+    {
+      "date": "2026-04-26",
+      "close": 98.51
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-04-01",
-      "close": 158.63
-    },
     {
       "date": "2026-04-02",
       "close": 159.34
@@ -347,17 +343,17 @@
     {
       "date": "2026-04-25",
       "close": 158.704993
+    },
+    {
+      "date": "2026-04-26",
+      "close": 158.704993
     }
   ],
   "vix": {
-    "value": 19.16,
-    "date": "2026-04-23",
-    "prev_value": 19.31,
+    "value": 18.71,
+    "date": "2026-04-26",
+    "prev_value": 19.16,
     "chart": [
-      {
-        "date": "2026-03-31",
-        "close": 25.25
-      },
       {
         "date": "2026-04-01",
         "close": 24.54
@@ -433,6 +429,10 @@
       {
         "date": "2026-04-25",
         "close": 19.16
+      },
+      {
+        "date": "2026-04-26",
+        "close": 18.71
       }
     ]
   },
@@ -450,7 +450,7 @@
   },
   "margin_ratio": {
     "ratio": null,
-    "date": "20260425"
+    "date": "20260426"
   },
   "cnn_fg": {
     "value": 66.0,
@@ -460,9 +460,9 @@
     "week_ago_value": 68.0
   },
   "crypto_fg": {
-    "value": 31,
+    "value": 33,
     "label": "Fear",
-    "prev_value": 39,
+    "prev_value": 31,
     "prev_label": "Fear"
   },
   "pcr": {
@@ -472,13 +472,9 @@
   },
   "us10y": {
     "value": 4.31,
-    "date": "2026-04-25",
+    "date": null,
     "prev_value": 4.294,
     "chart": [
-      {
-        "date": "2026-04-01",
-        "close": 4.33
-      },
       {
         "date": "2026-04-02",
         "close": 4.31
@@ -554,6 +550,10 @@
       {
         "date": "2026-04-25",
         "close": 4.31
+      },
+      {
+        "date": "2026-04-26",
+        "close": 4.31
       }
     ]
   },
@@ -578,17 +578,12 @@
   "sentiment": {
     "micro_sentiment": null,
     "micro_sentiment_prev": 6.34,
-    "mini_sentiment": 6.34,
+    "mini_sentiment": null,
     "mini_sentiment_prev": 6.34,
     "pcr_today": null,
     "pcr_prev": 119.79,
     "micro_sentiment_chart": [],
-    "mini_sentiment_chart": [
-      {
-        "date": "2026-04-25",
-        "close": 6.34
-      }
-    ],
+    "mini_sentiment_chart": [],
     "pcr_chart": []
   },
   "on_rrp": {
