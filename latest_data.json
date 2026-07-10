@@ -1,6 +1,6 @@
 {
-  "date": "20260709",
-  "generated_at": "2026-07-09 20:47:18",
+  "date": "20260710",
+  "generated_at": "2026-07-10 20:27:29",
   "taiex": {
     "index": 45354.61,
     "change": -379.8,
@@ -8,18 +8,20 @@
     "volume": 996789429935.0,
     "prev_volume": 1004560446696.0,
     "volume_change": -0.77,
-    "date": "20260709"
+    "date": "20260710"
   },
   "institutional": {
-    "foreign_buy": null,
-    "foreign_sell": null,
-    "foreign_net": null,
-    "foreign_prev_net": -37948987989.0,
-    "trust_buy": null,
-    "trust_sell": null,
-    "trust_net": null,
-    "trust_prev_net": 12680292684.0,
-    "dealer_net": null
+    "foreign_buy": 367858937128.0,
+    "foreign_sell": 415111753557.0,
+    "foreign_net": -47252816429.0,
+    "foreign_prev_net": -47252816429.0,
+    "trust_buy": 30231840066.0,
+    "trust_sell": 10331239403.0,
+    "trust_net": 19900600663.0,
+    "trust_prev_net": 19900600663.0,
+    "dealer_net": -2036187921.0,
+    "dealer_buy": 9494954521.0,
+    "dealer_sell": 11531142442.0
   },
   "foreign_top10": {
     "top_buy": [
@@ -178,16 +180,12 @@
   "breadth": {
     "tse_up": 540,
     "tse_down": 670,
-    "tse_flat": 49,
+    "tse_flat": 159,
     "otc_up": null,
     "otc_down": null,
     "otc_flat": null
   },
   "usd_index": [
-    {
-      "date": "2026-06-12",
-      "close": 99.83
-    },
     {
       "date": "2026-06-15",
       "close": 99.57
@@ -263,13 +261,13 @@
     {
       "date": "2026-07-09",
       "close": 100.94
+    },
+    {
+      "date": "2026-07-10",
+      "close": 100.82
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-06-12",
-      "close": 160.27
-    },
     {
       "date": "2026-06-15",
       "close": 160.18
@@ -345,6 +343,10 @@
     {
       "date": "2026-07-09",
       "close": 162.43
+    },
+    {
+      "date": "2026-07-10",
+      "close": 161.79
     }
   ],
   "vix": {
@@ -352,10 +354,6 @@
     "date": null,
     "prev_value": 18.96,
     "chart": [
-      {
-        "date": "2026-06-12",
-        "close": 18.96
-      },
       {
         "date": "2026-06-15",
         "close": 18.96
@@ -430,6 +428,10 @@
       },
       {
         "date": "2026-07-09",
+        "close": 18.96
+      },
+      {
+        "date": "2026-07-10",
         "close": 18.96
       }
     ]
@@ -448,35 +450,31 @@
   },
   "margin_ratio": {
     "ratio": null,
-    "date": "20260709"
+    "date": "20260710"
   },
   "cnn_fg": {
-    "value": 41.5,
-    "label": "fear",
-    "prev_value": 42.3,
+    "value": 47.2,
+    "label": "neutral",
+    "prev_value": 47.3,
     "prev_label": null,
-    "week_ago_value": 37.5
+    "week_ago_value": 32.4
   },
   "crypto_fg": {
-    "value": 22,
+    "value": 23,
     "label": "Extreme Fear",
-    "prev_value": 20,
+    "prev_value": 22,
     "prev_label": "Extreme Fear"
   },
   "pcr": {
-    "ratio": 118.81,
-    "put_oi": 175220.0,
-    "call_oi": 173682.0
+    "ratio": null,
+    "put_oi": null,
+    "call_oi": null
   },
   "us10y": {
     "value": 4.336,
     "date": null,
     "prev_value": 4.336,
     "chart": [
-      {
-        "date": "2026-06-12",
-        "close": 4.336
-      },
       {
         "date": "2026-06-15",
         "close": 4.336
@@ -552,62 +550,47 @@
       {
         "date": "2026-07-09",
         "close": 4.336
+      },
+      {
+        "date": "2026-07-10",
+        "close": 4.336
       }
     ]
   },
   "futures_oi": {
     "foreign": {
-      "change": 468,
-      "oi": -80730
+      "change": null,
+      "oi": null
     },
     "trust": {
-      "change": 1702,
-      "oi": 71689
+      "change": null,
+      "oi": null
     },
     "dealer": {
-      "change": -950,
-      "oi": 2243
+      "change": null,
+      "oi": null
     },
     "total": {
-      "change": 1220,
-      "oi": -6798
+      "change": null,
+      "oi": null
     }
   },
   "sentiment": {
-    "micro_sentiment": -20.56,
-    "micro_sentiment_prev": -42.94,
-    "mini_sentiment": -20.56,
-    "mini_sentiment_prev": -42.94,
-    "pcr_today": 100.89,
-    "pcr_prev": 91.04,
-    "micro_sentiment_chart": [
-      {
-        "date": "2026-07-09",
-        "close": -20.56
-      }
-    ],
-    "mini_sentiment_chart": [
-      {
-        "date": "2026-07-09",
-        "close": -20.56
-      }
-    ],
-    "pcr_chart": [
-      {
-        "date": "2026-07-09",
-        "close": 118.81
-      }
-    ]
+    "micro_sentiment": null,
+    "micro_sentiment_prev": -20.56,
+    "mini_sentiment": null,
+    "mini_sentiment_prev": -20.56,
+    "pcr_today": null,
+    "pcr_prev": 100.89,
+    "micro_sentiment_chart": [],
+    "mini_sentiment_chart": [],
+    "pcr_chart": []
   },
   "on_rrp": {
-    "value": 3.347,
-    "date": "2026-07-08",
-    "prev_value": 4.484,
+    "value": 5.772,
+    "date": "2026-07-09",
+    "prev_value": 3.347,
     "chart": [
-      {
-        "date": "2026-05-26",
-        "close": 1.787
-      },
       {
         "date": "2026-05-27",
         "close": 1.853
@@ -723,6 +706,10 @@
       {
         "date": "2026-07-08",
         "close": 3.347
+      },
+      {
+        "date": "2026-07-09",
+        "close": 5.772
       }
     ]
   }
