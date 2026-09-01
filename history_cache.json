@@ -327,8 +327,23 @@
       "close": 147.18
     }
   ],
-  "micro_sentiment": [],
-  "mini_sentiment": [],
-  "pcr": [],
-  "last_updated": "2026-09-01 01:27:48"
+  "micro_sentiment": [
+    {
+      "date": "2026-09-01",
+      "close": 7.27
+    }
+  ],
+  "mini_sentiment": [
+    {
+      "date": "2026-09-01",
+      "close": 7.27
+    }
+  ],
+  "pcr": [
+    {
+      "date": "2026-09-01",
+      "close": 110.04
+    }
+  ],
+  "last_updated": "2026-09-01 22:38:05"
 }
