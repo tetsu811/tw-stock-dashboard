@@ -1,6 +1,6 @@
 {
   "date": "20260916",
-  "generated_at": "2026-09-16 22:41:29",
+  "generated_at": "2026-09-16 23:48:45",
   "taiex": {
     "index": 45848.9,
     "change": 337.41,
@@ -350,7 +350,7 @@
     }
   ],
   "vix": {
-    "value": 16.72,
+    "value": 16.75,
     "prev_value": 17.2,
     "date": "2026-09-16",
     "chart": [
@@ -472,7 +472,7 @@
       },
       {
         "date": "2026-09-16",
-        "close": 16.72
+        "close": 16.75
       }
     ],
     "source": "Yahoo Finance",
@@ -495,7 +495,7 @@
     "date": "20260916"
   },
   "cnn_fg": {
-    "value": 28.9,
+    "value": 29.0,
     "label": "fear",
     "prev_value": 28.7,
     "prev_label": null,
