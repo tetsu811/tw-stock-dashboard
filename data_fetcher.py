@@ -44,6 +44,7 @@ def _load_history_cache():
 def _save_history_cache(cache):
     """儲存歷史數據快取"""
     try:
+        cache["schema_version"] = 2
         cache["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(HISTORY_CACHE_PATH, 'w', encoding='utf-8') as f:
             json.dump(cache, f, ensure_ascii=False, indent=2)
@@ -1919,7 +1920,7 @@ def fetch_jpy_rate():
     return data[-30:] if data else []
 
 
-def fetch_vix():
+def _legacy_fetch_vix():
     """
     抓取 VIX 指數 (近7天含圖表資料)
     優先順序: Google Finance (即時) → FRED CSV (歷史) → Stooq CSV (歷史)
@@ -3065,7 +3066,7 @@ def fetch_put_call_ratio(date_str=None):
 # ============================================================
 # 12. 美國 10 年期公債殖利率 (US10Y)
 # ============================================================
-def fetch_us10y():
+def _legacy_fetch_us10y():
     """
     抓取美國 10 年期公債殖利率
     優先順序: FRED DGS10 (歷史) → Treasury CSV → Google Finance (即時) → Stooq
@@ -3234,6 +3235,25 @@ def fetch_on_rrp():
         "chart": data,
     }
 
+def fetch_vix():
+    from market_history import fetch_history, quote
+    rows = fetch_history('^VIX')
+    if not rows:
+        rows = _fetch_fred_data('VIXCLS', 90)
+        return quote(rows, 'FRED VIXCLS')
+    return quote(rows)
+
+
+def fetch_us10y():
+    from market_history import fetch_history, quote
+    # Yahoo ^TNX is already in percent; never divide it by ten.
+    rows = fetch_history('^TNX')
+    if not rows:
+        rows = _fetch_fred_data('DGS10', 90)
+        return quote(rows, 'FRED DGS10')
+    return quote(rows)
+
+
 def fetch_all_data(date_str=None):
     """
     一次抓取所有資料
@@ -3261,26 +3281,18 @@ def fetch_all_data(date_str=None):
     usd_fresh = fetch_usd_index()
     jpy_fresh = fetch_jpy_rate()
 
-    # ★ 合併快取：將新抓的數據與快取合併，確保有足夠歷史
-    vix_chart_merged = _merge_and_trim(
-        history_cache.get("vix", []),
-        vix_result.get("chart", []),
-        35
-    )
-    vix_result["chart"] = vix_chart_merged[-30:]
-    if len(vix_chart_merged) >= 2:
-        vix_result["value"] = vix_chart_merged[-1]["close"]
-        vix_result["prev_value"] = vix_chart_merged[-2]["close"]
-
-    us10y_chart_merged = _merge_and_trim(
-        history_cache.get("us10y", []),
-        us10y_result.get("chart", []),
-        35
-    )
-    us10y_result["chart"] = us10y_chart_merged[-30:]
-    if len(us10y_chart_merged) >= 2:
-        us10y_result["value"] = us10y_chart_merged[-1]["close"]
-        us10y_result["prev_value"] = us10y_chart_merged[-2]["close"]
+    from market_history import merge_observations, quote
+    migrated = history_cache.get('schema_version') == 2
+    for key, result in [('vix', vix_result), ('us10y', us10y_result)]:
+        fresh = result.get('chart', [])
+        cached = history_cache.get(key, []) if migrated else []
+        merged = merge_observations(cached, fresh)
+        source = result.get('source', 'Yahoo Finance')
+        result.update(quote(merged, source))
+        if not fresh and merged:
+            result['status'] = 'stale'
+    vix_chart_merged = vix_result['chart']
+    us10y_chart_merged = us10y_result['chart']
 
     usd_merged = _merge_and_trim(
         history_cache.get("usd_index", []),

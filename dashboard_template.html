@@ -718,7 +718,7 @@
                 <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近30天)</div>
                 <div class="vix-header">
                     <div>
-                        <span class="vix-current {{ vix_color_class }}">{{ vix_value }}</span>
+                        <span class="vix-current {{ vix_color_class }}">{{ vix_value }}</span><small>行情日期 {{ vix_date }} {{ vix_status }}</small>
                         {% if vix_change is not none %}
                         <span style="font-size:16px; margin-left:8px;" class="{% if vix_change > 0 %}text-red{% elif vix_change < 0 %}text-green{% endif %}">
                             {% if vix_change > 0 %}▲{% elif vix_change < 0 %}▼{% endif %} {{ vix_change_display }}
@@ -875,7 +875,7 @@
             <div class="card">
                 <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近30天</div>
                 <div style="display:flex; align-items:baseline; gap:8px;">
-                    <div class="metric-value text-cyan">{{ us10y_value }}%</div>
+                    <div class="metric-value text-cyan">{{ us10y_value }}%</div><small>行情日期 {{ us10y_date }} {{ us10y_status }}</small>
                     {% if us10y_change is not none %}
                     <span style="font-size:14px;" class="{% if us10y_change > 0 %}text-red{% elif us10y_change < 0 %}text-green{% endif %}">
                         {% if us10y_change > 0 %}▲{% elif us10y_change < 0 %}▼{% endif %} {{ us10y_change_display }}%

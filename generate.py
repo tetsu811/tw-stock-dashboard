@@ -184,6 +184,8 @@ def prepare_template_data(data):
     # VIX (含7天圖表)
     vix = data.get("vix", {})
     vix_val = vix.get("value")
+    ctx["vix_date"] = vix.get("date") or "來源暫無資料"
+    ctx["vix_status"] = "（來源更新失敗，保留原日期）" if vix.get("status") != "ok" else ""
     ctx["vix_value"] = format_number(vix_val, 2) if vix_val else "N/A"
     vix_label, vix_color, vix_bg = get_vix_level(vix_val)
     ctx["vix_label"] = vix_label
@@ -381,6 +383,8 @@ def prepare_template_data(data):
     # 美國 10 年期公債殖利率
     us10y = data.get("us10y", {})
     us10y_val = us10y.get("value")
+    ctx["us10y_date"] = us10y.get("date") or "來源暫無資料"
+    ctx["us10y_status"] = "（來源更新失敗，保留原日期）" if us10y.get("status") != "ok" else ""
     ctx["us10y_value"] = format_number(us10y_val, 3) if us10y_val else "N/A"
     us10y_prev = us10y.get("prev_value")
     if us10y_val and us10y_prev:
@@ -643,13 +647,12 @@ def merge_and_persist_history(data):
 
     today_iso = datetime.now().strftime("%Y-%m-%d")
 
-    vix_obj = data.get("vix") or {}
-    if isinstance(vix_obj, dict):
-        cache["vix"] = _append_history_point(cache["vix"], today_iso, vix_obj.get("value"))
-
-    us10y_obj = data.get("us10y") or {}
-    if isinstance(us10y_obj, dict):
-        cache["us10y"] = _append_history_point(cache["us10y"], today_iso, us10y_obj.get("value"))
+    from market_history import merge_observations
+    for key in ('vix', 'us10y'):
+        obj = data.get(key) or {}
+        # fetch_all_data owns migration and historical backfill. Preserve source dates.
+        cache[key] = merge_observations([], obj.get('chart', []), 90)
+    cache['schema_version'] = 2
 
     usd_arr = data.get("usd_index")
     if isinstance(usd_arr, list) and usd_arr:

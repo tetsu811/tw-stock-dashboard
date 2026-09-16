@@ -3,7 +3,7 @@ name: Daily Dashboard Update
 on:
   # Run at UTC 10:00 = Taiwan 18:00, weekdays only
   schedule:
-    - cron: '0 10 * * 1-5'
+    - cron: '17 6,10,14 * * 1-5'
 
   # Manual trigger
   workflow_dispatch:
@@ -12,6 +12,10 @@ permissions:
   contents: write
   pages: write
   id-token: write
+
+concurrency:
+  group: dashboard-update
+  cancel-in-progress: false
 
 jobs:
   update-dashboard:
@@ -51,11 +55,14 @@ jobs:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python generate.py
 
+      - name: Verify observation freshness
+        run: python check_health.py
+
       - name: Commit and push
         run: |
           git config user.name "Dashboard Bot"
           git config user.email "bot@example.com"
-          git add index.html archive latest_data.json history_cache.json
+          git add index.html archive latest_data.json history_cache.json health.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
