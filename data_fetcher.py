@@ -312,6 +312,8 @@ def fetch_taiex(date_str=None):
         idx_val = _parse_number(latest[4])
         if not idx_val:
             continue
+        yy, mm, dd = map(int, latest[0].split("/"))
+        result["date"] = f"{yy + 1911 if yy < 1911 else yy:04d}{mm:02d}{dd:02d}"
         result["index"] = idx_val
         result["change"] = _parse_number(latest[5])
         vol = _parse_number(latest[2])
@@ -964,21 +966,23 @@ def fetch_margin_trading(date_str=None):
 
     if fm_data:
         try:
+            result["date"] = max(r["date"] for r in fm_data if r.get("date"))
+            result["source"] = "FinMind"
             for row in fm_data:
                 name = row.get("name", "")
                 today_bal = row.get("TodayBalance")
                 yes_bal = row.get("YesBalance")
                 print(f"    [FinMind] name={name}, TodayBalance={today_bal}, YesBalance={yes_bal}")
 
-                if "融資" in name and "金額" not in name:
+                if name == "MarginPurchase" or ("融資" in name and "金額" not in name):
                     result["margin_balance"] = _parse_number(str(today_bal)) if today_bal is not None else None
                     if today_bal is not None and yes_bal is not None:
                         result["margin_change"] = int(today_bal) - int(yes_bal)
-                elif "融資金額" in name or ("融資" in name and "金額" in name):
+                elif name == "MarginPurchaseMoney" or "融資金額" in name or ("融資" in name and "金額" in name):
                     amt = _parse_number(str(today_bal)) if today_bal is not None else None
                     if amt is not None:
-                        result["margin_balance_amount"] = amt * 1000  # 仟元轉元
-                elif "融券" in name and "金額" not in name:
+                        result["margin_balance_amount"] = amt if name == "MarginPurchaseMoney" else amt * 1000  # FinMind English field is already TWD
+                elif name == "ShortSale" or ("融券" in name and "金額" not in name):
                     result["short_balance"] = _parse_number(str(today_bal)) if today_bal is not None else None
                     if today_bal is not None and yes_bal is not None:
                         result["short_change"] = int(today_bal) - int(yes_bal)
@@ -1306,6 +1310,12 @@ def fetch_market_breadth(date_str=None):
             data_otc = resp_otc.json()
             if "tables" in data_otc:
                 for table in data_otc["tables"]:
+                    fields = table.get("fields", [])
+                    rows = table.get("data", [])
+                    if rows and "上漲家數" in fields:
+                        for key, field in [("otc_up","上漲家數"),("otc_down","下跌家數"),("otc_flat","平盤家數")]:
+                            if field in fields: result[key] = _parse_number(rows[0][fields.index(field)])
+                        result["otc_date"] = data_otc.get("date")
                     if "data" in table:
                         for row in table["data"]:
                             row_text = str(row)
@@ -3333,10 +3343,12 @@ def fetch_all_data(date_str=None):
 
     print(f"  📊 快取合併結果: VIX={len(vix_chart_merged)}筆 US10Y={len(us10y_chart_merged)}筆 DXY={len(usd_merged)}筆 JPY={len(jpy_merged)}筆 ONRRP={len(on_rrp_merged)}筆")
 
+    taiex_data = fetch_taiex(date_str)
+    date_str = taiex_data.get("date") or date_str
     data = {
         "date": date_str,
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "taiex": fetch_taiex(date_str),
+        "taiex": taiex_data,
         "institutional": fetch_institutional(date_str),
         "foreign_top10": fetch_foreign_top10(date_str),
         "margin": fetch_margin_trading(date_str),

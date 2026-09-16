@@ -616,7 +616,7 @@ HISTORY_KEEP_DAYS = 20
 
 def _append_history_point(series, today_iso, value):
     """Append a single data point to a history series, dedupe by date, and trim."""
-    if value is None:
+    if value is None or not today_iso:
         return series
     if not isinstance(series, list):
         series = []
@@ -645,7 +645,7 @@ def merge_and_persist_history(data):
         except Exception as e:
             print(f"  [history] load failed: {e}")
 
-    today_iso = datetime.now().strftime("%Y-%m-%d")
+    today_iso = datetime.strptime(data["date"], "%Y%m%d").strftime("%Y-%m-%d") if data.get("date") else None
 
     from market_history import merge_observations
     for key in ('vix', 'us10y'):

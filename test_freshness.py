@@ -21,3 +21,14 @@ def test_history_is_backfilled_not_flattened(tmp_path):
         d=generate.merge_and_persist_history({'us10y':quote(rows),'vix':quote([])})
     assert d['us10y']['chart']==rows
     assert d['us10y']['date']=='2026-09-15'
+
+
+def test_finmind_english_fields_keep_money_in_twd(monkeypatch):
+    import data_fetcher as d
+    rows=[{'date':'2026-09-16','name':name,'TodayBalance':today,'YesBalance':yesterday} for name,today,yesterday in [('MarginPurchase',9000,8000),('ShortSale',200,210),('MarginPurchaseMoney',586166660000,582240465000)]]
+    monkeypatch.setattr(d,'_finmind_fetch',lambda *args:rows)
+    value=d.fetch_margin_trading('20260916')
+    assert value['margin_balance']==9000
+    assert value['short_change']==-10
+    assert value['margin_balance_amount']==586166660000
+    assert value['date']=='2026-09-16'
