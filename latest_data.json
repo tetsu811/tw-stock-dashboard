@@ -1,6 +1,6 @@
 {
   "date": "20260918",
-  "generated_at": "2026-09-18 19:23:34",
+  "generated_at": "2026-09-19 01:44:27",
   "taiex": {
     "index": 47180.75,
     "change": 892.75,
@@ -11,13 +11,13 @@
     "date": "20260918"
   },
   "institutional": {
-    "foreign_buy": 556129658863.0,
-    "foreign_sell": 469135296921.0,
+    "foreign_buy": 585247334035.0,
+    "foreign_sell": 498252972093.0,
     "foreign_net": 86994361942.0,
     "foreign_prev_net": 12185000820.0,
-    "trust_buy": 40117440585.0,
-    "trust_sell": 34828616297.0,
-    "trust_net": 5288824288.0,
+    "trust_buy": 43553365127.0,
+    "trust_sell": 35399915995.0,
+    "trust_net": 8153449132.0,
     "trust_prev_net": 11703066352.0,
     "dealer_net": 14181867318.0,
     "dealer_buy": 21646121449.0,
@@ -171,11 +171,13 @@
     "data_date": "20260918"
   },
   "margin": {
-    "margin_balance": null,
-    "margin_change": null,
-    "margin_balance_amount": null,
-    "short_balance": null,
-    "short_change": null
+    "margin_balance": 9279815.0,
+    "margin_change": 18022,
+    "margin_balance_amount": 594039480000.0,
+    "short_balance": 222965.0,
+    "short_change": 6677,
+    "date": "2026-09-18",
+    "source": "FinMind"
   },
   "breadth": {
     "tse_up": 949,
@@ -187,10 +189,6 @@
     "otc_date": "20260918"
   },
   "usd_index": [
-    {
-      "date": "2026-08-19",
-      "close": 98.27
-    },
     {
       "date": "2026-08-20",
       "close": 98.22
@@ -266,13 +264,13 @@
     {
       "date": "2026-09-18",
       "close": 97.36
+    },
+    {
+      "date": "2026-09-19",
+      "close": 97.36
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-08-20",
-      "close": 147.31
-    },
     {
       "date": "2026-08-21",
       "close": 148.33
@@ -348,10 +346,14 @@
     {
       "date": "2026-09-18",
       "close": 147.95
+    },
+    {
+      "date": "2026-09-19",
+      "close": 147.95
     }
   ],
   "vix": {
-    "value": 15.37,
+    "value": 15.38,
     "prev_value": 15.44,
     "date": "2026-09-18",
     "chart": [
@@ -473,7 +475,7 @@
       },
       {
         "date": "2026-09-18",
-        "close": 15.37
+        "close": 15.38
       }
     ],
     "source": "Yahoo Finance",
@@ -496,7 +498,7 @@
     "date": "20260918"
   },
   "cnn_fg": {
-    "value": 28.7,
+    "value": 28.5,
     "label": "fear",
     "prev_value": 28.7,
     "prev_label": null,
@@ -514,14 +516,10 @@
     "call_oi": 332047.0
   },
   "us10y": {
-    "value": 4.947,
-    "prev_value": 5.006,
-    "date": "2026-09-17",
+    "value": 4.998,
+    "prev_value": 4.947,
+    "date": "2026-09-18",
     "chart": [
-      {
-        "date": "2026-08-06",
-        "close": 4.67
-      },
       {
         "date": "2026-08-07",
         "close": 4.66
@@ -637,6 +635,10 @@
       {
         "date": "2026-09-17",
         "close": 4.947
+      },
+      {
+        "date": "2026-09-18",
+        "close": 4.998
       }
     ],
     "source": "Yahoo Finance",
@@ -687,14 +689,10 @@
     ]
   },
   "on_rrp": {
-    "value": 0.276,
-    "date": "2026-09-17",
-    "prev_value": 5.375,
+    "value": 0.576,
+    "date": "2026-09-18",
+    "prev_value": 0.276,
     "chart": [
-      {
-        "date": "2026-08-06",
-        "close": 1.429
-      },
       {
         "date": "2026-08-07",
         "close": 1.45
@@ -810,6 +808,10 @@
       {
         "date": "2026-09-17",
         "close": 0.276
+      },
+      {
+        "date": "2026-09-18",
+        "close": 0.576
       }
     ]
   }
