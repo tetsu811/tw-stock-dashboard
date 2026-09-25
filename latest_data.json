@@ -1,6 +1,6 @@
 {
   "date": "20260924",
-  "generated_at": "2026-09-25 02:28:39",
+  "generated_at": "2026-09-25 19:57:07",
   "taiex": {
     "index": 48024.6,
     "change": -132.69,
@@ -180,9 +180,9 @@
     "source": "FinMind"
   },
   "breadth": {
-    "tse_up": 555,
-    "tse_down": 656,
-    "tse_flat": 169,
+    "tse_up": 464,
+    "tse_down": 728,
+    "tse_flat": 188,
     "otc_up": 389.0,
     "otc_down": 380.0,
     "otc_flat": 101.0,
@@ -267,7 +267,7 @@
     },
     {
       "date": "2026-09-25",
-      "close": 97.87
+      "close": 98.55
     }
   ],
   "jpy_rate": [
@@ -349,18 +349,14 @@
     },
     {
       "date": "2026-09-25",
-      "close": 148.75
+      "close": 149.75
     }
   ],
   "vix": {
-    "value": 15.73,
-    "prev_value": 15.18,
-    "date": "2026-09-24",
+    "value": 15.07,
+    "prev_value": 15.67,
+    "date": "2026-09-25",
     "chart": [
-      {
-        "date": "2026-08-14",
-        "close": 14.25
-      },
       {
         "date": "2026-08-17",
         "close": 15.19
@@ -475,7 +471,11 @@
       },
       {
         "date": "2026-09-24",
-        "close": 15.73
+        "close": 15.67
+      },
+      {
+        "date": "2026-09-25",
+        "close": 15.07
       }
     ],
     "source": "Yahoo Finance",
@@ -498,11 +498,11 @@
     "date": "20260924"
   },
   "cnn_fg": {
-    "value": 35.0,
+    "value": 36,
     "label": "fear",
-    "prev_value": 34.7,
+    "prev_value": 36.1,
     "prev_label": null,
-    "week_ago_value": 28.3
+    "week_ago_value": 30.4
   },
   "crypto_fg": {
     "value": 71,
