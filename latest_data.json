@@ -1,6 +1,6 @@
 {
   "date": "20260924",
-  "generated_at": "2026-09-26 02:43:36",
+  "generated_at": "2026-09-28 22:04:35",
   "taiex": {
     "index": 48024.6,
     "change": -132.69,
@@ -190,10 +190,6 @@
   },
   "usd_index": [
     {
-      "date": "2026-08-29",
-      "close": 97.81
-    },
-    {
       "date": "2026-09-01",
       "close": 97.69
     },
@@ -268,13 +264,13 @@
     {
       "date": "2026-09-26",
       "close": 98.55
+    },
+    {
+      "date": "2026-09-28",
+      "close": 97.91
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-09-01",
-      "close": 147.18
-    },
     {
       "date": "2026-09-02",
       "close": 148.32
@@ -350,17 +346,17 @@
     {
       "date": "2026-09-26",
       "close": 149.75
+    },
+    {
+      "date": "2026-09-28",
+      "close": 148.59
     }
   ],
   "vix": {
-    "value": 15.04,
-    "prev_value": 15.67,
-    "date": "2026-09-25",
+    "value": 15.96,
+    "prev_value": 14.87,
+    "date": "2026-09-28",
     "chart": [
-      {
-        "date": "2026-08-17",
-        "close": 15.19
-      },
       {
         "date": "2026-08-18",
         "close": 15.84
@@ -475,7 +471,11 @@
       },
       {
         "date": "2026-09-25",
-        "close": 15.04
+        "close": 14.87
+      },
+      {
+        "date": "2026-09-28",
+        "close": 15.96
       }
     ],
     "source": "Yahoo Finance",
@@ -498,16 +498,16 @@
     "date": "20260924"
   },
   "cnn_fg": {
-    "value": 37.7,
+    "value": 36.3,
     "label": "fear",
-    "prev_value": 36.1,
+    "prev_value": 37.0,
     "prev_label": null,
-    "week_ago_value": 30.4
+    "week_ago_value": 34.2
   },
   "crypto_fg": {
-    "value": 71,
+    "value": 74,
     "label": "Greed",
-    "prev_value": 71,
+    "prev_value": 70,
     "prev_label": "Greed"
   },
   "pcr": {
@@ -516,14 +516,10 @@
     "call_oi": 104015.0
   },
   "us10y": {
-    "value": 5.204,
-    "prev_value": 5.162,
-    "date": "2026-09-25",
+    "value": 5.217,
+    "prev_value": 5.184,
+    "date": "2026-09-28",
     "chart": [
-      {
-        "date": "2026-08-14",
-        "close": 4.696
-      },
       {
         "date": "2026-08-17",
         "close": 4.724
@@ -638,7 +634,11 @@
       },
       {
         "date": "2026-09-25",
-        "close": 5.204
+        "close": 5.184
+      },
+      {
+        "date": "2026-09-28",
+        "close": 5.217
       }
     ],
     "source": "Yahoo Finance",
