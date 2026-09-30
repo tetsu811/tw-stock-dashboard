@@ -1,6 +1,6 @@
 {
   "date": "20260930",
-  "generated_at": "2026-09-30 20:43:06",
+  "generated_at": "2026-10-01 03:26:55",
   "taiex": {
     "index": 47940.13,
     "change": 308.17,
@@ -171,11 +171,13 @@
     "data_date": "20260930"
   },
   "margin": {
-    "margin_balance": null,
-    "margin_change": null,
-    "margin_balance_amount": null,
-    "short_balance": null,
-    "short_change": null
+    "margin_balance": 9286318.0,
+    "margin_change": -16282,
+    "margin_balance_amount": 622252453000.0,
+    "short_balance": 235296.0,
+    "short_change": 17297,
+    "date": "2026-09-30",
+    "source": "FinMind"
   },
   "breadth": {
     "tse_up": 433,
@@ -187,10 +189,6 @@
     "otc_date": "20260930"
   },
   "usd_index": [
-    {
-      "date": "2026-09-03",
-      "close": 98.16
-    },
     {
       "date": "2026-09-07",
       "close": 97.45
@@ -266,13 +264,13 @@
     {
       "date": "2026-09-30",
       "close": 97.81
+    },
+    {
+      "date": "2026-10-01",
+      "close": 97.81
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-09-04",
-      "close": 148.42
-    },
     {
       "date": "2026-09-07",
       "close": 147.49
@@ -348,10 +346,14 @@
     {
       "date": "2026-09-30",
       "close": 147.88
+    },
+    {
+      "date": "2026-10-01",
+      "close": 147.88
     }
   ],
   "vix": {
-    "value": 16.08,
+    "value": 15.95,
     "prev_value": 16.04,
     "date": "2026-09-30",
     "chart": [
@@ -473,7 +475,7 @@
       },
       {
         "date": "2026-09-30",
-        "close": 16.08
+        "close": 15.95
       }
     ],
     "source": "Yahoo Finance",
@@ -496,7 +498,7 @@
     "date": "20260930"
   },
   "cnn_fg": {
-    "value": 29.2,
+    "value": 33,
     "label": "fear",
     "prev_value": 31.6,
     "prev_label": null,
@@ -514,7 +516,7 @@
     "call_oi": 345481.0
   },
   "us10y": {
-    "value": 5.234,
+    "value": 5.293,
     "prev_value": 5.255,
     "date": "2026-09-30",
     "chart": [
@@ -636,7 +638,7 @@
       },
       {
         "date": "2026-09-30",
-        "close": 5.234
+        "close": 5.293
       }
     ],
     "source": "Yahoo Finance",
@@ -687,14 +689,10 @@
     ]
   },
   "on_rrp": {
-    "value": 11.446,
-    "date": "2026-09-29",
-    "prev_value": 0.851,
+    "value": 11.539,
+    "date": "2026-09-30",
+    "prev_value": 11.446,
     "chart": [
-      {
-        "date": "2026-08-18",
-        "close": 0.155
-      },
       {
         "date": "2026-08-19",
         "close": 0.317
@@ -810,6 +808,10 @@
       {
         "date": "2026-09-29",
         "close": 11.446
+      },
+      {
+        "date": "2026-09-30",
+        "close": 11.539
       }
     ]
   }
