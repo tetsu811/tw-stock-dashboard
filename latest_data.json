@@ -1,6 +1,6 @@
 {
   "date": "20261008",
-  "generated_at": "2026-10-09 21:24:55",
+  "generated_at": "2026-10-10 03:35:18",
   "taiex": {
     "index": 49313.44,
     "change": -492.93,
@@ -190,10 +190,6 @@
   },
   "usd_index": [
     {
-      "date": "2026-09-17",
-      "close": 97.02
-    },
-    {
       "date": "2026-09-18",
       "close": 97.36
     },
@@ -268,13 +264,13 @@
     {
       "date": "2026-10-09",
       "close": 99.39
+    },
+    {
+      "date": "2026-10-10",
+      "close": 99.39
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-09-17",
-      "close": 146.93
-    },
     {
       "date": "2026-09-18",
       "close": 147.95
@@ -350,10 +346,14 @@
     {
       "date": "2026-10-09",
       "close": 153.02
+    },
+    {
+      "date": "2026-10-10",
+      "close": 153.02
     }
   ],
   "vix": {
-    "value": 15.14,
+    "value": 14.82,
     "prev_value": 15.41,
     "date": "2026-10-09",
     "chart": [
@@ -475,31 +475,31 @@
       },
       {
         "date": "2026-10-09",
-        "close": 15.14
+        "close": 14.82
       }
     ],
     "source": "Yahoo Finance",
     "status": "ok"
   },
   "futures": {
-    "close": null,
-    "change": null,
-    "change_pct": null,
-    "volume": null,
-    "settlement": null,
-    "open": null,
-    "high": null,
-    "low": null,
-    "contract_month": null,
-    "data_date": null
+    "close": 49349.0,
+    "change": -619.0,
+    "change_pct": -1.24,
+    "volume": 36039.0,
+    "settlement": 49357.0,
+    "open": 49480.0,
+    "high": 49692.0,
+    "low": 49333.0,
+    "contract_month": "202610",
+    "data_date": "20261008"
   },
   "margin_ratio": {
     "ratio": null,
     "date": "20261008"
   },
   "cnn_fg": {
-    "value": 38.1,
-    "label": "fear",
+    "value": 46.1,
+    "label": "neutral",
     "prev_value": 37.9,
     "prev_label": null,
     "week_ago_value": 40.0
@@ -511,12 +511,12 @@
     "prev_label": "Greed"
   },
   "pcr": {
-    "ratio": null,
-    "put_oi": null,
-    "call_oi": null
+    "ratio": 80.18,
+    "put_oi": 130442.0,
+    "call_oi": 149694.0
   },
   "us10y": {
-    "value": 5.25,
+    "value": 5.244,
     "prev_value": 5.231,
     "date": "2026-10-09",
     "chart": [
@@ -638,7 +638,7 @@
       },
       {
         "date": "2026-10-09",
-        "close": 5.25
+        "close": 5.244
       }
     ],
     "source": "Yahoo Finance",
@@ -646,47 +646,53 @@
   },
   "futures_oi": {
     "foreign": {
-      "change": null,
-      "oi": null
+      "change": -4048,
+      "oi": -83194
     },
     "trust": {
-      "change": null,
-      "oi": null
+      "change": 71,
+      "oi": 76339
     },
     "dealer": {
-      "change": null,
-      "oi": null
+      "change": 1819,
+      "oi": -534
     },
     "total": {
-      "change": null,
-      "oi": null
+      "change": -2158,
+      "oi": -7389
     }
   },
   "sentiment": {
-    "micro_sentiment": null,
-    "micro_sentiment_prev": null,
+    "micro_sentiment": -54.73,
+    "micro_sentiment_prev": -20.65,
     "mini_sentiment": -54.73,
     "mini_sentiment_prev": -20.65,
-    "pcr_today": null,
-    "pcr_prev": null,
-    "micro_sentiment_chart": [],
+    "pcr_today": 87.14,
+    "pcr_prev": 94.57,
+    "micro_sentiment_chart": [
+      {
+        "date": "2026-10-08",
+        "close": -54.73
+      }
+    ],
     "mini_sentiment_chart": [
       {
         "date": "2026-10-08",
         "close": -54.73
       }
     ],
-    "pcr_chart": []
+    "pcr_chart": [
+      {
+        "date": "2026-10-08",
+        "close": 80.18
+      }
+    ]
   },
   "on_rrp": {
-    "value": 0.335,
-    "date": "2026-10-08",
-    "prev_value": 2.338,
+    "value": 0.3,
+    "date": "2026-10-09",
+    "prev_value": 0.335,
     "chart": [
-      {
-        "date": "2026-08-27",
-        "close": 0.456
-      },
       {
         "date": "2026-08-28",
         "close": 0.175
@@ -802,6 +808,10 @@
       {
         "date": "2026-10-08",
         "close": 0.335
+      },
+      {
+        "date": "2026-10-09",
+        "close": 0.3
       }
     ]
   }
