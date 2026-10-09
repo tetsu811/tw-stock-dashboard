@@ -1,6 +1,6 @@
 {
   "date": "20261008",
-  "generated_at": "2026-10-09 04:00:31",
+  "generated_at": "2026-10-09 21:24:55",
   "taiex": {
     "index": 49313.44,
     "change": -492.93,
@@ -180,9 +180,9 @@
     "source": "FinMind"
   },
   "breadth": {
-    "tse_up": 709,
-    "tse_down": 513,
-    "tse_flat": 158,
+    "tse_up": 495,
+    "tse_down": 733,
+    "tse_flat": 152,
     "otc_up": 356.0,
     "otc_down": 416.0,
     "otc_flat": 95.0,
@@ -267,7 +267,7 @@
     },
     {
       "date": "2026-10-09",
-      "close": 98.85
+      "close": 99.39
     }
   ],
   "jpy_rate": [
@@ -349,18 +349,14 @@
     },
     {
       "date": "2026-10-09",
-      "close": 152.65
+      "close": 153.02
     }
   ],
   "vix": {
-    "value": 15.57,
-    "prev_value": 15.08,
-    "date": "2026-10-08",
+    "value": 15.14,
+    "prev_value": 15.41,
+    "date": "2026-10-09",
     "chart": [
-      {
-        "date": "2026-08-28",
-        "close": 14.43
-      },
       {
         "date": "2026-08-31",
         "close": 14.92
@@ -475,55 +471,55 @@
       },
       {
         "date": "2026-10-08",
-        "close": 15.57
+        "close": 15.41
+      },
+      {
+        "date": "2026-10-09",
+        "close": 15.14
       }
     ],
     "source": "Yahoo Finance",
     "status": "ok"
   },
   "futures": {
-    "close": 49349.0,
-    "change": -619.0,
-    "change_pct": -1.24,
-    "volume": 36039.0,
-    "settlement": 49357.0,
-    "open": 49480.0,
-    "high": 49692.0,
-    "low": 49333.0,
-    "contract_month": "202610",
-    "data_date": "20261008"
+    "close": null,
+    "change": null,
+    "change_pct": null,
+    "volume": null,
+    "settlement": null,
+    "open": null,
+    "high": null,
+    "low": null,
+    "contract_month": null,
+    "data_date": null
   },
   "margin_ratio": {
     "ratio": null,
     "date": "20261008"
   },
   "cnn_fg": {
-    "value": 37.9,
+    "value": 38.1,
     "label": "fear",
-    "prev_value": 44.5,
+    "prev_value": 37.9,
     "prev_label": null,
-    "week_ago_value": 29.0
+    "week_ago_value": 40.0
   },
   "crypto_fg": {
-    "value": 64,
+    "value": 59,
     "label": "Greed",
-    "prev_value": 71,
+    "prev_value": 64,
     "prev_label": "Greed"
   },
   "pcr": {
-    "ratio": 80.18,
-    "put_oi": 130442.0,
-    "call_oi": 149694.0
+    "ratio": null,
+    "put_oi": null,
+    "call_oi": null
   },
   "us10y": {
-    "value": 5.231,
-    "prev_value": 5.277,
-    "date": "2026-10-08",
+    "value": 5.25,
+    "prev_value": 5.231,
+    "date": "2026-10-09",
     "chart": [
-      {
-        "date": "2026-08-27",
-        "close": 4.672
-      },
       {
         "date": "2026-08-28",
         "close": 4.72
@@ -639,6 +635,10 @@
       {
         "date": "2026-10-08",
         "close": 5.231
+      },
+      {
+        "date": "2026-10-09",
+        "close": 5.25
       }
     ],
     "source": "Yahoo Finance",
@@ -646,47 +646,37 @@
   },
   "futures_oi": {
     "foreign": {
-      "change": -4048,
-      "oi": -83194
+      "change": null,
+      "oi": null
     },
     "trust": {
-      "change": 71,
-      "oi": 76339
+      "change": null,
+      "oi": null
     },
     "dealer": {
-      "change": 1819,
-      "oi": -534
+      "change": null,
+      "oi": null
     },
     "total": {
-      "change": -2158,
-      "oi": -7389
+      "change": null,
+      "oi": null
     }
   },
   "sentiment": {
-    "micro_sentiment": -54.73,
-    "micro_sentiment_prev": -20.65,
+    "micro_sentiment": null,
+    "micro_sentiment_prev": null,
     "mini_sentiment": -54.73,
     "mini_sentiment_prev": -20.65,
-    "pcr_today": 87.14,
-    "pcr_prev": 94.57,
-    "micro_sentiment_chart": [
-      {
-        "date": "2026-10-08",
-        "close": -54.73
-      }
-    ],
+    "pcr_today": null,
+    "pcr_prev": null,
+    "micro_sentiment_chart": [],
     "mini_sentiment_chart": [
       {
         "date": "2026-10-08",
         "close": -54.73
       }
     ],
-    "pcr_chart": [
-      {
-        "date": "2026-10-08",
-        "close": 80.18
-      }
-    ]
+    "pcr_chart": []
   },
   "on_rrp": {
     "value": 0.335,
