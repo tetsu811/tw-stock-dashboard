@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣股市每日戰略儀表板 | 2026/10/21 (星期三)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        /* ===== Dark Mode (default) ===== */
+        :root, [data-theme="dark"] {
+            --bg-primary: #0a0e17;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2332;
+            --bg-subtle: rgba(255,255,255,0.04);
+            --border: #1e2d3d;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-green: #ef4444;  /* 台灣慣例：漲=紅 */
+            --accent-red: #22c55e;   /* 台灣慣例：跌=綠 */
+            --accent-blue: #3b82f6;
+            --accent-yellow: #eab308;
+            --accent-purple: #a855f7;
+            --accent-cyan: #06b6d4;
+            --accent-orange: #f97316;
+            --hero-gradient-1: linear-gradient(135deg, #111827 0%, #1a2744 100%);
+            --hero-gradient-2: linear-gradient(135deg, #111827 0%, #2a1a44 100%);
+            --chart-grid: rgba(30, 45, 61, 0.5);
+            --chart-tick: #64748b;
+            --tooltip-bg: #1e293b;
+            --tooltip-border: #334155;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* ===== Light Mode ===== */
+        [data-theme="light"] {
+            --bg-primary: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f8fafc;
+            --bg-subtle: rgba(0,0,0,0.04);
+            --border: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-green: #dc2626;  /* 台灣慣例：漲=紅 */
+            --accent-red: #16a34a;   /* 台灣慣例：跌=綠 */
+            --accent-blue: #2563eb;
+            --accent-yellow: #ca8a04;
+            --accent-purple: #9333ea;
+            --accent-cyan: #0891b2;
+            --accent-orange: #ea580c;
+            --hero-gradient-1: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            --hero-gradient-2: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+            --chart-grid: rgba(0, 0, 0, 0.06);
+            --chart-tick: #94a3b8;
+            --tooltip-bg: #ffffff;
+            --tooltip-border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 100;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .header .date {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        .header .update-time {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .grid-5 { grid-template-columns: repeat(5, 1fr); }
+
+        @media (max-width: 900px) {
+            .grid-2, .grid-3, .grid-4, .grid-5 {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (min-width: 901px) and (max-width: 1200px) {
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-5 { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+        }
+        .card:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-title .icon { font-size: 16px; }
+
+        /* Hero area - 加權指數 + 期貨 並排 */
+        .hero-area {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 900px) {
+            .hero-area { grid-template-columns: 1fr; }
+        }
+
+        .hero-card {
+            background: var(--hero-gradient-1);
+            border: 1px solid var(--accent-blue);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+        .hero-card .index-value {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .hero-card .index-change {
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .hero-card .volume-info {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+
+        /* 期貨卡片 */
+        .futures-card {
+            background: var(--hero-gradient-2);
+            border: 1px solid var(--accent-purple);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+        .futures-card .index-value {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .futures-card .index-change {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .futures-detail {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+        .futures-detail .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: var(--bg-subtle);
+            border-radius: 6px;
+        }
+        .futures-detail .detail-label { color: var(--text-muted); }
+        .futures-detail .detail-value { font-weight: 600; }
+        .spread-tag {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Metric Value */
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .metric-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .metric-compare {
+            font-size: 12px;
+            margin-top: 6px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* 外資買賣明細 */
+        .inst-detail {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .inst-detail .detail-box {
+            flex: 1;
+            padding: 6px 8px;
+            border-radius: 6px;
+            background: var(--bg-subtle);
+        }
+        .inst-detail .detail-box .label {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+        .inst-detail .detail-box .value {
+            font-weight: 600;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+
+        /* Colors */
+        .text-green { color: var(--accent-green); }
+        .text-red { color: var(--accent-red); }
+        .text-blue { color: var(--accent-blue); }
+        .text-yellow { color: var(--accent-yellow); }
+        .text-purple { color: var(--accent-purple); }
+        .text-cyan { color: var(--accent-cyan); }
+        .text-orange { color: var(--accent-orange); }
+
+        .bg-green { background: rgba(239, 68, 68, 0.15); color: var(--accent-green); }  /* 漲=紅底 */
+        .bg-red { background: rgba(34, 197, 94, 0.15); color: var(--accent-red); }    /* 跌=綠底 */
+
+        /* Table */
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .stock-table th {
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .stock-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(30, 45, 61, 0.5);
+        }
+        .stock-table tr:last-child td { border-bottom: none; }
+        .stock-table .rank {
+            width: 30px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .stock-table .stock-id {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Breadth bar */
+        .breadth-bar {
+            display: flex;
+            height: 28px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .breadth-bar .up {
+            background: var(--accent-green);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+        .breadth-bar .down {
+            background: var(--accent-red);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+        .breadth-bar .flat {
+            background: var(--text-muted);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+        }
+
+        .breadth-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        .breadth-legend span { display: flex; align-items: center; gap: 4px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-green { background: var(--accent-green); }
+        .dot-red { background: var(--accent-red); }
+        .dot-gray { background: var(--text-muted); }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 10px;
+        }
+        .chart-container-sm {
+            position: relative;
+            height: 160px;
+            margin-top: 10px;
+        }
+
+        /* VIX value inline */
+        .vix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .vix-current {
+            font-size: 32px;
+            font-weight: 800;
+        }
+        .vix-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Section title */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 28px 0 14px;
+            padding-left: 12px;
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 0 20px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .nowrap { white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="切換淺色/深色模式" id="themeBtn">🌙</button>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>台灣股市每日戰略儀表板</h1>
+            <div class="date">2026/10/21 (星期三)</div>
+            <div class="update-time">資料更新時間: 2026-10-21 22:30:13</div>
+        </div>
+
+        <!-- ====== 加權指數 + 台指期 Hero ====== -->
+        <div class="hero-area">
+            <!-- 加權指數 -->
+            <div class="hero-card">
+                <div class="card-title" style="justify-content: center;">
+                    <span class="icon">📊</span> 加權股價指數 TAIEX
+                </div>
+                <div class="index-value text-green">
+                    46,887.77
+                </div>
+                <div class="index-change text-green">
+                    ▲
+                    594.84 點
+                    (1.28%)
+                </div>
+                <div class="volume-info">
+                    成交金額: +8,746.14 億元
+                    
+                        <span class="metric-compare bg-green">
+                            較前日 8.93%
+                        </span>
+                    
+                </div>
+            </div>
+
+            <!-- 台指期貨 -->
+            <div class="futures-card">
+                <div class="card-title" style="justify-content: center;">
+                    <span class="icon">📈</span> 台指期貨 (TX)
+                </div>
+                <div class="index-value text-green">
+                    46,648
+                </div>
+                <div class="index-change text-green">
+                    ▲
+                    307 點
+                    (0.66%)
+                </div>
+                
+                <div class="spread-tag bg-red">
+                    期現貨價差: 240 點
+                </div>
+                
+                <div class="futures-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">開盤</span>
+                        <span class="detail-value">47,240</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">最高</span>
+                        <span class="detail-value text-green">47,288</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">最低</span>
+                        <span class="detail-value text-red">46,596</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">成交量</span>
+                        <span class="detail-value">23,455</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 戰略溫度計 ====== -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+                <h3>🌡️ 戰略溫度計</h3>
+                <span style="font-size:12px;color:var(--text-muted);">綜合 6 項指標</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;padding:10px 0;">
+                <div style="position:relative;width:260px;height:145px;overflow:hidden;">
+                    <svg viewBox="0 0 260 145" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+                        <path d="M 20 135 A 110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="22" stroke-linecap="round"/>
+                        <path d="M 20 135 A 110 110 0 0 1 53 58" fill="none" stroke="#1e3a5f" stroke-width="22" stroke-linecap="round"/>
+                        <path d="M 53 58 A 110 110 0 0 1 108 27" fill="none" stroke="#3b82f6" stroke-width="20"/>
+                        <path d="M 108 27 A 110 110 0 0 1 152 27" fill="none" stroke="#a3a3a3" stroke-width="20"/>
+                        <path d="M 152 27 A 110 110 0 0 1 207 58" fill="none" stroke="#f97316" stroke-width="20"/>
+                        <path d="M 207 58 A 110 110 0 0 1 240 135" fill="none" stroke="#ef4444" stroke-width="22" stroke-linecap="round"/>
+                        
+                        <line id="gaugeNeedle" x1="130" y1="135" x2="130" y2="40" stroke="#a3a3a3" stroke-width="3" stroke-linecap="round" transform="rotate(-13.5, 130, 135)"/>
+                        <circle cx="130" cy="135" r="8" fill="#a3a3a3"/>
+                        <circle cx="130" cy="135" r="4" fill="#1a1a2e"/>
+                        
+                        <text x="15" y="143" fill="#888" font-size="9" text-anchor="start">0</text>
+                        <text x="245" y="143" fill="#888" font-size="9" text-anchor="end">100</text>
+                        <text x="130" y="18" fill="#888" font-size="9" text-anchor="middle">50</text>
+                    </svg>
+                </div>
+                <div style="text-align:center;margin-top:8px;">
+                    
+                    <div style="font-size:36px;font-weight:700;color:#a3a3a3;">42.5</div>
+                    <div style="font-size:16px;font-weight:600;color:#a3a3a3;margin-top:2px;">中性觀望</div>
+                    
+                </div>
+                <div style="display:flex;justify-content:space-between;width:260px;margin-top:10px;padding:0 5px;">
+                    <span style="font-size:10px;color:#1e3a5f;">極度恐懼</span>
+                    <span style="font-size:10px;color:#3b82f6;">偏空</span>
+                    <span style="font-size:10px;color:#a3a3a3;">中性</span>
+                    <span style="font-size:10px;color:#f97316;">偏多</span>
+                    <span style="font-size:10px;color:#ef4444;">極度樂觀</span>
+                </div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:12px;text-align:center;opacity:0.7;">
+                    ⚠️ 本指標僅為市場數據綜合呈現，不構成任何投資建議
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 三大法人現貨買賣超 ====== -->
+        <div class="grid grid-4" style="margin-bottom: 16px;">
+            <!-- 外資 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🌍</span> 外資買賣超</div>
+                <div class="metric-value text-green">
+                    +22.39
+                </div>
+                <div class="metric-sub">億元</div>
+                <div class="inst-detail">
+                    <div class="detail-box">
+                        <div class="label">買進</div>
+                        <div class="value text-green">+3,470.69 億元</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">賣出</div>
+                        <div class="value text-red">+3,448.30 億元</div>
+                    </div>
+                </div>
+                
+                <div class="metric-compare bg-green" style="margin-top:10px;">
+                    前日: -795.40 億元
+                </div>
+                
+            </div>
+
+            <!-- 投信 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🏛️</span> 投信買賣超</div>
+                <div class="metric-value text-green">
+                    +127.99
+                </div>
+                <div class="metric-sub">億元</div>
+                <div class="inst-detail">
+                    <div class="detail-box">
+                        <div class="label">買進</div>
+                        <div class="value text-green">+303.99 億元</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">賣出</div>
+                        <div class="value text-red">+176.00 億元</div>
+                    </div>
+                </div>
+                
+                <div class="metric-compare bg-red" style="margin-top:10px;">
+                    前日: +187.59 億元
+                </div>
+                
+            </div>
+
+            <!-- 自營商 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🏢</span> 自營商買賣超</div>
+                <div class="metric-value text-red">
+                    -61.87
+                </div>
+                <div class="metric-sub">億元</div>
+            </div>
+
+            <!-- 融資餘額: 已移除 -->
+        </div>
+
+        <!-- ====== 三大法人台指期未平倉 ====== -->
+        <div class="section-title">三大法人台指期未平倉 (口)</div>
+        <div class="card" style="margin-bottom: 16px;">
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th style="text-align:right">台指期增減口數</th>
+                        <th style="text-align:right">台指期未平倉口數</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight:600;">外資</td>
+                        <td style="text-align:right" class="text-green">
+                            ▲ 1,062
+                        </td>
+                        <td style="text-align:right" class="text-red">
+                            -86,072
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600;">投信</td>
+                        <td style="text-align:right" class="text-green">
+                            ▲ 1,466
+                        </td>
+                        <td style="text-align:right" class="text-green">
+                            83,778
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight:600;">自營</td>
+                        <td style="text-align:right" class="text-red">
+                            ▼ -2,306
+                        </td>
+                        <td style="text-align:right" class="text-green">
+                            1,716
+                        </td>
+                    </tr>
+                    <tr style="border-top: 2px solid var(--border);">
+                        <td style="font-weight:700;">合計</td>
+                        <td style="text-align:right; font-weight:700;" class="text-green">
+                            ▲ 222
+                        </td>
+                        <td style="text-align:right; font-weight:700;" class="text-red">
+                            -578
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ====== 期權觀測指標 + VIX ====== -->
+        <div class="section-title">期權觀測 & 恐慌指標</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+
+            <!-- 左: 期權觀測指標表格 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🔮</span> 期權觀測指標</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>指標</th>
+                            <th style="text-align:right">今日</th>
+                            <th style="text-align:right">前一交易日</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight:600;">微台多空指標</td>
+                            <td style="text-align:right" class="text-red">
+                                -65.55%
+                            </td>
+                            <td style="text-align:right; color: var(--text-muted);">-47.54%</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:600;">小台多空指標</td>
+                            <td style="text-align:right" class="text-red">
+                                -65.55%
+                            </td>
+                            <td style="text-align:right; color: var(--text-muted);">-47.54%</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:600;">PUT/CALL Ratio</td>
+                            <td style="text-align:right" class="">N/A%</td>
+                            <td style="text-align:right; color: var(--text-muted);">129.1%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="inst-detail" style="margin-top:12px;">
+                    <div class="detail-box">
+                        <div class="label">Put OI</div>
+                        <div class="value">N/A</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="label">Call OI</div>
+                        <div class="value">N/A</div>
+                    </div>
+                </div>
+                <div class="metric-sub" style="margin-top:8px; font-size:11px; line-height:1.5;">
+                    PCR &gt;100%：Put 未平倉多於 Call，莊家偏多佈局<br>
+                    PCR &lt;100%：Call 未平倉多於 Put，莊家偏空佈局<br>
+                    微台/小台：正值偏多、負值偏空，反映散戶方向
+                </div>
+            </div>
+
+            <!-- 右: VIX 近30天折線圖 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">😱</span> VIX 恐慌指數 (近30天)</div>
+                <div class="vix-header">
+                    <div>
+                        <span class="vix-current text-blue">17.40</span><small>行情日期 2026-10-21 </small>
+                        
+                        <span style="font-size:16px; margin-left:8px;" class="text-red">
+                            ▲ 0.09
+                        </span>
+                        
+                    </div>
+                    <span class="vix-badge" style="background: rgba(59,130,246,0.15); color: var(--accent-blue);">正常</span>
+                </div>
+                <div class="chart-container-sm">
+                    <canvas id="vixChart"></canvas>
+                </div>
+                <div class="metric-sub" style="margin-top:10px; font-size:11px; line-height:1.5;">
+                    &lt;15 極度樂觀（市場過度自滿）<br>
+                    15~20 正常區間<br>
+                    20~25 偏高警戒（波動加大）<br>
+                    25~30 恐慌（市場大幅震盪）<br>
+                    &gt;30 極度恐慌（恐慌性拋售）
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 市場情緒指標 ====== -->
+        <div class="section-title">市場情緒指標</div>
+        <div class="grid grid-3" style="margin-bottom: 16px;">
+
+            <!-- CNN Fear & Greed -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🎭</span> CNN 恐慌貪婪</div>
+                <div style="text-align:center; padding: 6px 0;">
+                    <div class="metric-value text-orange" style="font-size:36px;">29</div>
+                    <span class="vix-badge" style="background: rgba(249,115,22,0.15); color: #f97316;; margin-top:6px; display:inline-block;">fear</span>
+                    
+                    <div style="font-size:13px; margin-top:8px;" class="text-green">
+                        ▲ 2.0
+                    </div>
+                    
+                </div>
+                <div class="metric-sub" style="text-align:center; margin-top:6px; font-size:11px; line-height:1.4;">0=極度恐慌 → 100=極度貪婪</div>
+            </div>
+
+            <!-- 比特幣恐慌貪婪 -->
+            <div class="card">
+                <div class="card-title"><span class="icon">₿</span> 加密貨幣恐慌貪婪</div>
+                <div style="text-align:center; padding: 6px 0;">
+                    <div class="metric-value text-cyan" style="font-size:36px;">63</div>
+                    <span class="vix-badge" style="background: rgba(6,182,212,0.15); color: #06b6d4;; margin-top:6px; display:inline-block;">Greed</span>
+                    
+                    <div style="font-size:13px; margin-top:8px;" class="text-green">
+                        ▲ 8
+                    </div>
+                    
+                </div>
+                <div class="metric-sub" style="text-align:center; margin-top:6px; font-size:11px; line-height:1.4;">0=極度恐慌 → 100=極度貪婪</div>
+            </div>
+
+            <!-- 融資維持率: 已移除 -->
+
+        </div>
+
+        <!-- ====== 漲跌家數 ====== -->
+        <div class="section-title">漲跌家數</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+            <div class="card">
+                <div class="card-title"><span class="icon">🏢</span> 上市 (TWSE)</div>
+                
+                
+                <div class="breadth-bar">
+                    <div class="up" style="width: 22.84887924801157%">316</div>
+                    <div class="flat" style="width: 11.135213304410701%">154</div>
+                    <div class="down" style="width: 66.01590744757773%">913</div>
+                </div>
+                <div class="breadth-legend">
+                    <span><span class="dot dot-green"></span> 上漲 316</span>
+                    <span><span class="dot dot-gray"></span> 持平 154</span>
+                    <span><span class="dot dot-red"></span> 下跌 913</span>
+                </div>
+                
+            </div>
+
+            <!-- 上櫃漲跌家數: 已移除 -->
+        </div>
+
+        <!-- ====== 外資排行 ====== -->
+        <div class="section-title">外資買賣超排行</div>
+        <div class="grid grid-2" style="margin-bottom: 16px;">
+            <div class="card">
+                <div class="card-title"><span class="icon">🟢</span> 外資買超前十名</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr><th>#</th><th>股票</th><th style="text-align:right">買超(張)</th></tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td class="rank">1</td>
+                            <td>群益ESG投等債0-5 <span class="stock-id">00985B</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+95,412</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">2</td>
+                            <td>友達 <span class="stock-id">2409</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+44,548</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">3</td>
+                            <td>鴻海 <span class="stock-id">2317</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+30,172</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">4</td>
+                            <td>南亞 <span class="stock-id">1303</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+24,165</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">5</td>
+                            <td>緯創 <span class="stock-id">3231</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+19,915</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">6</td>
+                            <td>仁寶 <span class="stock-id">2324</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+15,142</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">7</td>
+                            <td>群創 <span class="stock-id">3481</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+13,782</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">8</td>
+                            <td>中信金 <span class="stock-id">2891</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+12,382</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">9</td>
+                            <td>群益臺灣加權正2 <span class="stock-id">00685L</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+12,144</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">10</td>
+                            <td>台塑化 <span class="stock-id">6505</span></td>
+                            <td style="text-align:right" class="text-green nowrap">+11,788</td>
+                        </tr>
+                        
+                        
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">🔴</span> 外資賣超前十名</div>
+                <table class="stock-table">
+                    <thead>
+                        <tr><th>#</th><th>股票</th><th style="text-align:right">賣超(張)</th></tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td class="rank">1</td>
+                            <td>主動統一台股增長 <span class="stock-id">00981A</span></td>
+                            <td style="text-align:right" class="text-red nowrap">36,252</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">2</td>
+                            <td>台玻 <span class="stock-id">1802</span></td>
+                            <td style="text-align:right" class="text-red nowrap">18,210</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">3</td>
+                            <td>主動統一全球創新 <span class="stock-id">00988A</span></td>
+                            <td style="text-align:right" class="text-red nowrap">18,201</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">4</td>
+                            <td>元大台灣50 <span class="stock-id">0050</span></td>
+                            <td style="text-align:right" class="text-red nowrap">16,220</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">5</td>
+                            <td>華通 <span class="stock-id">2313</span></td>
+                            <td style="text-align:right" class="text-red nowrap">15,445</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">6</td>
+                            <td>主動群益核心50 <span class="stock-id">00415A</span></td>
+                            <td style="text-align:right" class="text-red nowrap">13,447</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">7</td>
+                            <td>和益 <span class="stock-id">1709</span></td>
+                            <td style="text-align:right" class="text-red nowrap">9,089</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">8</td>
+                            <td>泰金寶-DR <span class="stock-id">9105</span></td>
+                            <td style="text-align:right" class="text-red nowrap">8,238</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">9</td>
+                            <td>主動聯博全球非投 <span class="stock-id">00984D</span></td>
+                            <td style="text-align:right" class="text-red nowrap">7,193</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="rank">10</td>
+                            <td>聯電 <span class="stock-id">2303</span></td>
+                            <td style="text-align:right" class="text-red nowrap">6,890</td>
+                        </tr>
+                        
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ====== 國際指標趨勢 ====== -->
+        <div class="section-title">國際指標趨勢</div>
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-title"><span class="icon">💵</span> 美元指數 (DXY) · 近30天</div>
+                
+                <div class="metric-value text-blue">98.60</div>
+                
+                <div class="chart-container">
+                    <canvas id="usdChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">💴</span> 美元兌日圓 (USD/JPY) · 近30天</div>
+                
+                <div class="metric-value text-purple">151.87</div>
+                
+                <div class="chart-container">
+                    <canvas id="jpyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><span class="icon">🏛️</span> 美國10年期公債殖利率 · 近30天</div>
+                <div style="display:flex; align-items:baseline; gap:8px;">
+                    <div class="metric-value text-cyan">5.098%</div><small>行情日期 2026-10-21 </small>
+                    
+                    <span style="font-size:14px;" class="text-green">
+                        ▼ 0.019%
+                    </span>
+                    
+                </div>
+                <div class="chart-container">
+                    <canvas id="us10yChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+                <!-- 聯準會隔夜逆回購 (ON RRP) 近30天 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🏦 聯準會隔夜逆回購 (ON RRP) · 近30天</h3>
+                
+                <span class="text-red" style="font-size:14px;font-weight:600;">
+                    ▼ -0.1 B
+                </span>
+                
+            </div>
+            <div class="metric-value" style="font-size:28px; margin-bottom: 8px;">
+                0.23 <span style="font-size:14px;color:var(--text-muted);font-weight:400;">十億美元</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="onRrpChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>台灣股市每日戰略儀表板 | 資料來源: 台灣證券交易所、證券櫃檯買賣中心、台灣期貨交易所、Yahoo Finance</p>
+            <p>本頁面僅供參考，不構成任何投資建議</p>
+        </div>
+    </div>
+
+    <script>
+        // ===== Theme Toggle =====
+        function getTheme() {
+            return localStorage.getItem('dashboard-theme') || 'dark';
+        }
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const btn = document.getElementById('themeBtn');
+            if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+        function toggleTheme() {
+            const current = getTheme();
+            const next = current === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('dashboard-theme', next);
+            applyTheme(next);
+            // Rebuild charts with new colors
+            rebuildCharts();
+        }
+        // Apply saved theme on load
+        applyTheme(getTheme());
+
+        function getChartColors() {
+            const style = getComputedStyle(document.documentElement);
+            return {
+                grid: style.getPropertyValue('--chart-grid').trim() || 'rgba(30,45,61,0.5)',
+                tick: style.getPropertyValue('--chart-tick').trim() || '#64748b',
+                tooltipBg: style.getPropertyValue('--tooltip-bg').trim() || '#1e293b',
+                tooltipBorder: style.getPropertyValue('--tooltip-border').trim() || '#334155',
+                textPrimary: style.getPropertyValue('--text-primary').trim() || '#e2e8f0',
+            };
+        }
+
+        function getChartDefaults() {
+            const c = getChartColors();
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: c.tooltipBg,
+                        titleColor: c.textPrimary,
+                        bodyColor: c.textPrimary,
+                        borderColor: c.tooltipBorder,
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: c.grid },
+                        ticks: { color: c.tick, maxTicksLimit: 6, font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { color: c.grid },
+                        ticks: { color: c.tick, font: { size: 11 } }
+                    }
+                },
+                elements: {
+                    point: { radius: 2, hoverRadius: 5 },
+                    line: { tension: 0.3, borderWidth: 2 }
+                }
+            };
+        }
+
+        let chartDefaults = getChartDefaults();
+        let chartInstances = [];
+
+        function makeGradient(ctx, color) {
+            const g = ctx.createLinearGradient(0, 0, 0, 200);
+            g.addColorStop(0, color.replace(')', ', 0.3)').replace('rgb', 'rgba'));
+            g.addColorStop(1, color.replace(')', ', 0.02)').replace('rgb', 'rgba'));
+            return g;
+        }
+
+        // Chart data
+        const vixData = {"labels": ["09-10", "09-11", "09-14", "09-15", "09-16", "09-17", "09-18", "09-21", "09-22", "09-23", "09-24", "09-25", "09-28", "09-29", "09-30", "10-01", "10-02", "10-05", "10-06", "10-07", "10-08", "10-09", "10-12", "10-13", "10-14", "10-15", "10-16", "10-19", "10-20", "10-21"], "values": [17.84, 15.84, 17.1, 17.2, 17.71, 15.44, 14.81, 14.87, 14.21, 15.18, 15.67, 14.87, 16.07, 16.04, 16.34, 16.39, 15.31, 15.52, 15.01, 15.08, 15.41, 14.84, 15.21, 15.27, 16.87, 16.46, 19.99, 18.44, 17.31, 17.4]};
+        const usdData = {"labels": ["09-25", "09-26", "09-28", "09-29", "09-30", "10-01", "10-02", "10-03", "10-05", "10-06", "10-07", "10-08", "10-09", "10-10", "10-12", "10-13", "10-14", "10-15", "10-16", "10-20"], "values": [100.97, 98.55, 101.21, 101.46, 101.35, 102.08, 101.91, 97.87, 98.11, 98.11, 98.58, 98.85, 99.39, 99.39, 99.23, 99.23, 99.04, 98.69, 98.35, 98.6]};
+        const jpyData = {"labels": ["09-25", "09-26", "09-28", "09-29", "09-30", "10-01", "10-02", "10-03", "10-05", "10-06", "10-07", "10-08", "10-09", "10-10", "10-13", "10-14", "10-15", "10-16", "10-20", "10-21"], "values": [157.18, 149.75, 157.44, 157.5, 157.25, 157.63, 157.81, 147.21, 150.26, 150.26, 151.86, 152.65, 153.02, 153.02, 152.23, 151.74, 151.08, 150.39, 150.67, 151.87]};
+        const us10yData = {"labels": ["09-10", "09-11", "09-14", "09-15", "09-16", "09-17", "09-18", "09-21", "09-22", "09-23", "09-24", "09-25", "09-28", "09-29", "09-30", "10-01", "10-02", "10-05", "10-06", "10-07", "10-08", "10-09", "10-12", "10-13", "10-14", "10-15", "10-16", "10-19", "10-20", "10-21"], "values": [4.944, 4.975, 4.961, 4.996, 5.006, 4.947, 4.998, 4.963, 4.968, 5.114, 5.162, 5.184, 5.24, 5.255, 5.293, 5.237, 5.277, 5.311, 5.269, 5.277, 5.231, 5.244, 5.24, 5.217, 5.19, 5.089, 5.098, 5.136, 5.117, 5.098]};
+
+        function buildAllCharts() {
+            chartDefaults = getChartDefaults();
+            const c = getChartColors();
+
+            // VIX
+            if (vixData.labels.length > 0) {
+                const vixCtx = document.getElementById('vixChart').getContext('2d');
+                const vixColors = vixData.values.map(v => {
+                    if (v < 15) return 'rgba(34,197,94,1)';
+                    if (v < 20) return 'rgba(59,130,246,1)';
+                    if (v < 25) return 'rgba(234,179,8,1)';
+                    return 'rgba(239,68,68,1)';
+                });
+                chartInstances.push(new Chart(vixCtx, {
+                    type: 'line',
+                    data: {
+                        labels: vixData.labels,
+                        datasets: [{
+                            data: vixData.values,
+                            borderColor: 'rgb(249,115,22)',
+                            backgroundColor: makeGradient(vixCtx, 'rgb(249,115,22)'),
+                            fill: true,
+                            pointBackgroundColor: vixColors,
+                            pointBorderColor: vixColors,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                        }]
+                    },
+                    options: {
+                        ...chartDefaults,
+                        plugins: { ...chartDefaults.plugins, tooltip: { ...chartDefaults.plugins.tooltip,
+                            callbacks: { label: ctx => { const v=ctx.parsed.y; let l=''; if(v<15)l='極度樂觀'; else if(v<20)l='正常'; else if(v<25)l='偏高警戒'; else if(v<30)l='恐慌'; else l='極度恐慌'; return `VIX: ${v} (${l})`; } }
+                        }},
+                        scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { color: c.tick, font:{size:11}} } }
+                    }
+                }));
+            }
+
+            // USD
+            if (usdData.labels.length > 0) {
+                const ctx = document.getElementById('usdChart').getContext('2d');
+                chartInstances.push(new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: usdData.labels, datasets: [{ data: usdData.values, borderColor: 'rgb(59,130,246)', backgroundColor: makeGradient(ctx, 'rgb(59,130,246)'), fill: true }] },
+                    options: chartDefaults
+                }));
+            }
+
+            // JPY
+            if (jpyData.labels.length > 0) {
+                const ctx = document.getElementById('jpyChart').getContext('2d');
+                chartInstances.push(new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: jpyData.labels, datasets: [{ data: jpyData.values, borderColor: 'rgb(168,85,247)', backgroundColor: makeGradient(ctx, 'rgb(168,85,247)'), fill: true }] },
+                    options: chartDefaults
+                }));
+            }
+
+            // US10Y
+            if (us10yData.labels.length > 0) {
+                const ctx = document.getElementById('us10yChart').getContext('2d');
+                chartInstances.push(new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: us10yData.labels, datasets: [{ data: us10yData.values, borderColor: 'rgb(6,182,212)', backgroundColor: makeGradient(ctx, 'rgb(6,182,212)'), fill: true, pointRadius: 4, pointHoverRadius: 7 }] },
+                    options: { ...chartDefaults, scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, ticks: { color: c.tick, font:{size:11}} } } }
+                }));
+            }
+        }
+
+        function rebuildCharts() {
+            chartInstances.forEach(c => c.destroy());
+            chartInstances = [];
+            buildAllCharts();
+        }
+
+        // Initial build
+        buildAllCharts();
+    </script>
+
+    <!-- Auto-resize iframe: send content height to parent (for embedding in WordPress) -->
+    <script>
+    (function() {
+        if (window === window.parent) return;  // not in iframe, skip
+        var lastH = 0;
+        
+        // ON RRP Chart
+        if (document.getElementById('onRrpChart')) {
+            const onRrpLabels = ["09-08", "09-09", "09-10", "09-11", "09-14", "09-15", "09-16", "09-17", "09-18", "09-21", "09-22", "09-23", "09-24", "09-25", "09-28", "09-29", "09-30", "10-01", "10-02", "10-05", "10-06", "10-07", "10-08", "10-09", "10-13", "10-14", "10-15", "10-16", "10-19", "10-20"];
+            const onRrpData = [0.626, 0.432, 4.736, 5.255, 1.42, 0.7, 5.375, 0.276, 0.576, 0.582, 0.453, 0.461, 0.63, 0.576, 0.851, 11.446, 11.539, 0.35, 1.501, 1.004, 0.414, 2.338, 0.335, 0.3, 0.275, 0.201, 1.201, 0.1, 0.33, 0.227];
+            if (onRrpLabels.length > 0) {
+                chartInstances.push(new Chart(document.getElementById('onRrpChart').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: onRrpLabels,
+                        datasets: [{
+                            label: 'ON RRP (B)',
+                            data: onRrpData,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 2,
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#888', maxRotation: 45, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                }));
+            }
+        }
+
+        function sendHeight() {
+            var c = document.querySelector(".container"); var h = c ? Math.ceil(c.getBoundingClientRect().bottom) : document.body.scrollHeight;
+            if (Math.abs(h - lastH) < 4) return;
+            lastH = h;
+            try {
+                window.parent.postMessage({type: 'tw-dashboard-height', height: h}, '*');
+            } catch (e) {}
+        }
+        window.addEventListener('load', sendHeight);
+        window.addEventListener('resize', sendHeight);
+        // Periodic resend in case content (charts, fonts) loads asynchronously
+        setTimeout(sendHeight, 200);
+        setTimeout(sendHeight, 600);
+        setTimeout(sendHeight, 1200);
+        setTimeout(sendHeight, 2500);
+        setInterval(sendHeight, 2000);
+        if (window.ResizeObserver) {
+            try {
+                new ResizeObserver(sendHeight).observe(document.body);
+            } catch (e) {}
+        }
+    })();
+    </script>
+</body>
+</html>
