@@ -1,6 +1,6 @@
 {
   "date": "20261022",
-  "generated_at": "2026-10-23 22:14:58",
+  "generated_at": "2026-10-27 00:07:33",
   "taiex": {
     "index": 46041.43,
     "change": -846.34,
@@ -190,10 +190,6 @@
   },
   "usd_index": [
     {
-      "date": "2026-09-28",
-      "close": 101.21
-    },
-    {
       "date": "2026-09-29",
       "close": 101.46
     },
@@ -268,13 +264,13 @@
     {
       "date": "2026-10-23",
       "close": 98.94
+    },
+    {
+      "date": "2026-10-27",
+      "close": 98.81
     }
   ],
   "jpy_rate": [
-    {
-      "date": "2026-09-28",
-      "close": 157.44
-    },
     {
       "date": "2026-09-29",
       "close": 157.5
@@ -350,17 +346,17 @@
     {
       "date": "2026-10-23",
       "close": 152.54
+    },
+    {
+      "date": "2026-10-27",
+      "close": 152.85
     }
   ],
   "vix": {
-    "value": 20.04,
-    "prev_value": 19.03,
-    "date": "2026-10-23",
+    "value": 18.05,
+    "prev_value": 19.45,
+    "date": "2026-10-26",
     "chart": [
-      {
-        "date": "2026-09-14",
-        "close": 17.1
-      },
       {
         "date": "2026-09-15",
         "close": 17.2
@@ -475,7 +471,11 @@
       },
       {
         "date": "2026-10-23",
-        "close": 20.04
+        "close": 19.45
+      },
+      {
+        "date": "2026-10-26",
+        "close": 18.05
       }
     ],
     "source": "Yahoo Finance",
@@ -498,17 +498,17 @@
     "date": "20261022"
   },
   "cnn_fg": {
-    "value": 19.7,
-    "label": "extreme fear",
-    "prev_value": 19.8,
+    "value": 29.4,
+    "label": "fear",
+    "prev_value": 21.0,
     "prev_label": null,
-    "week_ago_value": 22.1
+    "week_ago_value": 20.8
   },
   "crypto_fg": {
     "value": 50,
     "label": "Neutral",
-    "prev_value": 68,
-    "prev_label": "Greed"
+    "prev_value": 54,
+    "prev_label": "Neutral"
   },
   "pcr": {
     "ratio": 66.18,
@@ -516,14 +516,10 @@
     "call_oi": 199654.0
   },
   "us10y": {
-    "value": 4.988,
-    "prev_value": 4.953,
-    "date": "2026-10-23",
+    "value": 4.982,
+    "prev_value": 4.988,
+    "date": "2026-10-26",
     "chart": [
-      {
-        "date": "2026-09-14",
-        "close": 4.961
-      },
       {
         "date": "2026-09-15",
         "close": 4.996
@@ -639,6 +635,10 @@
       {
         "date": "2026-10-23",
         "close": 4.988
+      },
+      {
+        "date": "2026-10-26",
+        "close": 4.982
       }
     ],
     "source": "Yahoo Finance",
@@ -689,14 +689,10 @@
     ]
   },
   "on_rrp": {
-    "value": 0.351,
-    "date": "2026-10-22",
-    "prev_value": 0.237,
+    "value": 0.2,
+    "date": "2026-10-23",
+    "prev_value": 0.351,
     "chart": [
-      {
-        "date": "2026-09-10",
-        "close": 4.736
-      },
       {
         "date": "2026-09-11",
         "close": 5.255
@@ -812,6 +808,10 @@
       {
         "date": "2026-10-22",
         "close": 0.351
+      },
+      {
+        "date": "2026-10-23",
+        "close": 0.2
       }
     ]
   }
