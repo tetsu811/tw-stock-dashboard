@@ -1,192 +1,192 @@
 {
-  "date": "20261022",
-  "generated_at": "2026-10-27 00:07:33",
+  "date": "20261027",
+  "generated_at": "2026-10-27 23:21:27",
   "taiex": {
-    "index": 46041.43,
-    "change": -846.34,
-    "change_pct": -1.81,
-    "volume": 933437473560.0,
-    "prev_volume": 874614166736.0,
-    "volume_change": 6.73,
-    "date": "20261022"
+    "index": 46096.23,
+    "change": 54.8,
+    "change_pct": 0.12,
+    "volume": 1031683538938.0,
+    "prev_volume": 933437473560.0,
+    "volume_change": 10.53,
+    "date": "20261027"
   },
   "institutional": {
-    "foreign_buy": 304133658440.0,
-    "foreign_sell": 385715759892.0,
-    "foreign_net": -81582101452.0,
-    "foreign_prev_net": 2238909816.0,
-    "trust_buy": 25263632690.0,
-    "trust_sell": 15771432172.0,
-    "trust_net": 9492200518.0,
-    "trust_prev_net": 12798537238.0,
-    "dealer_net": -3716264758.0,
-    "dealer_buy": 7229694959.0,
-    "dealer_sell": 10945959717.0
+    "foreign_buy": 514123007104.0,
+    "foreign_sell": 522161880243.0,
+    "foreign_net": -8038873139.0,
+    "foreign_prev_net": null,
+    "trust_buy": 38392407004.0,
+    "trust_sell": 14787900746.0,
+    "trust_net": 23604506258.0,
+    "trust_prev_net": null,
+    "dealer_net": 768221086.0,
+    "dealer_buy": 9007716092.0,
+    "dealer_sell": 8239495006.0
   },
   "foreign_top10": {
     "top_buy": [
       {
-        "stock_id": "1101",
-        "stock_name": "台泥",
-        "buy": 44656,
-        "sell": 19107,
-        "net": 25549
-      },
-      {
-        "stock_id": "1802",
-        "stock_name": "台玻",
-        "buy": 92892,
-        "sell": 67656,
-        "net": 25236
+        "stock_id": "6770",
+        "stock_name": "力積電",
+        "buy": 84319,
+        "sell": 28308,
+        "net": 56012
       },
       {
         "stock_id": "2002",
         "stock_name": "中鋼",
-        "buy": 30638,
-        "sell": 5973,
-        "net": 24665
+        "buy": 34601,
+        "sell": 5002,
+        "net": 29598
       },
       {
-        "stock_id": "2887",
-        "stock_name": "台新新光金",
-        "buy": 32576,
-        "sell": 19733,
-        "net": 12843
+        "stock_id": "2344",
+        "stock_name": "華邦電",
+        "buy": 43301,
+        "sell": 20812,
+        "net": 22489
       },
       {
-        "stock_id": "6505",
-        "stock_name": "台塑化",
-        "buy": 23350,
-        "sell": 10714,
-        "net": 12635
+        "stock_id": "00712",
+        "stock_name": "復華富時不動產",
+        "buy": 25841,
+        "sell": 7865,
+        "net": 17976
       },
       {
-        "stock_id": "2801",
-        "stock_name": "彰銀",
-        "buy": 14820,
-        "sell": 3907,
-        "net": 10912
-      },
-      {
-        "stock_id": "4526",
-        "stock_name": "東台",
-        "buy": 17212,
-        "sell": 7235,
-        "net": 9978
-      },
-      {
-        "stock_id": "2892",
-        "stock_name": "第一金",
-        "buy": 15369,
-        "sell": 5433,
-        "net": 9936
-      },
-      {
-        "stock_id": "2884",
-        "stock_name": "玉山金",
-        "buy": 22502,
-        "sell": 13174,
-        "net": 9327
+        "stock_id": "2356",
+        "stock_name": "英業達",
+        "buy": 32950,
+        "sell": 16349,
+        "net": 16601
       },
       {
         "stock_id": "2353",
         "stock_name": "宏碁",
-        "buy": 12805,
-        "sell": 3584,
-        "net": 9221
+        "buy": 37855,
+        "sell": 25045,
+        "net": 12810
+      },
+      {
+        "stock_id": "2408",
+        "stock_name": "南亞科",
+        "buy": 27305,
+        "sell": 15739,
+        "net": 11566
+      },
+      {
+        "stock_id": "5880",
+        "stock_name": "合庫金",
+        "buy": 25393,
+        "sell": 14674,
+        "net": 10719
+      },
+      {
+        "stock_id": "4526",
+        "stock_name": "東台",
+        "buy": 18412,
+        "sell": 8533,
+        "net": 9879
+      },
+      {
+        "stock_id": "009829",
+        "stock_name": "大華韓國KOSPI50",
+        "buy": 9786,
+        "sell": 575,
+        "net": 9211
       }
     ],
     "top_sell": [
       {
+        "stock_id": "2409",
+        "stock_name": "友達",
+        "buy": 66688,
+        "sell": 162648,
+        "net": -95960
+      },
+      {
         "stock_id": "00406A",
         "stock_name": "主動中信台灣收益",
-        "buy": 108132,
-        "sell": 230494,
-        "net": -122362
+        "buy": 106834,
+        "sell": 175061,
+        "net": -68228
       },
       {
         "stock_id": "00981A",
         "stock_name": "主動統一台股增長",
-        "buy": 53225,
-        "sell": 109945,
-        "net": -56720
-      },
-      {
-        "stock_id": "0050",
-        "stock_name": "元大台灣50",
-        "buy": 13423,
-        "sell": 59413,
-        "net": -45990
-      },
-      {
-        "stock_id": "2409",
-        "stock_name": "友達",
-        "buy": 38671,
-        "sell": 80642,
-        "net": -41971
+        "buy": 44823,
+        "sell": 111718,
+        "net": -66895
       },
       {
         "stock_id": "00403A",
         "stock_name": "主動統一升級50",
-        "buy": 47708,
-        "sell": 82626,
-        "net": -34918
+        "buy": 41500,
+        "sell": 97214,
+        "net": -55714
       },
       {
-        "stock_id": "1303",
-        "stock_name": "南亞",
-        "buy": 19846,
-        "sell": 40262,
-        "net": -20416
+        "stock_id": "0050",
+        "stock_name": "元大台灣50",
+        "buy": 26634,
+        "sell": 55054,
+        "net": -28421
       },
       {
         "stock_id": "009828",
         "stock_name": "中信台日韓PCB",
-        "buy": 10704,
-        "sell": 29472,
-        "net": -18768
+        "buy": 9468,
+        "sell": 34387,
+        "net": -24919
       },
       {
-        "stock_id": "1301",
-        "stock_name": "台塑",
-        "buy": 9383,
-        "sell": 25448,
-        "net": -16066
+        "stock_id": "1802",
+        "stock_name": "台玻",
+        "buy": 33919,
+        "sell": 48009,
+        "net": -14090
       },
       {
-        "stock_id": "2327",
-        "stock_name": "國巨",
-        "buy": 7373,
-        "sell": 23129,
-        "net": -15756
+        "stock_id": "00992A",
+        "stock_name": "主動群益科技創新",
+        "buy": 11330,
+        "sell": 24597,
+        "net": -13267
       },
       {
         "stock_id": "00400A",
         "stock_name": "主動國泰動能高息",
-        "buy": 6248,
-        "sell": 20864,
-        "net": -14616
+        "buy": 5830,
+        "sell": 19062,
+        "net": -13233
+      },
+      {
+        "stock_id": "009816",
+        "stock_name": "凱基台灣TOP50",
+        "buy": 6439,
+        "sell": 18626,
+        "net": -12187
       }
     ],
-    "data_date": "20261022"
+    "data_date": "20261027"
   },
   "margin": {
-    "margin_balance": 9604402.0,
-    "margin_change": -27925,
-    "margin_balance_amount": 633880174000.0,
-    "short_balance": 216539.0,
-    "short_change": 23941,
-    "date": "2026-10-22",
+    "margin_balance": 9550611.0,
+    "margin_change": -53788,
+    "margin_balance_amount": 623386860000.0,
+    "short_balance": 217708.0,
+    "short_change": 1169,
+    "date": "2026-10-27",
     "source": "FinMind"
   },
   "breadth": {
     "tse_up": 303,
     "tse_down": 959,
     "tse_flat": 121,
-    "otc_up": 146.0,
-    "otc_down": 659.0,
-    "otc_flat": 63.0,
-    "otc_date": "20261022"
+    "otc_up": 307.0,
+    "otc_down": 491.0,
+    "otc_flat": 74.0,
+    "otc_date": "20261027"
   },
   "usd_index": [
     {
@@ -353,14 +353,10 @@
     }
   ],
   "vix": {
-    "value": 18.05,
-    "prev_value": 19.45,
-    "date": "2026-10-26",
+    "value": 17.56,
+    "prev_value": 18.39,
+    "date": "2026-10-27",
     "chart": [
-      {
-        "date": "2026-09-15",
-        "close": 17.2
-      },
       {
         "date": "2026-09-16",
         "close": 17.71
@@ -475,55 +471,55 @@
       },
       {
         "date": "2026-10-26",
-        "close": 18.05
+        "close": 18.39
+      },
+      {
+        "date": "2026-10-27",
+        "close": 17.56
       }
     ],
     "source": "Yahoo Finance",
     "status": "ok"
   },
   "futures": {
-    "close": 46272.0,
-    "change": -741.0,
-    "change_pct": -1.58,
-    "volume": 55226.0,
-    "settlement": 46234.0,
-    "open": 47164.0,
-    "high": 47337.0,
-    "low": 46217.0,
+    "close": 46081.0,
+    "change": -153.0,
+    "change_pct": -0.33,
+    "volume": 61110.0,
+    "settlement": 46106.0,
+    "open": 46505.0,
+    "high": 46846.0,
+    "low": 46050.0,
     "contract_month": "202611",
-    "data_date": "20261022"
+    "data_date": "20261027"
   },
   "margin_ratio": {
     "ratio": null,
-    "date": "20261022"
+    "date": "20261027"
   },
   "cnn_fg": {
-    "value": 29.4,
+    "value": 32.4,
     "label": "fear",
-    "prev_value": 21.0,
+    "prev_value": 27.1,
     "prev_label": null,
-    "week_ago_value": 20.8
+    "week_ago_value": 29.6
   },
   "crypto_fg": {
-    "value": 50,
+    "value": 48,
     "label": "Neutral",
-    "prev_value": 54,
+    "prev_value": 50,
     "prev_label": "Neutral"
   },
   "pcr": {
-    "ratio": 66.18,
-    "put_oi": 172113.0,
-    "call_oi": 199654.0
+    "ratio": 61.96,
+    "put_oi": 358857.0,
+    "call_oi": 399207.0
   },
   "us10y": {
-    "value": 4.982,
-    "prev_value": 4.988,
-    "date": "2026-10-26",
+    "value": 4.984,
+    "prev_value": 4.986,
+    "date": "2026-10-27",
     "chart": [
-      {
-        "date": "2026-09-15",
-        "close": 4.996
-      },
       {
         "date": "2026-09-16",
         "close": 5.006
@@ -638,7 +634,11 @@
       },
       {
         "date": "2026-10-26",
-        "close": 4.982
+        "close": 4.986
+      },
+      {
+        "date": "2026-10-27",
+        "close": 4.984
       }
     ],
     "source": "Yahoo Finance",
@@ -646,57 +646,53 @@
   },
   "futures_oi": {
     "foreign": {
-      "change": -1221,
-      "oi": -87297
+      "change": 1221,
+      "oi": -86043
     },
     "trust": {
-      "change": -177,
-      "oi": 83601
+      "change": 1451,
+      "oi": 85052
     },
     "dealer": {
-      "change": 1565,
-      "oi": 3260
+      "change": -1794,
+      "oi": 1454
     },
     "total": {
-      "change": 167,
-      "oi": -436
+      "change": 878,
+      "oi": 463
     }
   },
   "sentiment": {
-    "micro_sentiment": -79.19,
-    "micro_sentiment_prev": -65.55,
-    "mini_sentiment": -79.19,
-    "mini_sentiment_prev": -65.55,
-    "pcr_today": 86.21,
-    "pcr_prev": 111.88,
+    "micro_sentiment": -71.64,
+    "micro_sentiment_prev": null,
+    "mini_sentiment": -71.64,
+    "mini_sentiment_prev": null,
+    "pcr_today": 89.89,
+    "pcr_prev": null,
     "micro_sentiment_chart": [
       {
-        "date": "2026-10-22",
-        "close": -79.19
+        "date": "2026-10-27",
+        "close": -71.64
       }
     ],
     "mini_sentiment_chart": [
       {
-        "date": "2026-10-22",
-        "close": -79.19
+        "date": "2026-10-27",
+        "close": -71.64
       }
     ],
     "pcr_chart": [
       {
-        "date": "2026-10-22",
-        "close": 66.18
+        "date": "2026-10-27",
+        "close": 61.96
       }
     ]
   },
   "on_rrp": {
     "value": 0.2,
-    "date": "2026-10-23",
-    "prev_value": 0.351,
+    "date": "2026-10-26",
+    "prev_value": 0.2,
     "chart": [
-      {
-        "date": "2026-09-11",
-        "close": 5.255
-      },
       {
         "date": "2026-09-14",
         "close": 1.42
@@ -811,6 +807,10 @@
       },
       {
         "date": "2026-10-23",
+        "close": 0.2
+      },
+      {
+        "date": "2026-10-26",
         "close": 0.2
       }
     ]
